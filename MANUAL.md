@@ -1,8 +1,8 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.1.0
-status: draft            # the genesis run flips this to "live"
+manual_version: 1.1.1
+status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
 hub: github.com/<yinggarykairui>/factory-hub
@@ -426,6 +426,10 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.1.1** (2026-07-25) — Genesis run (meta issue #17): auth verified
+  end-to-end on `factory-selftest` (create repo, push, Pages live, archive),
+  issue/label/comment/close machinery verified, `status: draft → live`.
+  No doctrine text changed.
 - **1.1.0** (2026-07-25) — Solo refit. Cut guest queue, webring, achievements,
   inbound maintainer; injection defense reduced to the §15 owner-only rule.
   Added genesis run + earned graduation (§16), README-first specs (§4),
