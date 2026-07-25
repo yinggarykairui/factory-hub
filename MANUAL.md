@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.1.3
+manual_version: 1.1.4
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -219,7 +219,9 @@ rises on purpose, not by drift.
    rubric average, repo + demo links, idea source, builder model), then refresh
    the KPI row: streak, verified rate, average rubric score, percent of demos
    alive. The hub Pages site renders this file client-side; pushing the update
-   is the rebuild — no extra step.
+   is the rebuild — no extra step. Then refresh the profile storefront: run
+   `scripts/render_profile.py` and push the output as the README of
+   `yinggarykairui/yinggarykairui`.
 9. Append at most one `LESSONS.md` line if the day earned one (§14).
 
 ---
@@ -431,6 +433,10 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.1.4** (2026-07-26) — §9.8 (meta issue #22): shipper also refreshes the
+  profile storefront (`yinggarykairui/yinggarykairui` README) via
+  `scripts/render_profile.py` — reactions-ranked best builds, rubric
+  fallback. §16-P2 storefront pulled forward by owner. Canaried on branch.
 - **1.1.3** (2026-07-26) — §9.8 (meta issue #19): index row gains type and
   rubric-average fields; dashboard is now a Pages site at the hub root,
   rendered client-side from dashboard/README.md (canaried on branch,
