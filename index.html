@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>build factory — dashboard</title>
+<style>
+  :root {
+    --ink: #1a1a18; --faint: #6b6b64; --line: #e4e2da; --paper: #faf9f6;
+    --accent: #2f5d3a;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font: 16px/1.55 ui-serif, Georgia, 'Times New Roman', serif;
+    max-width: 72rem; margin: 0 auto; padding: 2.5rem 1.25rem 5rem;
+  }
+  header { border-bottom: 1px solid var(--ink); padding-bottom: 1.25rem; margin-bottom: 1rem; }
+  h1 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; }
+  h1 a { color: inherit; text-decoration: none; }
+  #kpi {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.85rem; color: var(--faint); margin-top: 0.5rem;
+  }
+  nav { display: flex; gap: 0.5rem; align-items: baseline; margin: 1.25rem 0 1.75rem; }
+  nav span { font-size: 0.85rem; color: var(--faint); margin-right: 0.25rem; }
+  nav button {
+    font: 0.85rem ui-monospace, 'SF Mono', Menlo, monospace;
+    background: none; border: 1px solid var(--line); border-radius: 2px;
+    padding: 0.2rem 0.7rem; cursor: pointer; color: var(--faint);
+  }
+  nav button[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); }
+  #cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 1.5rem; }
+  .card { border: 1px solid var(--line); border-radius: 3px; background: #fff; display: flex; flex-direction: column; }
+  .shot { aspect-ratio: 16/9; background: #11150f; overflow: hidden; }
+  .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .shot .noshot {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    color: #5a6355; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem;
+  }
+  .body { padding: 0.9rem 1rem 1rem; display: flex; flex-direction: column; gap: 0.45rem; flex: 1; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+  .slug { font-weight: 600; font-size: 1.05rem; }
+  .slug a { color: inherit; text-decoration: none; }
+  .slug a:hover { text-decoration: underline; }
+  .day { font: 0.75rem ui-monospace, Menlo, monospace; color: var(--faint); white-space: nowrap; }
+  .liner { font-size: 0.92rem; }
+  .meta { font: 0.75rem ui-monospace, Menlo, monospace; color: var(--faint); }
+  .meta b { color: var(--accent); font-weight: 600; }
+  .links { margin-top: auto; padding-top: 0.5rem; font-size: 0.88rem; display: flex; gap: 1rem; }
+  .links a { color: var(--accent); }
+  #empty, #err { color: var(--faint); font-style: italic; padding: 2rem 0; }
+  footer { margin-top: 3.5rem; font-size: 0.8rem; color: var(--faint); }
+  footer a { color: var(--faint); }
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="https://github.com/yinggarykairui/factory-hub">build factory</a> — one small finished thing per day</h1>
+  <div id="kpi">loading…</div>
+</header>
+<nav aria-label="sort">
+  <span>sort by</span>
+  <button data-sort="date" aria-pressed="true">date</button>
+  <button data-sort="type" aria-pressed="false">type</button>
+  <button data-sort="rubric" aria-pressed="false">rubric</button>
+</nav>
+<main id="cards"></main>
+<div id="err" hidden>couldn't load dashboard data — see the <a href="dashboard/README.md">raw index</a>.</div>
+<footer>Rendered client-side from <a href="dashboard/README.md">dashboard/README.md</a>, the factory's ledger. No dependencies, no build step.</footer>
+<script>
+"use strict";
+(function () {
+  var cardsEl = document.getElementById('cards');
+  var kpiEl = document.getElementById('kpi');
+  var projects = [];
+  var sortKey = 'date';
+
+  // one markdown link -> {text, url}; plain text passes through
+  function link(cell) {
+    var m = cell.match(/\[([^\]]*)\]\(([^)]+)\)/);
+    return m ? { text: m[1], url: m[2] } : { text: cell.trim(), url: null };
+  }
+
+  function parse(md) {
+    var lines = md.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      if (ln.indexOf('**KPI:**') !== -1) {
+        kpiEl.textContent = ln.replace(/\*\*KPI:\*\*/, 'KPI —').replace(/\*/g, '').trim();
+        continue;
+      }
+      if (ln.charAt(0) !== '|') continue;
+      var cells = ln.split('|').slice(1, -1).map(function (c) { return c.trim(); });
+      // schema: Day|Date|Slug|Type|One-liner|Tech|Rubric|Repo|Demo|Idea source|Builder model
+      if (cells.length < 11 || cells[0] === 'Day' || /^-+$/.test(cells[0].replace(/\s/g, '-'))) continue;
+      var repo = link(cells[7]).url, demo = link(cells[8]).url;
+      projects.push({
+        day: cells[0], date: cells[1], slug: cells[2], type: cells[3],
+        liner: cells[4], tech: cells[5], rubric: parseFloat(cells[6]) || 0,
+        repo: repo, demo: demo,
+        shot: repo ? repo.replace('github.com', 'raw.githubusercontent.com') + '/main/screenshot.png' : null
+      });
+    }
+  }
+
+  function render() {
+    var sorted = projects.slice().sort(function (a, b) {
+      if (sortKey === 'rubric') return b.rubric - a.rubric || b.date.localeCompare(a.date);
+      if (sortKey === 'type') return a.type.localeCompare(b.type) || b.date.localeCompare(a.date);
+      return b.date.localeCompare(a.date) || b.day.localeCompare(a.day);
+    });
+    cardsEl.innerHTML = '';
+    if (!sorted.length) {
+      var p = document.createElement('p');
+      p.id = 'empty'; p.textContent = 'nothing shipped yet — day 001 is coming.';
+      cardsEl.appendChild(p);
+      return;
+    }
+    sorted.forEach(function (pr) {
+      var card = document.createElement('article');
+      card.className = 'card';
+      var shot = document.createElement('div'); shot.className = 'shot';
+      if (pr.shot) {
+        var img = document.createElement('img');
+        img.loading = 'lazy'; img.alt = pr.slug + ' screenshot'; img.src = pr.shot;
+        img.onerror = function () { shot.innerHTML = '<div class="noshot">no screenshot</div>'; };
+        shot.appendChild(img);
+      } else {
+        shot.innerHTML = '<div class="noshot">no screenshot</div>';
+      }
+      var body = document.createElement('div'); body.className = 'body';
+      var top = document.createElement('div'); top.className = 'top';
+      var slug = document.createElement('span'); slug.className = 'slug';
+      if (pr.repo) { var a = document.createElement('a'); a.href = pr.repo; a.textContent = pr.slug; slug.appendChild(a); }
+      else slug.textContent = pr.slug;
+      var day = document.createElement('span'); day.className = 'day';
+      day.textContent = 'day ' + pr.day + ' · ' + pr.date;
+      top.appendChild(slug); top.appendChild(day);
+      var liner = document.createElement('p'); liner.className = 'liner'; liner.textContent = pr.liner;
+      var meta = document.createElement('p'); meta.className = 'meta';
+      meta.innerHTML = '<b>' + pr.type + '</b> · ' + pr.tech + (pr.rubric ? ' · rubric ' + pr.rubric.toFixed(2) : '');
+      var links = document.createElement('p'); links.className = 'links';
+      if (pr.demo) { var d = document.createElement('a'); d.href = pr.demo; d.textContent = 'demo ↗'; links.appendChild(d); }
+      if (pr.repo) { var r = document.createElement('a'); r.href = pr.repo; r.textContent = 'repo'; links.appendChild(r); }
+      body.appendChild(top); body.appendChild(liner); body.appendChild(meta); body.appendChild(links);
+      card.appendChild(shot); card.appendChild(body);
+      cardsEl.appendChild(card);
+    });
+  }
+
+  document.querySelectorAll('nav button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      sortKey = btn.dataset.sort;
+      document.querySelectorAll('nav button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b === btn));
+      });
+      render();
+    });
+  });
+
+  fetch('dashboard/README.md', { cache: 'no-store' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(function (md) { parse(md); render(); })
+    .catch(function () {
+      kpiEl.textContent = '';
+      document.getElementById('err').hidden = false;
+    });
+})();
+</script>
+</body>
+</html>
