@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.1.1
+manual_version: 1.1.2
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -91,6 +91,9 @@ or `verified` is immutable: never reopen or amend a verified ship.
 ---
 
 ## 4. The noon shift — picking and building
+
+If today is already `shipped`: run the §11.2 spot-check and exit. Never build
+twice in one day.
 
 Pick work in this order:
 
@@ -426,6 +429,9 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.1.2** (2026-07-26) — §4 (meta issue #18): a noon shift waking on an
+  already-`shipped` day runs the §11.2 spot-check and exits — never build
+  twice in one day. No canary needed (§4 outside the §14 canary list).
 - **1.1.1** (2026-07-25) — Genesis run (meta issue #17): auth verified
   end-to-end on `factory-selftest` (create repo, push, Pages live, archive),
   issue/label/comment/close machinery verified, `status: draft → live`.
