@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.1.2
+manual_version: 1.1.3
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -215,9 +215,11 @@ rises on purpose, not by drift.
 5. Web builds: enable GitHub Pages; confirm the live URL loads.
 6. Screenshot via headless browser, committed to the repo, embedded in README.
 7. Close the issue with the sign-off (§10); label `shipped`.
-8. Dashboard: append the index row (day #, date, slug, one-liner, tech,
-   repo + demo links, idea source, builder model), then refresh the KPI row:
-   streak, verified rate, average rubric score, percent of demos alive.
+8. Dashboard: append the index row (day #, date, slug, type, one-liner, tech,
+   rubric average, repo + demo links, idea source, builder model), then refresh
+   the KPI row: streak, verified rate, average rubric score, percent of demos
+   alive. The hub Pages site renders this file client-side; pushing the update
+   is the rebuild — no extra step.
 9. Append at most one `LESSONS.md` line if the day earned one (§14).
 
 ---
@@ -429,6 +431,11 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.1.3** (2026-07-26) — §9.8 (meta issue #19): index row gains type and
+  rubric-average fields; dashboard is now a Pages site at the hub root,
+  rendered client-side from dashboard/README.md (canaried on branch,
+  dry-run row parsed clean before merge). Owner pulled this §16-P2 item
+  forward.
 - **1.1.2** (2026-07-26) — §4 (meta issue #18): a noon shift waking on an
   already-`shipped` day runs the §11.2 spot-check and exits — never build
   twice in one day. No canary needed (§4 outside the §14 canary list).
