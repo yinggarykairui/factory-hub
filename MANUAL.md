@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.2.0
+manual_version: 1.3.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -83,9 +83,9 @@ One label from this lifecycle set per project issue:
 | `needs-secret` | blocked only on a missing key (§12); mock shipped  |
 | `blocked`      | needs a human decision; owner @mentioned           |
 
-Knob labels, combinable: `size:xs` `size:s` `size:m` · `type:web` `type:cli`
-`type:game` `type:lib` `type:agent` · `priority` · `meta` · `job`
-(owner-triggered, §17).
+Knob labels, combinable: `size:xs` `size:s` `size:m` `size:l` (multi-day
+epic, §4) · `type:web` `type:cli` `type:game` `type:lib` `type:agent` ·
+`priority` · `meta` · `job` (owner-triggered, §17).
 
 Rules: at most one issue is `building` at any time. Never delete labels'
 history — move issues forward, don't rewrite. A closed issue with `shipped`
@@ -122,6 +122,24 @@ stub and call it part 1.
 **Maintenance builds.** An issue naming an existing factory repo ("improve
 pixel-garden: add levels") means commit to that repo — no new repo. Same loop,
 same rubric, same sign-off.
+
+**PROJECT.md.** Every `size:m`+ build, every multi-part project, and every
+job build keeps a `PROJECT.md` at its repo root: the spec being converged
+on, an architecture sketch, a done-map (increments and items with states),
+and open threads. Any revisit reads it first and updates it last; a
+revisit's planner diffs the repo's current state against the spec and specs
+only the next increment.
+
+**Epics (`size:l`).** A multi-day project. The issue stays open across days.
+Each shift that picks it: relabel `building`, ship a working,
+**rubric-passing increment to the same repo**, update the done-map, stop at
+a clean seam, post an increment sign-off (§10 form, first line
+`SHIP day-<NNN> <slug> (increment k/N)`), append the dashboard row — the
+increment IS the day's ship — then relabel back to `queued`. It closes as
+`shipped` only when the done-map is complete. Feature freeze applies within
+an increment, not across the epic: the next increment's scope comes from
+the done-map, not from improvisation. `job` issues may spawn `size:l`
+aligned builds when the posting warrants it.
 
 ---
 
@@ -265,6 +283,18 @@ Boot per §2, then:
    evening looping.
 
 The foreman never modifies a `verified` ship and never starts tomorrow's work.
+
+**Evening shift (active now; second daily trigger, 20:00 PT, created at the
+owner's desk).** Boot per §2, then: if today's ship exists and is not yet
+`verified`, run up to `loop_cap` **additional** critic→fix cycles on it —
+polish only: close defects, raise scored rubric lines, never add scope
+(feature freeze stands; the §7 fence is absolute). Then run the §11.2
+spot-check **last** and relabel `verified` on pass — verification is the
+exit step because a `verified` ship is immutable (§3). If nothing shipped
+today, fall through to §11.3–.5 (rescue, circuit breaker). Five consecutive
+clean evenings — ship `verified`, no human fix — double as the §16
+graduation evidence. Until phase 1, the evening shift performs only this
+mandate; the full foreman duties of §11.1–.5 activate with phase 1.
 
 ---
 
@@ -488,6 +518,12 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.3.0** (2026-07-25) — continuous iteration at project scale (meta issue
+  #27): PROJECT.md rule for size:m+/multi-part/job builds (§4); epics —
+  `size:l` multi-day projects shipping daily rubric-passing increments to
+  one repo (§3, §4); evening shift — 20:00 PT polish cycles then §11.2
+  verification, five clean evenings = graduation evidence (§11). Canaried
+  on branch (§3 touched).
 - **1.2.0** (2026-07-25) — job lane live as owner-triggered §17 (meta issue
   #24): parse → gap analysis → aligned build (posting's stack, priority,
   s–m) → FACTS.md-constrained resume (PDF+docx) → APPLICATIONS.md ledger →
