@@ -250,8 +250,10 @@ rises on purpose, not by drift.
 6. Screenshot via headless browser, committed to the repo, embedded in README.
 7. Close the issue with the sign-off (§10); label `shipped`. Epics (§4)
    instead: post the increment sign-off, check off the done-map in
-   PROJECT.md, leave the issue open, relabel `queued` — close as `shipped`
-   only when the done-map completes.
+   PROJECT.md, leave the issue open — and relabel `queued` only **after**
+   §9.8's dashboard row is pushed, so no crash window exists where neither
+   label nor row records the day. Close as `shipped` only when the
+   done-map completes.
 8. Dashboard: append the index row (day #, date, slug, type, one-liner, tech,
    rubric average, repo + demo links, idea source, builder model), then refresh
    the KPI row: streak, verified rate, average rubric score, percent of demos
@@ -409,8 +411,9 @@ warm-start pack must exist: 15–20 seeded `queued` ideas, a starter
 
 **Phase 1:** full crew of §6; the full §11.1–.5 foreman duties activate on
 the existing 20:00 trigger.
-**Graduation is earned, not scheduled: five consecutive `verified` ships with
-no human fix.** The advancing `meta` issue must quote the five sign-offs.
+**Graduation is earned, not scheduled: five consecutive clean evenings
+(§11 — a `verified` ship or an epic increment verification) with no human
+fix.** The advancing `meta` issue must quote the five verifications.
 
 **Phase 2:** veto window (planner posts tomorrow's spec the evening before;
 silence is consent, a thumbs-down forces a re-plan), weekly patrol, monthly
@@ -487,7 +490,8 @@ Clone <hub>, read MANUAL.md fully, and do the noon shift's work.
 All state you need is in the hub's issues and labels; leave state the same way.
 ```
 
-Foreman (daily, 20:00 America/Los_Angeles — create at phase 1):
+Evening/foreman (daily, 20:00 America/Los_Angeles — trigger exists; runs
+the §11 evening mandate now, full foreman duties from phase 1):
 
 ```
 You are the foreman shift of the build factory.
