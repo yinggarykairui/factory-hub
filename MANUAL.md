@@ -78,7 +78,7 @@ One label from this lifecycle set per project issue:
 | `speccing`     | planner is expanding it                            |
 | `building`     | build in progress today                            |
 | `shipped`      | pushed, demo live, issue closed by noon shift      |
-| `verified`     | foreman re-checked the ship (phase 1+)             |
+| `verified`     | evening/foreman shift re-checked the ship (§11)    |
 | `needs-retry`  | shipped incomplete or failed; retry queue jumps    |
 | `needs-secret` | blocked only on a missing key (§12); mock shipped  |
 | `blocked`      | needs a human decision; owner @mentioned           |
@@ -88,8 +88,8 @@ epic, §4) · `type:web` `type:cli` `type:game` `type:lib` `type:agent` ·
 `priority` · `meta` · `job` (owner-triggered, §17).
 
 Rules: at most one issue is `building` at any time. Never delete labels'
-history — move issues forward, don't rewrite. A closed issue with `shipped`
-or `verified` is immutable: never reopen or amend a verified ship.
+history — move issues forward, don't rewrite. A closed issue labeled
+`shipped` or `verified` is immutable: never reopen or amend it.
 
 ---
 
@@ -126,20 +126,32 @@ same rubric, same sign-off.
 **PROJECT.md.** Every `size:m`+ build, every multi-part project, and every
 job build keeps a `PROJECT.md` at its repo root: the spec being converged
 on, an architecture sketch, a done-map (increments and items with states),
-and open threads. Any revisit reads it first and updates it last; a
+and open threads. The planner writes and revises it; the shipper checks off
+the done-map at ship. Any revisit reads it first and updates it last; a
 revisit's planner diffs the repo's current state against the spec and specs
-only the next increment.
+only the next increment. Not retroactive: a pre-1.3.0 repo gains its
+PROJECT.md on first revisit (the revisit planner writes it before diffing).
 
 **Epics (`size:l`).** A multi-day project. The issue stays open across days.
-Each shift that picks it: relabel `building`, ship a working,
-**rubric-passing increment to the same repo**, update the done-map, stop at
-a clean seam, post an increment sign-off (§10 form, first line
-`SHIP day-<NNN> <slug> (increment k/N)`), append the dashboard row — the
-increment IS the day's ship — then relabel back to `queued`. It closes as
-`shipped` only when the done-map is complete. Feature freeze applies within
-an increment, not across the epic: the next increment's scope comes from
-the done-map, not from improvisation. `job` issues may spawn `size:l`
-aligned builds when the posting warrants it.
+First pick: `speccing` → spec comment + PROJECT.md → `building`. Later
+picks: the planner posts the increment spec (the PROJECT.md diff) and
+relabels `building` directly. Each picked day ships a working,
+**rubric-passing increment to the same repo** (rubric judged on what
+exists: the README stays truthful about the built subset), updates the
+done-map, stops at a clean seam, posts an increment sign-off (§10 form,
+first line `SHIP day-<NNN> <slug> (increment k/N)`), appends the dashboard
+row, then relabels back to `queued`. **The dashboard row is the day's
+shipped-marker:** §2.3's "has today shipped?", §4's double-build guard,
+and §11's evening test all read the dashboard's last row date — an epic
+increment day counts as shipped even though the issue stays open. Pick
+cadence: an epic queues oldest-first like any issue; after an increment it
+may not take two consecutive factory days unless it carries `priority` or
+nothing else is queued — an epic neither starves the queue nor is starved
+by it (`priority` starts one sooner). It closes as `shipped` only when the
+done-map is complete. Feature freeze applies within an increment, not
+across the epic: the next increment's scope comes from the done-map, not
+improvisation. `job` issues may spawn `size:l` aligned builds when the
+posting warrants it.
 
 ---
 
@@ -168,7 +180,7 @@ the config block says otherwise.
 
 | Role | Mission | Produces |
 |------|---------|----------|
-| **planner** | Expand the issue into the spec (§4). Guard scope. | Spec comment |
+| **planner** | Expand the issue into the spec (§4). Guard scope. | Spec comment + PROJECT.md where §4 requires |
 | **builder** | Implement v0 exactly to spec. Commit incrementally as real units of work. Add nothing the spec excludes. | Working v0 + commits |
 | **playtester** | Use it like a stranger: headless browser for web (resize to phone width, mash keys, feed garbage into every input), wrong flags for CLIs. | Friction list |
 | **critic-correctness** | Adversarial: "find reasons this is NOT ready to ship." Bugs, errors, broken states. | Rubric scores + defects |
@@ -236,7 +248,10 @@ rises on purpose, not by drift.
    autonomous build factory — [hub link]"*.
 5. Web builds: enable GitHub Pages; confirm the live URL loads.
 6. Screenshot via headless browser, committed to the repo, embedded in README.
-7. Close the issue with the sign-off (§10); label `shipped`.
+7. Close the issue with the sign-off (§10); label `shipped`. Epics (§4)
+   instead: post the increment sign-off, check off the done-map in
+   PROJECT.md, leave the issue open, relabel `queued` — close as `shipped`
+   only when the done-map completes.
 8. Dashboard: append the index row (day #, date, slug, type, one-liner, tech,
    rubric average, repo + demo links, idea source, builder model), then refresh
    the KPI row: streak, verified rate, average rubric score, percent of demos
@@ -285,16 +300,24 @@ Boot per §2, then:
 The foreman never modifies a `verified` ship and never starts tomorrow's work.
 
 **Evening shift (active now; second daily trigger, 20:00 PT, created at the
-owner's desk).** Boot per §2, then: if today's ship exists and is not yet
-`verified`, run up to `loop_cap` **additional** critic→fix cycles on it —
-polish only: close defects, raise scored rubric lines, never add scope
-(feature freeze stands; the §7 fence is absolute). Then run the §11.2
-spot-check **last** and relabel `verified` on pass — verification is the
-exit step because a `verified` ship is immutable (§3). If nothing shipped
-today, fall through to §11.3–.5 (rescue, circuit breaker). Five consecutive
-clean evenings — ship `verified`, no human fix — double as the §16
-graduation evidence. Until phase 1, the evening shift performs only this
-mandate; the full foreman duties of §11.1–.5 activate with phase 1.
+owner's desk).** Boot per §2, then read the dashboard's last row — that is
+"today's ship" (§4): a closed build issue, or an open epic whose increment
+shipped today. If it exists and is not yet verified: run up to `loop_cap`
+polish cycles on it — a **separate evening budget**; §11.3's
+"counts cycles already spent today" governs rescue work only. Polish means
+close defects and raise scored rubric lines, never add scope (feature
+freeze stands; for an epic, tomorrow's done-map items are scope, not
+polish). Then verify **last**, because verified state is immutable:
+- Normal ship: §11.2 spot-check → relabel the closed issue `verified`.
+- Epic increment: §11.2 spot-check against the increment → post
+  `EVENING VERIFIED day-<NNN> (increment k/N)` as a comment on the open
+  epic issue. The `verified` label goes on only when the epic closes; the
+  repo stays workable for tomorrow's increment.
+Both forms count as a "clean evening"; five consecutive clean evenings with
+no human fix double as the §16 graduation evidence. If nothing shipped
+today, fall through to §11.3–.5 (rescue, circuit breaker). Until phase 1,
+the evening shift performs only this mandate; the full foreman duties of
+§11.1–.5 activate with phase 1.
 
 ---
 
@@ -373,16 +396,19 @@ mandate; the full foreman duties of §11.1–.5 activate with phase 1.
 
 ## 16. Phase gates — what is active right now
 
-**Phase 0 (now):** §1–§5, §7–§10, §12–§15. Crew may run reduced: planner +
-builder + one combined critic pass + shipper. No foreman — the noon shift is
-alone, so it self-checks §11.2 before exiting. Phase 0 opens with a **genesis
+**Phase 0 (now):** §1–§5, §7–§10, §12–§15, plus the standing exceptions:
+§17 (job lane) and §11's evening-shift mandate. Crew may run reduced:
+planner + builder + one combined critic pass + shipper. The evening shift
+covers verification and polish; if it is ever offline, the noon shift
+self-checks §11.2 before exiting. Phase 0 opens with a **genesis
 run** that builds nothing: create the label set, verify the PAT's scopes
 end-to-end (create repo, push, enable Pages) on one throwaway self-test, then
 file "factory operational." Before the first noon shift ever fires, the
 warm-start pack must exist: 15–20 seeded `queued` ideas, a starter
 `LESSONS.md`, `TASTE.md`, `STYLE.md`.
 
-**Phase 1:** full crew of §6, foreman shift live, second trigger created.
+**Phase 1:** full crew of §6; the full §11.1–.5 foreman duties activate on
+the existing 20:00 trigger.
 **Graduation is earned, not scheduled: five consecutive `verified` ships with
 no human fix.** The advancing `meta` issue must quote the five sign-offs.
 
@@ -396,9 +422,9 @@ live in §17; phase 3 graduates it: application outcomes feed `TASTE.md`, and
 the retro tracks response rates.
 
 Do not attempt features from phases above the config block's `phase` value.
-The one standing exception: §17's owner-triggered job lane, live at any
-phase but only ever on an owner-filed `job` issue. Advancing a phase is a
-`meta` issue like any other manual edit.
+The standing exceptions: §17's owner-triggered job lane (live at any phase,
+only ever on an owner-filed `job` issue) and §11's evening-shift mandate.
+Advancing a phase is a `meta` issue like any other manual edit.
 
 ---
 
@@ -425,8 +451,9 @@ The flow, in order — each step leaves an artifact:
    already align with the posting, and what one aligned build would close
    the biggest gap. Comment it.
 3. **Aligned build.** File a normal build issue linked both ways to the job
-   issue: `priority`, size:s–m allowed, **the posting's stack overrides
-   §13** (the one exception). Then it is an ordinary build — same §4–§10
+   issue: `priority`; size:s–m, or `size:l` when the posting warrants a
+   multi-day epic (§4); **the posting's stack overrides §13** (the one
+   exception). Then it is an ordinary build — same §4–§10
    loop, same rubric, same critics, same sign-off. A job-lane ship is never
    quality-discounted. Build-step stacks deploy via committed `dist/` or a
    Pages Actions workflow — either is sanctioned; §8's demo-link line judges
