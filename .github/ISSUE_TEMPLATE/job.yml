@@ -1,0 +1,43 @@
+name: "Job posting — start the §17 lane"
+description: "Paste a job posting. The factory parses it, ships an aligned project, and prepares a tailored resume + pitch in factory-private. Nothing is ever sent anywhere."
+title: "job: "
+labels: ["job"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **What happens after you submit:** the next shift (noon 12:00 PT / evening 20:00 PT) parses the posting, comments a gap analysis against the dashboard, and files a `priority` aligned build. After that build ships: tailored one-page resume (PDF + docx, every claim traceable to FACTS.md or a shipped repo), a ledger row in factory-private, and a three-sentence pitch note on this issue. **The factory sends nothing — you review and send.**
+  - type: textarea
+    id: posting
+    attributes:
+      label: The posting
+      description: Paste the full job description text, or a link to it (text survives link-rot better).
+      placeholder: Paste the whole thing — title, company, requirements, stack, all of it.
+    validations:
+      required: true
+  - type: input
+    id: shorthand
+    attributes:
+      label: Company · Role (shorthand for the title)
+      placeholder: "e.g. Foundry Labs · Frontend Engineer, AI Tools"
+    validations:
+      required: false
+  - type: dropdown
+    id: size
+    attributes:
+      label: Aligned-build size
+      description: §17.3 default is size:s–m (one day). A posting can warrant a multi-day size:l epic — force it here or let the gap analysis judge.
+      options:
+        - Let the factory judge (default)
+        - One-day build (size:s–m)
+        - Multi-day epic (size:l)
+      default: 0
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Owner notes (optional)
+      description: Deadlines, angles to emphasize, anything the parse should know.
+    validations:
+      required: false
