@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.4.0
+manual_version: 1.5.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -466,12 +466,19 @@ The flow, in order — each step leaves an artifact:
    loop, same rubric, same critics, same sign-off. A job-lane ship is never
    quality-discounted. Build-step stacks deploy via committed `dist/` or a
    Pages Actions workflow — either is sanctioned; §8's demo-link line judges
-   what the URL actually serves.
+   what the URL actually serves. Job-lane ships also embed a short demo GIF
+   (10–20 s, self-captured) in the README — recruiters watch before they
+   clone.
 4. **Resume.** After the ship: one-page tailored resume per `RESUME_STYLE.md`
    (reference PDF wins on form), produced as **PDF and docx**. Every claim
    must be traceable to `FACTS.md` or a shipped factory repo — a claim that
    can't be traced is omitted, whatever the posting rewards. Tailoring is
-   reordering and emphasis, never invention.
+   reordering and emphasis, never invention. The factory also maintains
+   **standing resumes** under `resumes/` in factory-private — a general
+   `Kairui_Ying_Resume.pdf`/`.docx` plus role-family variants (frontend,
+   full-stack; more as ships justify) — refreshed by any private-capable
+   shift when a shipped build materially strengthens them; the general PDF
+   is also published on the portfolio site (owner pre-approved).
 5. **Ledger.** Save both files under `applications/<company-slug>/` in
    factory-private (slug: lowercase hyphenated company name) and append one
    row to `APPLICATIONS.md` **per the header schema defined in that file**
@@ -479,10 +486,26 @@ The flow, in order — each step leaves an artifact:
    owner advances it thereafter.
 6. **Pitch note.** Three sentences in the ledger row's cell and on the job
    issue: lead with the aligned build's live demo, connect it to the
-   posting, close with the factory as ongoing proof of shipping.
+   posting, close with the factory as ongoing proof of shipping. When the
+   posting or its application flow calls for more, the package also carries
+   `cover-letter.md` (+ PDF) and drafted outreach text (referral request,
+   LinkedIn note) in the company folder — same FACTS.md constraint, same
+   register as RESUME_STYLE.md, and same hard stop: drafts, never sends.
 7. **Hard stop.** The factory sends nothing anywhere — no applications, no
    emails, no form fills, no outreach. Work ends at the private-repo commit
    and the job-issue comment; the owner reviews and sends. No exceptions.
+
+**Owner follow-ons.** After sending, the owner signals transitions by
+commenting on the job issue (`status: sent`, `status: screen`,
+`status: onsite`, `status: offer/rejected/withdrawn`); the servicing shift
+mirrors the status into the APPLICATIONS.md row when it has private access.
+Additionally: on `sent`, schedule a run-once follow-up reminder 7 days out
+(a reminder needs no repo access — its prompt carries the context); on
+`screen` or `onsite`, prepare `interview-brief.md` in the company folder —
+company summary, likely questions for the posting's stack, and talking
+points tying shipped factory builds to the role, all FACTS.md-constrained.
+A shift without private-repo access comments what is pending; the next
+capable session completes it (the HANDOFF pattern).
 
 ---
 
@@ -566,6 +589,14 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.5.0** (2026-07-27) — application package v2 (meta issue #33): §17
+  gains cover letters + drafted outreach, demo GIFs on job-lane ships,
+  standing resumes (general + role-family variants, factory-private
+  `resumes/`), and owner follow-ons (`status:` comments on job issues →
+  ledger mirror, 7-day follow-up reminder on `sent`, interview brief on
+  `screen`/`onsite`). Portfolio site `yinggarykairui.github.io` stands up
+  as storefront infrastructure (dashboard-site precedent, no day number).
+  No canary — §17 only.
 - **1.4.0** (2026-07-27) — instant queue (meta issue #32): hourly job-watch
   trigger services §17 steps 1–3 within the hour a `job` issue appears
   (§17, Appendix A); pairs with the intake form (#31) as the paste-box
