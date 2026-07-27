@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **What happens after you submit:** the next shift (noon 12:00 PT / evening 20:00 PT) parses the posting, comments a gap analysis against the dashboard, and files a `priority` aligned build. After that build ships: tailored one-page resume (PDF + docx, every claim traceable to FACTS.md or a shipped repo), a ledger row in factory-private, and a three-sentence pitch note on this issue. **The factory sends nothing — you review and send.**
+        **What happens after you submit:** within the hour, the job-watch trigger parses the posting, comments a gap analysis against the dashboard, and files a `priority` aligned build; the build itself lands on the next noon shift (12:00 PT). After that build ships: tailored one-page resume (PDF + docx, every claim traceable to FACTS.md or a shipped repo), a ledger row in factory-private, and a three-sentence pitch note on this issue. **The factory sends nothing — you review and send.**
   - type: textarea
     id: posting
     attributes:

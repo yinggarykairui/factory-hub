@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.3.1
+manual_version: 1.4.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -446,6 +446,12 @@ lane trigger, not a build issue, and §3's one-label rule applies to build
 issues; its state is readable from its step comments. It closes when steps
 4–6 are done.
 
+**Instant queue.** A third trigger — the hourly job-watch (Appendix A) —
+services steps 1–3 for any open `job` issue that lacks them, within the hour
+it appears. The watcher never builds, never advances steps 4–6, and exits
+with zero writes when there is nothing to service; the noon and evening
+shifts remain the lane's owners.
+
 The flow, in order — each step leaves an artifact:
 
 1. **Parse.** Comment a structured summary on the job issue: company, role,
@@ -499,8 +505,19 @@ Clone <hub>, read MANUAL.md fully, and do the foreman shift's work.
 All state you need is in the hub's issues and labels; leave state the same way.
 ```
 
-Create both triggers with completion push notifications enabled — the daily
-ship should land on the owner's phone with the screenshot one tap away.
+Job-lane watcher (hourly, on the hour; runs a cheaper tier — sonnet — since
+most runs are empty checks):
+
+```
+You are the job-lane watcher of the build factory.
+Clone <hub>, read MANUAL.md fully. Service §17 steps 1–3 for any open `job`
+issue that lacks them, then stop.
+Nothing to service → exit with zero writes. You never build and never touch
+steps 4–6; the shifts own those.
+```
+
+Create the shift triggers with completion push notifications enabled — the
+daily ship should land on the owner's phone with the screenshot one tap away.
 
 ---
 
@@ -549,6 +566,11 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.4.0** (2026-07-27) — instant queue (meta issue #32): hourly job-watch
+  trigger services §17 steps 1–3 within the hour a `job` issue appears
+  (§17, Appendix A); pairs with the intake form (#31) as the paste-box
+  frontend. Watcher runs sonnet; it never builds. No canary — §17 and
+  Appendix A are outside the §14 list.
 - **1.3.1** (2026-07-27) — changelog (meta issue #29): 1.1.4 and 1.1.5
   datestamps corrected 2026-07-26 → 2026-07-25; both meta builds ran on the
   25th. Owner-reported. Truth applies to datestamps — still.
