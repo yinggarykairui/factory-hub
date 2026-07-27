@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.3.0
+manual_version: 1.3.1
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -549,6 +549,9 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.3.1** (2026-07-27) — changelog (meta issue #29): 1.1.4 and 1.1.5
+  datestamps corrected 2026-07-26 → 2026-07-25; both meta builds ran on the
+  25th. Owner-reported. Truth applies to datestamps — still.
 - **1.3.0** (2026-07-25) — continuous iteration at project scale (meta issue
   #27): PROJECT.md rule for size:m+/multi-part/job builds (§4); epics —
   `size:l` multi-day projects shipping daily rubric-passing increments to
@@ -562,10 +565,10 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   merge: shift servicing duty (§2.3, §17) and private-repo property scoping
   (§1.5). Also: §3 knob, §4 tier-2 ordering, §10 template placeholder, §13
   exception, §15 factory-authored issues, §16-P3.
-- **1.1.5** (2026-07-26) — changelog (meta issue #23): 1.1.2 and 1.1.3
+- **1.1.5** (2026-07-25) — changelog (meta issue #23): 1.1.2 and 1.1.3
   datestamps corrected 2026-07-26 → 2026-07-25; the work happened on the
   25th. Truth applies to datestamps.
-- **1.1.4** (2026-07-26) — §9.8 (meta issue #22): shipper also refreshes the
+- **1.1.4** (2026-07-25) — §9.8 (meta issue #22): shipper also refreshes the
   profile storefront (`yinggarykairui/yinggarykairui` README) via
   `scripts/render_profile.py` — reactions-ranked best builds, rubric
   fallback. §16-P2 storefront pulled forward by owner. Canaried on branch.
