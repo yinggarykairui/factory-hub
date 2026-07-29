@@ -7,4 +7,10 @@
 | 003 | 2026-07-26 | pixel-garden | web | The garden now travels in a URL — share links, read-only visits | vanilla JS, canvas | 4.00 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit (replayed as #28) | claude-fable-5 |
 | 004 | 2026-07-27 | orbit-doodle | web | The pen orbits your cursor — you steer, physics draws the flourishes | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | seeded | claude-fable-5 |
 
-**KPI:** streak: 4 · verified rate: 3/4 · avg rubric score: 4.25 · demos alive: 3/3
+| 005 | 2026-07-29 | trace-lens | web | Deep-link any moment of the replay; opened tool cards survive scrubbing | TypeScript, React, canvas | 4.75 | [repo](https://github.com/yinggarykairui/trace-lens) | [demo](https://yinggarykairui.github.io/trace-lens/) | self-picked revisit (issue-plane record owed, HANDOFF.md) | claude-opus-5 |
+
+**KPI:** streak: 1 · verified rate: 3/5 · avg rubric score: 4.35 · demos alive: unchecked
+
+*Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005 is not
+verified and no demo could be re-crawled: this shift's sandbox reached the git plane
+but not github.io or the GitHub API — see HANDOFF.md. Day 004 is still unverified too.*
