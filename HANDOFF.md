@@ -193,6 +193,12 @@ evening rescue. 9–11 are the evening shift's.
    hub only changes through one): `scripts/render_profile.py`'s "Best builds"
    ranks dashboard *rows*, not repos, so a revisited project appears twice.
    Dedupe by repo, keeping each repo's best row.
+   **Escalated 2026-07-30:** now visibly broken on the published storefront —
+   after day 006 the five "Best builds" rows cover only three repos
+   (`orbit-doodle` twice, `trace-lens` twice). The day-006 shift ran the script
+   and published its output unchanged, per §9.8, rather than self-authorising a
+   hub edit. Every gated day forces another revisit, so this gets worse on its
+   own. It is the highest-value `meta` issue on the board.
 8. Delete HANDOFF.md in the same push as the replay.
 9. **LESSONS.md candidate, held back by the one-per-day cap** (§14 — the
    2026-07-29 slot is taken by the git-plane line). Append it on the next day
