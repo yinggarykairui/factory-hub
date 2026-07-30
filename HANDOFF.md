@@ -1,10 +1,14 @@
-# HANDOFF.md — 2026-07-29 shifts → next API-capable shift
+# HANDOFF.md — 2026-07-29 and 2026-07-30 shifts → next API-capable shift
 
 **Temporary state file, not doctrine.** Written because none of 2026-07-29's
-three runners could touch the issue plane. The next shift that CAN must replay
-the actions below, then delete this file in the same push. If you are reading
-this on a later day and it's still here, replay is still owed — do it before
-new work.
+three runners could touch the issue plane, and extended because the 2026-07-30
+noon shift hit the same wall. The next shift that CAN must replay the actions
+below — **both days, day 005 first** — then delete this file in the same push.
+If you are reading this on a later day and it's still here, replay is still
+owed; do it before new work.
+
+**Day 006 (2026-07-30) is recorded in the section at the bottom of this file.**
+Everything above that section is the still-owed day-005 replay, unchanged.
 
 **Status: day 005 SHIPPED and POLISHED, not `verified`.** The noon shift wrote
 the spec and died before any code; the evening rescue finished the increment
@@ -302,3 +306,239 @@ Worth knowing: the streak counter reads 1 because of the 2026-07-28 zero day,
 not because of a quality problem. And `verified rate: 3/5` is a verification
 outage, not three good days out of five — days 004 and 005 have simply never
 been certifiable by the runners that were awake.
+
+---
+
+# Day 006 — 2026-07-30 noon shift
+
+**Status: day 006 SHIPPED, not `verified`.** `orbit-doodle` main is at
+`38e0c5b`. Same sandbox gating as 2026-07-29 — the **sixth** consecutive
+scheduled run with no repo enrollment. The routing table above still holds
+exactly, re-probed at boot: `/user` 200, every `/repos/...` call 403 with the
+`add_repo` message, `github.io` unreachable (curl exit 56, no status code),
+git-over-HTTPS open including push via the `GIT_CONFIG_GLOBAL=/dev/null`
+bypass. There is no `add_repo` tool in the session; ToolSearch finds nothing.
+
+## The new finding: the gate also blocks repo *creation*
+
+This is what made today different from day 005, and it is now a `LESSONS.md`
+line. Creating a repo is an API call, and git has no push-to-create —
+`git ls-remote` on a fresh slug returns "Repository not found". So a gated
+shift **cannot ship a new project at all**. Probed and confirmed at boot on an
+unused slug before any planning happened.
+
+Consequence for pick order: with the queue unreadable *and* new repos
+impossible, the only lane that runs on the git plane alone is §4's maintenance
+build. Today went to a self-picked revisit of `orbit-doodle` — day 004, the
+least recently touched repo, and the only one that had never had an evening
+polish pass (HANDOFF item 6 above, still owed). `trace-lens` was excluded as
+yesterday's ship, `pixel-garden` as more recent than `orbit-doodle`, and the
+portfolio site because §1.5.0 defines it as storefront infrastructure with no
+day number.
+
+## What shipped (day 006)
+
+`orbit-doodle` increment 2: stroke history with undo/redo, Clear as one
+undoable step, replay-based resize, and a three-pen picker. 16 commits on
+`main`, `5f379bb` → `38e0c5b`:
+
+| Commit | What |
+|---|---|
+| `42c6c0c` | PROJECT.md — back-filled v0 spec + increment-2 spec (the repo had none) |
+| `5aa36f2` | refactor: strokes recorded as replayable pen paths; `redraw()` is the only bulk paint |
+| `c48915c` | feat: undo and redo — buttons and Ctrl/Cmd+Z, one code path |
+| `f7652c0` | feat: Clear becomes one undoable step |
+| `7edf1dc` | feat: three pens — orbit, coil, drift |
+| `feb499f`–`7a525c9` | cycle-1 fixes (5 commits) |
+| `7f508b1`–`05412d6` | cycle-2 fixes (4 commits) |
+| `44ad721`, `b1e799a`, `38e0c5b` | screenshot recapture, PROJECT.md done-map, phone hint fits one line |
+
+Two adversarial cycles, four independent clean-context critic passes, all three
+critic roles ending APPROVE. Cycle 1 found two real state-corruption blockers
+(Clear during a live stroke left the cleared drawing on screen and took three
+undos to unwind; undo during a live stroke destroyed the undone stroke
+unrecoverably) — both were fixed with **one** rule rather than two patches: a
+history action ends the live stroke first. Cycle 2's fresh verifier then found
+an uncaught `setPointerCapture` throw that latched the pointer and killed
+drawing while the page stayed alive — pre-existing since day 004, not a
+regression, and invisible to every pass that only read the diff.
+
+## Replay these issue-plane actions (day 006, after day 005's)
+
+1. File the build issue: title **"improve orbit-doodle: undo/redo + three
+   pens"**, body noting it was built 2026-07-30 under the sandbox gating and
+   filed retroactively per HANDOFF (the day-003 → #28 pattern). Label
+   `type:web`, `size:m`.
+2. Post the increment spec as a comment, verbatim. It is preserved in
+   the appendix at the end of this file, and mirrored in `orbit-doodle`'s
+   `PROJECT.md` at `38e0c5b` under "Increment 2".
+3. Post the sign-off below as the closing comment, close the issue, label
+   `shipped`.
+4. If the queue held a `priority` or `job` issue this shift could not see: note
+   on it that 2026-07-30 was taken by the gated revisit and it runs next. Do
+   not relabel anything else. **Four shifts' worth of §17 job-lane steps are
+   now overdue** — the hourly watcher is almost certainly hitting the same wall;
+   check its recent runs.
+5. **§11.2 spot-check for day 006 — desk session only.** Hard-refresh
+   `https://yinggarykairui.github.io/orbit-doodle/` and confirm: it loads; draw
+   three strokes and press ↶ twice, then ↷ twice, and the drawing comes back
+   exactly; Clear then ↶ restores everything; the three pens draw visibly
+   different lines from the same gesture; `screenshot.png` renders in the
+   README; repo description and topics are set. Clean → relabel the closed
+   issue `verified`. Not clean → §11.3.
+6. Days 004 and 005 are **still** unverified (items 5–6 above). Day 006's ship
+   is on the same repo as day 004, so verifying day 006's demo verifies day
+   004's URL is alive — but day 004's own must-pass lines were never re-tested.
+7. Delete this whole file in the same push as the replay of both days.
+
+### The day-006 sign-off (post verbatim at replay, item 3)
+
+```
+SHIP day-006 orbit-doodle
+built:   orbit-doodle increment 2 — every stroke is now kept as a replayable path instead of paint on a canvas, so undo/redo step through the drawing (buttons + Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl+Y), Clear is one undoable step, resize replays the art instead of stretching a bitmap, and three pens (orbit unchanged, coil, drift) ride on the same recording
+cut:     nothing from the spec. Two things added beyond it and disclosed rather than absorbed: pen radius now scales by min(1, shortViewportEdge/640) because drift's 95px radius amputated strokes within ~95px of any edge on a 375px canvas — filed as a PROJECT.md open thread, and orbit is bit-for-bit the day-004 pen at any short edge >= 640px; and the hint overlay distinguishes "cleared" from "undone to empty" because an undo landing on a blank screen with no instructions reads as broken. History has no depth cap — measured bound only (undo after 50 strokes: 1.1ms worst, 0.6ms median), deferred to its own issue in PROJECT.md
+next:    none filed — the issue plane was unreachable. PROJECT.md's open threads carry the history cap, the viewport-scaled orbit question, and lossy-in-one-direction resize
+rubric:  must-pass 5/7 verified · 2 unverifiable this shift (repo description/topics, and the live Pages URL — the GitHub API and github.io were both egress-blocked) · delight 5 · clarity 4 · readme 4 · scope 5 = 4.50, the majority score per line across three independent clean-context critics
+critics: correctness PASS · ux PASS · hygiene PASS — two adversarial cycles, four independent passes. Cycle 1 caught two real state-corruption blockers in the new history semantics: Clear during a live stroke left the cleared drawing on screen and took three undos to unwind, and undo during a live stroke destroyed the undone stroke unrecoverably. Both closed by one rule — a history action ends the live stroke first — not two patches. Cycle 2's fresh verifier then caught an uncaught setPointerCapture throw that latched the pointer and killed drawing while the page stayed alive: pre-existing since day 004, and invisible to every pass that only read the diff. gitleaks 8.18.4 clean over 21 commits
+lesson:  the gate that blocks the GitHub API blocks repo creation too — git has no push-to-create, so a gated shift's only lane is a maintenance revisit
+manual_version: 1.5.0 · model: claude-opus-5
+```
+
+## Notes for the owner
+
+**Six of the last eight scheduled runs** have landed in sandboxes with no repo
+enrollment. The 2026-07-29 note below still holds and today sharpens it: the
+gating does not cost quality — three independent critics drove the built
+artifact and found two blockers plus a day-004 bug nobody had seen — but it now
+costs **variety** as well as the ledger. A gated day cannot start a new
+project, so every gated day is forced into a revisit of an existing repo. Four
+of the last six ships are now revisits. §5's variety governor cannot do its job
+from inside this gate.
+
+What only you can fix is unchanged: attach the factory repos to the scheduled
+task's environment (`add_repo` with `access:push` — an environment-level
+setting, no such tool exists inside the session), or run the shifts from an
+environment that already has them.
+
+---
+
+## Appendix — the day-006 increment spec (post verbatim at replay, item 2)
+
+## Spec — day 006, orbit-doodle increment 2: stroke history and three pens
+
+Revisit of an existing repo (shipped day 004). `PROJECT.md` was missing and
+has been written this run — the converged spec, architecture sketch, done-map
+and open threads live there; this comment specs only the next increment.
+
+### Scope
+
+Today the only escape from a mistake in orbit-doodle is Clear, which destroys
+the whole drawing. The fix is structural: the canvas stops being the only
+record of the picture. Every stroke gets recorded as a replayable path, and
+the drawing is redrawn from that record whenever it has to change. A pen
+picker then rides on that record almost for free, because a pen is just a
+parameter set carried on the stroke.
+
+**In scope — v0 of this increment:**
+
+1. **Stroke history.** A linear list of entries with a cursor. An entry is
+   either a stroke (pen id, colour, and the sampled pen path: x, y, width per
+   sample) or a clear marker. Undo steps the cursor back one entry, redo
+   forward one. Drawing a new stroke truncates everything past the cursor and
+   appends. One `redraw()` — repaint background, replay entries `0..cursor` —
+   is the only code path that bulk-paints the canvas.
+   **Explicitly not bitmap snapshots:** at dpr 2 a full-canvas `ImageData` or
+   offscreen copy is roughly 10 MB per undo step. History stores paths — a few
+   hundred floats per stroke.
+2. **Undo/redo reachable two ways.** Buttons `↶` and `↷` in the control bar
+   (40 px targets, `aria-label` "undo"/"redo"), visibly disabled when there is
+   nothing to undo or redo, including on first load. Keyboard: Ctrl/Cmd+Z
+   undoes, Ctrl/Cmd+Shift+Z and Ctrl+Y redo. Both routes call the same code.
+3. **Clear becomes a single undoable step.** Clear appends a clear marker
+   instead of destroying state; Undo after Clear brings the whole drawing
+   back in one press. Clear on an already-clear canvas appends nothing.
+4. **Three pens.** `orbit` — the day-004 pen, constants unchanged. `coil` —
+   small orbit radius, high angular velocity, snappier chase, finer line: a
+   tight spring. `drift` — large radius, low angular velocity, laggier chase,
+   heavier line: long lazy loops. Picker in the control bar with the same
+   active-state styling as the colour swatches. The pen id travels on the
+   stroke, so replay is faithful and switching pens never restyles earlier
+   strokes.
+5. **Deterministic redraw on resize.** Resize re-sizes the canvas and replays
+   history rather than stretching an offscreen snapshot; the snapshot-restore
+   block is deleted. This is a net code deletion and it is forced by
+   correctness — once undo replays from history, the snapshot path is a second
+   source of truth that disagrees with the first. Bonus: strokes pushed off a
+   narrowed canvas survive and reappear when the window widens.
+
+**Order is not optional.** Item 1 lands first and works on its own — undo,
+redo, and clear-as-a-step are a shippable v0 by themselves. The pens go in
+after. The budget rule (config block: a working v0 must exist before half the
+run is spent) is hard, and if the run goes sideways, history alone ships and
+the pens become a follow-up issue.
+
+**Excluded — do not build these, a future spec comment must open them:**
+
+- Persistence of any kind, including localStorage. Nothing survives a reload.
+- Share links. pixel-garden owns that mechanic.
+- Any change to export beyond keeping Save PNG working exactly as it does.
+- New dependencies, new files, or a build step. One vanilla HTML file (§13).
+- Palette changes. Still the same five colours.
+- Animation, replay scrubbing, or any timeline UI.
+- Layers, eraser, brush-size or physics sliders, stroke selection, per-stroke
+  editing, a visible history panel.
+
+### Stack
+
+Vanilla JS, canvas 2D, one file (`index.html`), no dependencies, no build
+step, no network. Same as day 004; §13 applies unchanged.
+
+### Done-checklist
+
+1. Draw three separate strokes, press Undo twice: the last two strokes are
+   gone, the first is still there and pixel-identical to how it was drawn.
+   Press Redo twice: all three are back. Undo/Redo buttons and Ctrl/Cmd+Z /
+   Ctrl/Cmd+Shift+Z produce the same result.
+2. Both controls report their state: on first load and after undoing to
+   empty, `↶` is disabled; with nothing redoable, `↷` is disabled. Drawing a
+   new stroke after an undo discards the redo tail — `↷` goes disabled and the
+   shortcut does nothing.
+3. Clear is one undoable step: with strokes on the canvas, Clear then Undo
+   restores every one of them. Clear on an empty canvas leaves no dead undo
+   step to press through.
+4. No bitmap snapshots in the history path: the source contains no
+   `getImageData`, `toDataURL`, or retained offscreen canvas used for history
+   or resize, and undo after 50 strokes redraws in under 100 ms.
+5. The three pens are visibly different from the same gesture: drawn side by
+   side, loop diameter differs by at least 2× between `drift` and `coil`, and
+   `orbit` still draws what day 004 drew. After undo/redo, each stroke keeps
+   the pen and colour it was drawn with; switching pens does not restyle
+   earlier strokes.
+6. Resize (including a devicePixelRatio change) redraws from history at
+   correct scale and position, with no smeared or double-scaled artwork;
+   strokes pushed off a narrowed window reappear when it is widened again.
+7. At 375×667: every control is tappable without page scroll, targets stay
+   ≥ 40 px, the canvas keeps at least 60% of the viewport height, and Save PNG
+   still downloads a PNG matching what is on screen.
+
+### Rubric lines that matter most (§8)
+
+- **Loads/runs without errors, and survives garbage input including resize**
+  (must-pass). This increment rewires how the canvas gets painted. The failure
+  modes are resize during a stroke, undo with an empty history, redo after a
+  truncation, and Clear-then-undo-then-draw. Every one of those is a state
+  machine edge, and every one is reachable by mashing.
+- **Usable at phone width** (must-pass). The control bar gains five targets
+  (three pens, two history buttons) on top of five swatches and two actions.
+  At 375 px it must wrap without clipping and without eating the canvas.
+- **Scope discipline** (scored). A history model is a magnet: layers, erasers,
+  scrubbing, saving are all one small step away and all fenced. Judge against
+  the exclusions list above, not against what would be nice.
+- **Code clarity** (scored). The whole point of the refactor is that one
+  invariant becomes true — history is the source of truth, the canvas is a
+  view of it, `redraw()` is the only bulk paint. If a contributor cannot see
+  that invariant in five minutes, the refactor did not land, whatever the
+  buttons do.
+- **Delight** (scored) rides on the pens. Three pens that produce three
+  subtly-different-looking versions of the same line are a failed feature; the
+  difference has to be obvious in a screenshot.

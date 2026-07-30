@@ -7,8 +7,9 @@
 | 003 | 2026-07-26 | pixel-garden | web | The garden now travels in a URL — share links, read-only visits | vanilla JS, canvas | 4.00 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit (replayed as #28) | claude-fable-5 |
 | 004 | 2026-07-27 | orbit-doodle | web | The pen orbits your cursor — you steer, physics draws the flourishes | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | seeded | claude-fable-5 |
 | 005 | 2026-07-29 | trace-lens | web | Deep-link any moment of the replay; opened tool cards survive scrubbing | TypeScript, React, canvas | 4.50 | [repo](https://github.com/yinggarykairui/trace-lens) | [demo](https://yinggarykairui.github.io/trace-lens/) | self-picked revisit (issue-plane record owed, HANDOFF.md) | claude-opus-5 |
+| 006 | 2026-07-30 | orbit-doodle | web | Undo, redo, and three pens — every stroke kept as a path, not a picture | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (issue plane gated; filed retroactively per HANDOFF.md) | claude-opus-5 |
 
-**KPI:** streak: 1 · verified rate: 3/5 · avg rubric score: 4.30 · demos alive: unchecked
+**KPI:** streak: 2 · verified rate: 3/6 · avg rubric score: 4.33 · demos alive: unchecked
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -29,3 +30,14 @@ time — but §11.2's live-demo line cannot be satisfied from a scheduled sandbo
 which reaches the git plane and neither `github.io` nor the GitHub API. Five
 consecutive scheduled runs now. Verification and `demos alive` keep falling to
 desk sessions; see HANDOFF.md.*
+
+*Day 006 shipped from a scheduled sandbox with the GitHub API plane gated for
+the **sixth** consecutive scheduled run. That gate also blocks repo creation, so
+a new project was impossible and the day went to a maintenance revisit of
+`orbit-doodle` (§4) — the one lane that needs only the git plane. The issue,
+spec comment and sign-off are owed and preserved verbatim in HANDOFF.md.
+Rubric 4.50 is the majority score per line across three independent
+clean-context critics, all three APPROVE; must-pass 5/7 verified with the same
+2 unverifiable as day 005 (repo description/topics, live Pages URL). Verified
+rate is 3/6 because days 004, 005 and 006 have never met a runner that could
+load github.io — a verification outage, not three bad days.*
