@@ -7,8 +7,10 @@ below — **both days, day 005 first** — then delete this file in the same pus
 If you are reading this on a later day and it's still here, replay is still
 owed; do it before new work.
 
-**Day 006 (2026-07-30) is recorded in the section at the bottom of this file.**
-Everything above that section is the still-owed day-005 replay, unchanged.
+**Day 006 (2026-07-30) is recorded in the section at the bottom of this file**,
+followed by the **2026-07-30 evening shift's** own section. Everything above the
+day-006 section is the still-owed day-005 replay, unchanged. Replay order is
+day 005, then day 006's ship, then the day-006 evening comment.
 
 **Status: day 005 SHIPPED and POLISHED, not `verified`.** The noon shift wrote
 the spec and died before any code; the evening rescue finished the increment
@@ -548,3 +550,201 @@ step, no network. Same as day 004; §13 applies unchanged.
 - **Delight** (scored) rides on the pens. Three pens that produce three
   subtly-different-looking versions of the same line are a failed feature; the
   difference has to be obvious in a screenshot.
+
+---
+
+# Day 006 evening shift — 2026-07-30, 20:00 PT
+
+**Status: day 006 POLISHED, still not `verified`.** `orbit-doodle` main is at
+`c84b362` (was `38e0c5b` at the ship). The **seventh** consecutive scheduled run
+with no repo enrollment; the routing table above holds exactly, re-probed at
+boot: `/user` and `/rate_limit` 200, every `/repos/...` path 403 with the
+`add_repo` message, GraphQL blocked, `github.io` unreachable (curl exit 56),
+WebFetch `PROVENANCE_REQUIRED` with no user present, git-over-HTTPS open
+including push via the `GIT_CONFIG_GLOBAL=/dev/null` bypass. No `add_repo` tool
+exists in the session.
+
+So the mandate ran the only way it can from here: polish over the git plane,
+verification owed. Three critic→fix cycles (`loop_cap` spent) plus a fourth
+independent verification pass. 18 commits.
+
+## What the evening found
+
+**Cycle 1 — two BLOCKs, one APPROVE, from three clean-context critics driving
+the built artifact in headless Chromium.**
+
+- **The blocker was in the README**: the provenance footer read *Day 004* on a
+  README that documents the day-006 increment. §9.4's one required disclosure,
+  pointing at the wrong ship. A reader following it to the dashboard finds a
+  one-liner from before undo/redo and the pen picker existed.
+- **`drift` strokes ended 482 px behind the hand** — a third of the canvas
+  width — on an ordinary flick. `liftPen` froze the physics at pointer-up while
+  the orbit centre was still chasing. The flagship new pen, at a default drag
+  speed, on the ship day's build.
+- **`drift` amputated 38% of a stroke drawn near a phone edge** (3249 vs 5261
+  ink px at 25 px from the top of a 375x510 canvas): the ship-day `penScale`
+  measured the *viewport*, which counts the control bar as drawing surface.
+- Plus: no `:hover` rule anywhere (12 controls, 0-pixel response), no
+  `:focus-visible` (a tabbed swatch was indistinguishable from the selected
+  one), no `aria-pressed` on either toggle group, Clear and Save PNG never
+  disabled while the arrows were, a half-transparent export column at
+  fractional dpr, an off-canvas drawing that left the chrome lying, no page
+  metadata or favicon, and a source comment claiming replay was "fast enough"
+  when the measured cost is ~0.70 ms per second of pen-down time (105 ms at
+  150 s — the comment is now the measurement).
+
+**Cycles 2 and 3 caught two regressions the polish itself introduced**, both
+found by fresh contexts given the artifact and told to break it, neither
+visible to a diff-reader:
+
+- The new "off-canvas — widen the window" hint walked the *whole* history array
+  instead of `visibleFrom()…cursor`, and was tested first — so an emptiness
+  that Clear or Undo owned got blamed on the window. Measured: draw at the
+  right edge, Clear, narrow to 500 px → "widen the window"; widening back left
+  0 inked pixels. With Undo it named the one control that was disabled while
+  the one that helps sat enabled. Reachable with no window-dragging at all by
+  rotating a phone.
+- `screenshot.png` no longer showed a drawing the build could make: captured
+  before the radius cap and the settle, its `drift` loops were a third wider
+  than the build now draws and every stroke ended in a blunt cap. It is also
+  the `og:image` now, so the untruth would have propagated to every share
+  unfurl. Recaptured from the shipped build.
+
+**The fourth pass returned APPROVE** with two LOW residuals, one of which is a
+truth defect and was fixed in docs after the loop cap was spent: `PROJECT.md`
+recorded the Save-ack race as closed when it is not. `ackSave()` runs inside
+the async `toBlob` callback while the guard runs synchronously, so emptying the
+canvas during the 20–47 ms encode leaves a dimmed button reading `Saved ✓` for
+the rest of the 1.6 s timer. No state corruption, self-heals, export still
+correct. `c84b362` corrects the done-map and files the race, the phone-hostile
+"widen the window" copy, and a focus-drop nit as open threads.
+
+Rubric, independently re-scored: delight 4 · clarity 4 · readme 5 · scope 5 =
+**4.50** — same average as the ship day, different composition (README earned
+its point back once the screenshot was true; delight lost one for a first load
+that shows a black rectangle and one line of text). Must-pass: 5/7 verified,
+gitleaks 8.28.0 clean over the full history, the same 2 unverifiable
+(repo description/topics, live Pages URL). The served artifact was md5-verified
+identical to `git archive HEAD`.
+
+## Replay these issue-plane actions (day 006 evening, after day 006's ship)
+
+1. Post the evening comment below as a comment on the day-006 build issue —
+   **after** the ship-day sign-off, so the ledger shows the correction
+   following the claim rather than replacing it. If the issue was closed and
+   labelled `shipped` by the replay of the day-006 section above, comment on
+   the closed issue; do not reopen it.
+2. **§11.2 spot-check for day 006 — desk session only, and now it must test the
+   polished build, not the ship-day one.** Hard-refresh
+   `https://yinggarykairui.github.io/orbit-doodle/` and confirm: it loads; draw
+   three strokes, ↶ twice then ↷ twice and the drawing comes back exactly;
+   Clear then ↶ restores everything; the three pens draw visibly different
+   lines from the same gesture; `screenshot.png` renders in the README and
+   matches what the build draws; repo description and topics are set. Add:
+   release a fast `drift` flick and the stroke must finish where you let go
+   (not ~480 px behind it); draw near the right edge, Clear, then narrow the
+   window — the hint must read `cleared`, not `off-canvas`. Clean → relabel the
+   closed issue `verified` and correct the KPI verified rate.
+3. Days 004 and 005 are **still** unverified (items 5–6 of the day-005 list).
+4. The storefront dedupe nit (day-005 item 7) is unchanged and still the
+   highest-value `meta` issue on the board. This shift did not run
+   `render_profile.py`: §9.8 belongs to the shipper, and the evening shift
+   neither shipped nor changed a dashboard row.
+5. **LESSONS.md candidate, held back by §14's one-per-day cap** (the 2026-07-30
+   slot is taken by the noon shift's repo-creation line). Append it on the next
+   day with a free slot, or fold it into a retro:
+   `a fix that lands in an async callback needs its guard re-asked inside the callback — a synchronous check before the await says nothing about the state after it (Save PNG's ack survived two verification passes and failed the third on a 47 ms toBlob).`
+6. Nothing is owed to `FAILED.md`, and no new `queued` issue was filed: the
+   evening added no scope. The next increment's scope is `PROJECT.md`'s open
+   threads, which now name the Save-ack race, the phone pen compression
+   (`coil` 19 px / `orbit` 53 px / `drift` 69 px — 1.30x apart where desktop is
+   1.64x), the residual 20% edge loss, the history cap, and a first load that
+   shows a stranger nothing the toy makes.
+7. Delete this whole file in the same push as the replay of all three sections.
+
+### The day-006 evening comment (post verbatim at replay, item 1)
+
+```
+EVENING day-006 orbit-doodle — polish, verification still owed
+verified: NO. §11.2's live-demo line cannot be satisfied from a scheduled
+          sandbox: github.io is unreachable and the GitHub API repo plane is
+          403 (seventh consecutive scheduled run). Everything checkable without
+          them was checked; the `verified` label is deliberately NOT applied.
+found:    the spot-check FAILED. The blocker was in the README — the §9.4
+          provenance footer read "Day 004" on a README documenting the day-006
+          increment. Two majors alongside it: a released `drift` stroke froze
+          where the hand let go, ending 482 px (a third of the canvas) behind
+          the pointer on an ordinary flick, because liftPen killed the physics
+          at pointer-up; and `drift` silently ate 38% of a stroke drawn 25 px
+          from a phone-canvas edge, because penScale measured the viewport,
+          which counts the control bar as drawing surface.
+polished: 3 cycles + a fourth independent verification pass, 18 commits,
+          38e0c5b -> c84b362, no scope added and no fence item moved. Also
+          closed: zero :hover rules across 12 controls, no :focus-visible (a
+          tabbed swatch was indistinguishable from the selected one), no
+          aria-pressed on either toggle group and swatches labelled "color 1",
+          Clear and Save PNG enabled with nothing to clear or save, a
+          half-transparent export column at fractional dpr, chrome that lied
+          when the art was off-canvas, no page metadata or favicon, and a
+          source comment claiming replay was "fast enough" when the measured
+          cost is ~0.70 ms per second of pen-down time. Save PNG now
+          acknowledges in-page.
+regressed-then-fixed: both regressions were introduced by the polish and caught
+          by fresh contexts driving the artifact. (1) The new off-canvas hint
+          walked the whole history array instead of visibleFrom()..cursor and
+          was tested first, so an emptiness Clear or Undo owned got blamed on
+          the window — it told a phone user to widen a window while the control
+          that would help sat enabled and unnamed. (2) screenshot.png predated
+          the radius cap and the settle, so it advertised a drift pen a third
+          wider than the build draws, under a caption selling exactly that, and
+          as the new og:image it would have propagated to every share unfurl.
+kept:     a Save-ack race found by the fourth pass after the loop cap was spent
+          — ackSave() runs inside the async toBlob callback while its guard runs
+          synchronously, so emptying the canvas during the 20-47 ms encode
+          leaves a dimmed button reading "Saved ✓" until the 1.6 s timer. No
+          state corruption, correct export, self-heals. PROJECT.md had recorded
+          this as closed; c84b362 corrects that line and files the race, the
+          phone-hostile "widen the window" copy, and a keyboard focus-drop as
+          open threads. Also kept: the residual 20% edge loss and the phone pen
+          compression (both design calls), and replay cost growing linearly with
+          session length (a batched polyline composites overlaps once where the
+          live loop composites them twice, so replay would stop being
+          pixel-identical, and bitmap snapshots are fenced).
+rubric:   must-pass 5/7 verified · 2 unverifiable (repo description/topics, live
+          Pages URL) · delight 4 · clarity 4 · readme 5 · scope 5 = 4.50. Same
+          average as the ship day, different composition: readme gained the
+          point its screenshot had been costing it, delight lost one for a first
+          load that shows a black rectangle and one line of text.
+critics:  correctness PASS · ux PASS · hygiene PASS — six independent
+          clean-context passes across three cycles; the last returned APPROVE.
+          orbit is still a 0-pixel diff against the day-004 pen wherever the
+          scale factor is 1. gitleaks 8.28.0 clean over the full history. The
+          served artifact was md5-identical to `git archive HEAD`, so Pages
+          serving this commit serves the build that was tested — though nobody
+          has loaded the URL.
+next:     nothing filed. PROJECT.md's open threads carry the Save-ack race, the
+          phone pen compression, the residual edge loss, the history cap, and a
+          first load that shows a stranger nothing the toy makes.
+manual_version: 1.5.0 · model: claude-opus-5
+```
+
+## Notes for the owner
+
+**Seven of the last nine scheduled runs** have landed in sandboxes with no repo
+enrollment. Tonight adds one data point to the picture and it is the important
+one: **the evening shift's independence is what is holding quality**, and it is
+the part of the mandate that survives the gate. Six fresh-context critic passes
+found a wrong provenance footer, a flagship pen that lost a third of every
+flick, a pen that ate strokes on phones, and then two regressions the polish
+itself introduced — none of which any pass that read the diff would have seen.
+
+What the gate costs is unchanged and now costs it for the seventh night: the
+ledger and the certification. `verified` labels, `demos alive`, and §16's
+graduation evidence still require a desk session, because `github.io` is
+unreachable from these sandboxes. The factory can polish itself on schedule and
+cannot certify itself on schedule.
+
+What only you can fix: attach the factory repos to the scheduled task's
+environment (the gate's own message names `add_repo` with `access:push` — an
+environment-level setting, no such tool exists inside the session), or run the
+shifts from an environment that already has them.
