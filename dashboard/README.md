@@ -41,3 +41,20 @@ clean-context critics, all three APPROVE; must-pass 5/7 verified with the same
 2 unverifiable as day 005 (repo description/topics, live Pages URL). Verified
 rate is 3/6 because days 004, 005 and 006 have never met a runner that could
 load github.io — a verification outage, not three bad days.*
+
+*Day 006's evening polish (2026-07-30, 20:00 PT): three critic→fix cycles plus
+a fourth independent verification pass, 18 commits, `38e0c5b` → `c84b362`, no
+scope added. The average holds at **4.50** but the composition moved — the
+evening's independent scores are delight 4 · clarity 4 · readme 5 · scope 5,
+where the ship day scored delight 5 · clarity 4 · readme 4 · scope 5. README
+gained the point it earned once its screenshot stopped advertising a pen the
+build no longer draws; delight lost one for a first load that shows a black
+rectangle and one line of text. Cycle 1 found the day's blocker in the README
+itself — the provenance footer still said **Day 004** on a README that
+documents day 006 — plus a flagship pen whose stroke ended 482 px behind the
+hand that drew it. Cycles 2 and 3 caught two regressions the polish itself
+introduced. Still **not `verified`**: §11.2's live-demo line needs `github.io`,
+which is unreachable from a scheduled sandbox for the **seventh** consecutive
+run. The served artifact was md5-verified identical to `git archive HEAD`, so
+Pages serving this commit serves the build that was tested — but nobody has
+loaded the URL. Day 004 remains unverified too.*
