@@ -754,7 +754,8 @@ shifts from an environment that already has them.
 # Day 007 — 2026-07-31 evening shift (§11.4 rescue)
 
 **Status: day 007 SHIPPED, not `verified`.** `pixel-garden` main is at
-`756dadb`. The **eighth** consecutive scheduled run with no repo enrollment;
+`9eb0f4f` (the ship is `756dadb`; `9eb0f4f` is the doc correction the fifth
+independent pass forced). The **eighth** consecutive scheduled run with no repo enrollment;
 the routing table near the top of this file still holds exactly, re-probed at
 boot: `/user` 200, every `/repos/...` call 403 with the `add_repo` message,
 `github.io` unreachable (curl exit 56, no status code), git-over-HTTPS open
@@ -799,6 +800,7 @@ from, the date is the `day` field storage and the share hash already carry.
 | `f8a74a2`–`ff6abf3` | docs: screenshot recaptured, caption, increment-3 done-map |
 | `cfbdc4d`–`c661e30` | cycle-3 fixes (6 commits, G1–G6) |
 | `9c1db6a`–`756dadb` | ship-blocker round (4 commits) |
+| `9eb0f4f` | docs: corrections forced by the fifth independent pass |
 
 **Four independent clean-context critic passes plus a fifth fix round.**
 Cycle 1: two critics both returned BLOCK on the same defect independently — the
@@ -840,10 +842,20 @@ measurements before the deadline.
    Tab reaches the canvas and `←`/`→` walk left to right with Enter naming;
    `screenshot.png` renders in the README; repo description and topics are set.
    Clean → relabel the closed issue `verified`. Not clean → §11.3.
-6. **Start with this**: the post-blocker build (`9c1db6a`..`756dadb`) has had no
-   independent fresh-context pass — the fixer verified its own work in detail
-   and the clock ran out. That is the one gap this shift knows about and could
-   not close.
+6. **Carry these two forward.** A fifth independent pass ran on the blocker
+   fixes alone (`9c1db6a`..`756dadb`) and returned **APPROVE**, re-measuring
+   both claims with the pre-fix build as a positive control. It found no
+   functional defect and two record-quality ones, both already corrected in
+   `9eb0f4f` rather than smoothed over: **(a)** the dotted keyboard cursor is
+   now unreachable — the fixes leave `drawCursor()` guarded out of every state
+   a user can reach, so `keyboardFocus()`, `drawCursor()` and
+   `traceSilhouette()`'s `dotted` branch are dead code that the prose still
+   describes; deleting them is the first item of the next increment and
+   `pixel-garden`'s PROJECT.md open threads carry it. **(b)** commit `0a6090b`
+   (411 px) and PROJECT.md (215 px) gave different residual-paint figures for
+   the same measurement; the number is outline-length and therefore
+   fixture-specific, and PROJECT.md now says so alongside the independent
+   re-measurement (127 px pre-fix, 0 at HEAD on every gesture).
 7. Days 004, 005 and 006 are **still** unverified (items above). Day 007's ship
    is on the same repo as days 001 and 003.
 8. Delete this whole file in the same push as the replay of all three days.
@@ -863,7 +875,7 @@ built:   pixel-garden increment 3 — "meet your plants": tap or click any plant
 cut:     nothing from the spec — all 7 done-checklist items shipped. One spec line was corrected mid-build rather than followed: the arrows were specced to walk *planting* order, which with `slot = (index*17) % 40` placement moved the highlight backwards on 5 of 13 presses; they walk drawn-x order instead, and PROJECT.md carries the correction with its reasoning. Left open and disclosed in PROJECT.md: the hint returns on every load until a plant is selected (remembering "seen" needs a storage key the fence forbids), the keyboard walk does not wrap, the accessible name follows the label but is not announced without a live region (priced out of scope), and two pre-existing v0 geometry items (sub-232px vertical stretch, ~0.003% of seeds producing ferns wide enough to invert the lateral clamp).
 next:    none filed — the issue plane was unreachable. PROJECT.md's open threads carry the next increment's scope.
 rubric:  must-pass 5/7 verified · 2 unverifiable this shift (repo description/topics, and the live Pages URL — the GitHub API and github.io were both egress-blocked for the eighth consecutive scheduled run) · delight 4 · clarity 4 · readme 4 · scope 5 = 4.25. gitleaks clean (its one hit is the localStorage key name `pixel-garden.v1`, flagged on entropy). The unselected 40-plant garden renders pixel-identical to the previous ship (`1a635b3`) and emits a byte-identical share hash — independently re-measured by three separate passes, so no existing garden in the world was reshaped.
-critics: correctness PASS · ux PASS · hygiene PASS — after four independent clean-context passes and four fix rounds. Passes 1 and 2 both returned BLOCK independently on the same defect; pass 3 APPROVE; pass 4 BLOCK on two defects passes 1–3 had all read past.
+critics: correctness PASS · ux PASS · hygiene PASS — after five independent clean-context passes and four fix rounds. Passes 1 and 2 both returned BLOCK independently on the same defect; pass 3 APPROVE; pass 4 BLOCK on two defects passes 1–3 had all read past; pass 5, on the blocker fixes alone, APPROVE — it re-measured both fix claims with the pre-fix build as a positive control and asserted after every step of 14 mixed pointer/keyboard sequences that the canvas is exactly one reference frame and the label agrees with what is highlighted (zero mismatches, zero stray paint). Pass 5's two findings were record-quality, not functional, and are corrected in `9eb0f4f`: two shipped records disagreed on a fixture-specific pixel count, and the dotted keyboard cursor is now unreachable dead code the prose still described.
 lesson:  an arrow key that both moves the cursor and selects as it goes makes a `select(selected === cursor ? -1 : cursor)` toggle permanently dead, so the README's "press Enter to name a plant" shipped meaning the opposite. Three critic passes read that branch; the pass that caught it was the one that pressed the keys in the README's own documented order. Grade the documented path, not the code path.
 manual_version: 1.5.0 · model: claude-opus-5
 ```

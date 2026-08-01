@@ -85,8 +85,21 @@ as days 004–006: repo description/topics, and the live Pages URL. gitleaks is
 clean — its single hit is the string `pixel-garden.v1`, the localStorage key
 name, flagged as `generic-api-key` on entropy.*
 
-*Not `verified`, and one gap beyond the usual: the post-blocker build has had no
-**independent** fresh-context pass — the fixer verified its own work in detail
-and ran out of clock. The desk verification owed for days 004, 005, 006 and now
-007 should start there. Verified rate 3/7 remains a verification outage rather
-than four bad days: no scheduled runner has ever been able to load `github.io`.*
+*A **fifth** independent pass then ran on the blocker fixes alone and returned
+**APPROVE**, re-measuring both claims with the pre-fix build as a positive
+control (so the harness was shown to detect the defect rather than measure
+nothing) and asserting, after every step of 14 mixed pointer/keyboard sequences,
+that the canvas is exactly one reference frame and the label agrees with what is
+highlighted — zero mismatches, zero stray paint. It found no functional defect
+and two record-quality ones, both now corrected in the repo rather than smoothed
+over: two shipped records gave different residual-paint figures (215 px vs
+411 px) for a measurement that is fixture-specific, and the dotted keyboard
+cursor is now **unreachable** — the fixes left `drawCursor()` guarded out of
+every state a user can reach, so it is dead code the prose still describes.
+Deleting it is a next-increment change.*
+
+*Still not `verified`: §11.2's live-demo line needs `github.io`, unreachable from
+a scheduled sandbox for the eighth consecutive run. Verified rate 3/7 remains a
+verification outage rather than four bad days — no scheduled runner has ever been
+able to load the URL. The desk verification owed now covers days 004, 005, 006
+and 007.*
