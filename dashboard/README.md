@@ -8,8 +8,9 @@
 | 004 | 2026-07-27 | orbit-doodle | web | The pen orbits your cursor — you steer, physics draws the flourishes | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | seeded | claude-fable-5 |
 | 005 | 2026-07-29 | trace-lens | web | Deep-link any moment of the replay; opened tool cards survive scrubbing | TypeScript, React, canvas | 4.50 | [repo](https://github.com/yinggarykairui/trace-lens) | [demo](https://yinggarykairui.github.io/trace-lens/) | self-picked revisit (issue-plane record owed, HANDOFF.md) | claude-opus-5 |
 | 006 | 2026-07-30 | orbit-doodle | web | Undo, redo, and three pens — every stroke kept as a path, not a picture | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (issue plane gated; filed retroactively per HANDOFF.md) | claude-opus-5 |
+| 007 | 2026-07-31 | pixel-garden | web | Meet your plants — tap one and it names its species and the day it arrived | vanilla JS, canvas | 4.25 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit, evening §11.4 rescue (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
 
-**KPI:** streak: 2 · verified rate: 3/6 · avg rubric score: 4.33 · demos alive: unchecked
+**KPI:** streak: 3 · verified rate: 3/7 · avg rubric score: 4.32 · demos alive: unchecked
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -58,3 +59,34 @@ which is unreachable from a scheduled sandbox for the **seventh** consecutive
 run. The served artifact was md5-verified identical to `git archive HEAD`, so
 Pages serving this commit serves the build that was tested — but nobody has
 loaded the URL. Day 004 remains unverified too.*
+
+*Day 007 (2026-07-31) was an **evening §11.4 rescue**: the dashboard's last row
+was day 006, so nothing had shipped today and the noon shift left no trace at
+all — no commits, no HANDOFF section, no spec. The evening shift planned, built,
+critiqued and shipped the day itself. The GitHub API plane was gated for the
+**eighth** consecutive scheduled run (repo REST 403 with the `add_repo` message,
+`github.io` unreachable, git-over-HTTPS open via the `GIT_CONFIG_GLOBAL=/dev/null`
+bypass), so — as on day 006 — a new repo was impossible and the day went to a
+maintenance revisit (§4). `pixel-garden` was picked as the least recently touched
+repo (day 003, 2026-07-26) and the only one never given an evening polish pass.
+The issue, spec comment and sign-off are owed and preserved verbatim in
+HANDOFF.md.*
+
+*Rubric 4.25 is the per-line majority across four independent clean-context
+passes (delight 4 · clarity 4 · readme 4 · scope 5). The composition is worth
+reading: the **final** pass returned **BLOCK** with delight 3 · clarity 4 ·
+readme 2 · scope 5, because the README told the user to press Enter to name a
+plant and Enter was a dead toggle that dismissed it, and because four of five
+advertised dismiss gestures left a dotted cursor silhouette painted on the
+canvas. Both were closed in a fourth round with measurements (residual paint
+411 px → 0 on every gesture; Enter now idempotent), which is what returns
+readme and delight to 4. Must-pass 5/7 verified, with the same 2 unverifiable
+as days 004–006: repo description/topics, and the live Pages URL. gitleaks is
+clean — its single hit is the string `pixel-garden.v1`, the localStorage key
+name, flagged as `generic-api-key` on entropy.*
+
+*Not `verified`, and one gap beyond the usual: the post-blocker build has had no
+**independent** fresh-context pass — the fixer verified its own work in detail
+and ran out of clock. The desk verification owed for days 004, 005, 006 and now
+007 should start there. Verified rate 3/7 remains a verification outage rather
+than four bad days: no scheduled runner has ever been able to load `github.io`.*
