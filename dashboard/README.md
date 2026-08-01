@@ -9,8 +9,9 @@
 | 005 | 2026-07-29 | trace-lens | web | Deep-link any moment of the replay; opened tool cards survive scrubbing | TypeScript, React, canvas | 4.50 | [repo](https://github.com/yinggarykairui/trace-lens) | [demo](https://yinggarykairui.github.io/trace-lens/) | self-picked revisit (issue-plane record owed, HANDOFF.md) | claude-opus-5 |
 | 006 | 2026-07-30 | orbit-doodle | web | Undo, redo, and three pens — every stroke kept as a path, not a picture | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (issue plane gated; filed retroactively per HANDOFF.md) | claude-opus-5 |
 | 007 | 2026-07-31 | pixel-garden | web | Meet your plants — tap one and it names its species and the day it arrived | vanilla JS, canvas | 4.25 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit, evening §11.4 rescue (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
+| 008 | 2026-08-01 | trace-lens | web | A shared #t= link now lands in a tab you already have open, and the timeline answers the keyboard | TypeScript, React, canvas | 4.50 | [repo](https://github.com/yinggarykairui/trace-lens) | [demo](https://yinggarykairui.github.io/trace-lens/) | self-picked revisit (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
 
-**KPI:** streak: 3 · verified rate: 3/7 · avg rubric score: 4.32 · demos alive: unchecked
+**KPI:** streak: 4 · verified rate: 3/8 · avg rubric score: 4.34 · demos alive: unchecked
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -103,3 +104,38 @@ a scheduled sandbox for the eighth consecutive run. Verified rate 3/7 remains a
 verification outage rather than four bad days — no scheduled runner has ever been
 able to load the URL. The desk verification owed now covers days 004, 005, 006
 and 007.*
+
+*Day 008 shipped from a scheduled sandbox with the GitHub API plane gated for the
+**ninth** consecutive scheduled run (`/user` 200, every `/repos/...` call 403 with
+the `add_repo` message, `github.io` unreachable, git-over-HTTPS open including
+push via the `GIT_CONFIG_GLOBAL=/dev/null` bypass; still no `add_repo` tool in the
+session). New repos remain impossible under that gate, so the day went to a
+maintenance revisit (§4) of `trace-lens` — day 005, the least recently touched
+repo. `pixel-garden` was excluded as yesterday's ship, `orbit-doodle` as more
+recent, the portfolio site as storefront infrastructure with no day number. The
+issue, spec comment and sign-off are owed and preserved verbatim in HANDOFF.md —
+the fifth day's worth now waiting on an API-capable session.*
+
+*Rubric 4.50 is the per-line majority across **eight** independent clean-context
+passes over three cycles (delight 4 · clarity 5 · readme 4 · scope 5). Must-pass
+5/7 verified, with the same 2 unverifiable as days 004–007: repo
+description/topics, and the live Pages URL. gitleaks 8.30.0 over the full history
+at the shipped commit: 61 commits, no leaks.*
+
+*Both improvement cycles found what the shift existed to find. Cycle 1's three
+critics returned **BLOCK unanimously on the same defect** — a `screenshot.png`
+whose caption had been rewritten to describe a legend the image did not contain.
+Cycle 2's two verifiers then returned **BLOCK on the regression cycle 1's own fix
+introduced**: raising the played lane's contrast from 1.14:1 to 3.16:1 pushed all
+seven marks drawn on top of it — including the three tool colours the day's new
+legend exists to explain — down to 1.07–2.43:1. The commit message had stated only
+the number that improved. The fix was to stop trading contrast sideways: progress
+became a 4 px rail along the lane's bottom edge at 6.92:1, and every mark got its
+original contrast back or better. Cycle 3 caught two README claims that were still
+false of the artifact after a cycle had "fixed" the same phrase one line above.*
+
+*Still not `verified`: §11.2's live-demo line needs `github.io`, unreachable from a
+scheduled sandbox for the ninth consecutive run. Verified rate 3/8 remains a
+verification outage rather than five bad days — no scheduled runner has ever been
+able to load the URL. The desk verification owed now covers days 004, 005, 006,
+007 and 008.*

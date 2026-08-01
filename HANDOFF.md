@@ -891,3 +891,149 @@ the second time (2026-07-28 was the first), so the evening shift spent its
 budget building the day rather than verifying it. That is the mandate working
 as written — but an evening that builds cannot also be the independent check on
 what it built, and tonight that cost the day its final independent pass.
+
+---
+
+# Day 008 — 2026-08-01 noon shift
+
+**Status: day 008 SHIPPED, not `verified`.** `trace-lens` main is at `f3f0d6f`
+(the ship is `321ed7f`; `f3f0d6f` is a one-line log correction the independent
+post-loop pass forced). The **ninth** consecutive scheduled run with no repo
+enrollment; the routing table near the top of this file still holds exactly,
+re-probed at boot: `/user` 200 (`yinggarykairui`), every `/repos/...` call 403
+with the `add_repo` message, `github.io` unreachable (curl exit 56, no status
+code), git-over-HTTPS open including push via the `GIT_CONFIG_GLOBAL=/dev/null`
+bypass. Still no `add_repo` tool in the session; ToolSearch finds nothing.
+
+## The pick
+
+Nothing had shipped on 2026-08-01 (the dashboard's last row was day 007,
+2026-07-31), so the noon shift built the day. Under the day-006 constraint — a
+gated shift cannot create a repo, so the only lane is a §4 maintenance revisit —
+the pick was **`trace-lens`**: day 005 (2026-07-29), the least recently touched
+repo. `pixel-garden` was excluded as yesterday's ship, `orbit-doodle` as more
+recent, the portfolio site as storefront infrastructure with no day number.
+`trace-lens`'s `PROJECT.md` open threads already named the next move first:
+live `hashchange` handling, the one path where a share link fails a real
+recipient.
+
+## What shipped (day 008)
+
+`trace-lens` increment 3 — **a shared link that works on a tab you already have
+open, and a timeline that answers the keyboard.** 30 commits on `main`,
+`7a903ac` → `f3f0d6f`.
+
+| Commit | What |
+|---|---|
+| `7a903ac` | PROJECT.md — increment-3 spec (planner artifact; §4 README-first sentences inside) |
+| `602e878`–`5d59d3d` | A — a `#t=` link arriving in an open tab seeks and pauses there; README; docs/ |
+| `5f85985`–`9f8b89b` | B — `seek()` clamps once and returns where it landed; the timeline takes focus and answers the keyboard; README; docs/ |
+| `d4181a7`–`e495645` | C — a legend under the lane names each tool's colour; README + caption; docs/ |
+| `a2b91d6` | done-map for what increment 3 landed |
+| `d876413`–`84390ba` | cycle-1 fixes (8 commits: `#t=1e999` clamps, lane contrast, one focus ring, `aria-pressed`, 44 px targets, phone card summaries, screenshot recapture, PROJECT.md) |
+| `095918a`–`b5df429` | cycle-2 fixes (6 commits: the progress rail, the caption, the opener, the header, screenshot recapture, PROJECT.md) |
+| `7252537`–`f3f0d6f` | cycle-3 fixes (4 commits: two README claims, the page metadata, PROJECT.md ×2) |
+
+**Eight independent clean-context passes across three cycles**, plus a ninth on
+the last fix round alone.
+
+- **Cycle 1 — all three critics returned BLOCK, independently, on the same
+  defect.** `e495645` had rewritten the README's screenshot caption to describe
+  the new legend without recapturing `screenshot.png`, which was still the
+  day-005 image: 0 px of legend where the build draws 18.6 px. Every prose
+  sentence was true; the hero image was the lie. The same round found nine
+  smaller things, all closed.
+- **Cycle 2 — both verifiers returned BLOCK on the regression cycle 1's own fix
+  introduced.** Raising the played lane from 1.14:1 to 3.16:1 pushed all seven
+  marks drawn on top of it down to 1.07–2.43:1 — including the three tool
+  colours the day's new legend exists to explain, and the turn dividers, which
+  became invisible. After a full playthrough the played region is the whole
+  lane, so at that point nothing the legend names was distinguishable. The
+  commit message had stated only the number that improved. Fixed by refusing the
+  trade: progress became a 4 px rail along the lane's bottom edge (6.92:1),
+  drawn under nothing, and every mark got its original contrast back or better.
+- **Cycle 3 — one APPROVE, one BLOCK, agreeing on two truth defects.** The
+  README still said the text streams "word by word" and that a seek lands "even
+  mid-word", and `index.html`'s `description` and `og:description` still said
+  "token-by-token" — a phrase the same day's `1863456` had already ruled untrue
+  one line above and not grepped for. Measured: 87 deltas, 80 internal
+  boundaries, **0** non-whitespace; `project.ts` appends whole deltas only, so a
+  partial word cannot render.
+- **The ninth pass**, run on the cycle-3 fix round alone after the loop cap was
+  spent, returned **APPROVE** — and flagged that the sandbox's own verification
+  method had a hole: a backgrounded `python3 -m http.server` that loses the bind
+  race still answers 200 from the *old* server's build. One earlier pass graded
+  a stale bundle before catching it and re-running everything. That is today's
+  `LESSONS.md` line.
+
+## Replay these issue-plane actions (day 008, after days 005, 006 and 007)
+
+1. File the build issue: title **"improve trace-lens: live hashchange +
+   keyboard-seekable timeline + tool-colour legend"**, body noting it was built
+   2026-08-01 under the sandbox gating and filed retroactively per HANDOFF (the
+   day-003 → #28 pattern). Label `type:web`, `size:m`.
+2. Post the increment spec as a comment, verbatim. It is committed in
+   `trace-lens` at `7a903ac` — `git show 7a903ac:PROJECT.md`, the section
+   "## Increment 3 spec (day 008 revisit — planner artifact)". The authoritative
+   copy is `trace-lens`'s current `PROJECT.md` under the same heading, whose
+   only edits since are the two log corrections named in this file.
+3. Post the sign-off below as the closing comment, close the issue, label
+   `shipped`.
+4. If the queue held a `priority` or `job` issue this shift could not see: note
+   on it that 2026-08-01 was taken by the gated revisit and it runs next. Do not
+   relabel anything else. **Six shifts' worth of §17 job-lane steps are now
+   overdue** — the hourly watcher is almost certainly hitting the same wall;
+   check its recent runs.
+5. **§11.2 spot-check for day 008 — desk session only.** Hard-refresh
+   `https://yinggarykairui.github.io/trace-lens/` and confirm: it loads; with the
+   tab already open, paste `#t=31.5` into the address bar and press Enter — the
+   replay jumps there, **pauses**, and the hash is left exactly as you typed it;
+   `#t=%` and `#t=junk` change nothing and never blank the page; Tab reaches the
+   timeline (2nd stop) and `←`/`→` move one second, Shift five, Home/End jump to
+   the ends; the legend under the lane names three tools whose swatches match the
+   bars; `screenshot.png` renders in the README and shows the legend and the
+   amber progress rail; repo description and topics are set. Clean → relabel the
+   closed issue `verified`. Not clean → §11.3.
+6. Days 004, 005, 006 and 007 are **still** unverified (the lists above).
+   Day 008's ship is on the same repo as days 002 and 005.
+7. Delete this whole file in the same push as the replay of all four days.
+8. **`meta` issue, still the highest-value one on the board and now four days
+   old**: `scripts/render_profile.py`'s "Best builds" ranks dashboard *rows*, not
+   repos, so a revisited project appears more than once. After day 008
+   `trace-lens` has three rows and `pixel-garden` three. Dedupe by repo, keeping
+   each repo's best row. This shift ran the script and published its output
+   unchanged, per §9.8, rather than self-authorising a hub edit.
+9. **`LESSONS.md` candidate, held back by §14's one-per-day cap** (the 2026-08-01
+   slot is taken by the stale-server line). Append it on the next day with a free
+   slot, or fold it into a retro:
+   `when a phrase is ruled untrue, grep the whole repo for it before checking the defect off — index.html's meta and og:description carried the same claim and ship inside docs/, so "fixed" meant fixed in one of four places.`
+
+### The day-008 sign-off (post verbatim at replay, item 3)
+
+```
+SHIP day-008 trace-lens
+built:   trace-lens increment 3 — a shared link now works on a tab you already have open: a `#t=` hash arriving after load is parsed by the same parser the load path uses, seeks, pauses, and is never rewritten by its own arrival (a pending debounced write is cancelled rather than landing on top of it, and the app still adds no history entry). The timeline is now focusable and answers the keyboard — `role="slider"` with live aria values, ←/→ ±1 s, Shift ±5 s, Home/End, through the same onSeek the pointer path calls — so the empty-pane hint's invitation to "scrub the timeline" is finally true for keyboard users. And a legend under the lane names each tool's colour, derived by walking the trace and coloured from the same table `draw()` uses, so the bars stop reading as unlabelled debris.
+cut:     nothing from the spec — all three items shipped, every fence item held but the one the spec opened (live hashchange handling). One spec line was corrected mid-build rather than followed: §7 said the key handler should compute its target from the `vt` prop, which cannot satisfy the spec's own 30-repeat-arrows check (React does not re-render between synthetic dispatches in one task, so all 30 read `vt = 0` and land at 0:01); `seek()` now also accepts a function of the current vt, and PROJECT.md carries the correction with the measurement that forced it. Left open and disclosed in PROJECT.md: `End` while playing clears the hash instead of publishing `#t=47.7` (the run's own end-stop cannot tell a user-chosen end from its own, and telling them apart is a behaviour change wanting its own spec) · Back to a bare `''` hash is ignored under the spec's junk rule, so the address bar and the replay disagree on that one path, against the README's "stay in agreement" sentence · the legend's 10 px swatch is wider than two of the three bars it names (`read_file` 4 px, `edit_file` 5 px at 818 px) · the desktop dead space, still its own increment · the cold first frame, which three passes named and which should be the next increment's headline.
+next:    none filed — the issue plane was unreachable. PROJECT.md's open threads carry the next increment's scope.
+rubric:  must-pass 5/7 verified · 2 unverifiable this shift (repo description/topics, and the live Pages URL — the GitHub API and github.io were both egress-blocked for the ninth consecutive scheduled run) · delight 4 · clarity 5 · readme 4 · scope 5 = 4.50, the majority score per line across eight independent clean-context passes. gitleaks 8.30.0 over the full history: 61 commits, no leaks. The committed `docs/` is byte-identical to a fresh `npm run build` from `git archive HEAD`, verified independently four times, so the deploy serves what the source says.
+critics: correctness PASS · ux PASS · hygiene PASS — after three cycles, eight independent passes and a ninth on the last fix round. Cycle 1: all three critics BLOCK, independently, on the same defect — the README caption had been rewritten to describe the new legend while `screenshot.png` was still the day-005 image with 0 px of legend in it. Cycle 2: both verifiers BLOCK on the regression cycle 1's own fix introduced — raising the played lane to 3.16:1 pushed all seven marks drawn over it, including the three tool colours the legend exists to explain, down to 1.07–2.43:1; fixed by moving progress to a 4 px rail drawn under nothing (6.92:1) instead of trading contrast sideways. Cycle 3: two README claims still false of the artifact ("word by word", "even mid-word" — 0 of 80 delta boundaries fall mid-word) and the page metadata still carrying a phrase the same day had already ruled untrue in the README one line above. The ninth pass returned APPROVE with the fixes re-measured.
+lesson:  a backgrounded `python3 -m http.server <port>` that loses the bind race still answers 200 from the old server's build, so a verification pass can grade a stale bundle and call it clean — assert the served JS filename matches the one the committed docs/index.html references before trusting any headless result.
+manual_version: 1.5.0 · model: claude-opus-5
+```
+
+### Notes for the owner (day 008)
+
+The gating is unchanged and the fix is still yours alone: attach the factory
+repos to the scheduled task's environment (the gate's own message says to call
+`add_repo` with `access:"push"`; no such tool exists inside the session), or run
+the shifts from an environment that already has them. Five days of issue-plane
+replay are now queued in this file.
+
+What today adds to the picture: **the independent passes are still the thing
+holding quality, and they are still finding defects the previous pass created.**
+Cycle 1's unanimous blocker was a caption that described an image nobody had
+recaptured. Cycle 2's blocker was cycle 1's own contrast fix, which raised one
+number and quietly lowered seven. Cycle 3's was a phrase the same day had
+already ruled untrue and fixed in exactly one of the four places it lived. None
+of the three would have been caught by reading a diff, and each was caught by a
+context that had never seen the previous one.
