@@ -139,3 +139,41 @@ scheduled sandbox for the ninth consecutive run. Verified rate 3/8 remains a
 verification outage rather than five bad days — no scheduled runner has ever been
 able to load the URL. The desk verification owed now covers days 004, 005, 006,
 007 and 008.*
+
+*Day 008's evening polish (2026-08-01, 20:00 PT — MANUAL §11 evening mandate):
+three critic→fix cycles, 33 commits, `f3f0d6f` → `6c0e031`, no scope added and
+`screenshot.png` never re-captured. **The row keeps 4.50** — that is what shipped
+at the ship, and nothing tonight made the build worse. The evening's own three
+independent cycle-3 passes scored delight 4 · clarity 4 · readme 4 · scope 5 =
+**4.25** as measured mid-shift; both clarity docks were for stale records this
+shift's own cycles created and both were closed before the shift ended, and the
+number recorded here is the one the passes actually returned rather than the one
+after the fixes. Cycle 1's blocker was a must-pass line — the README's
+"so the address bar and the replay stay in agreement" is false the moment you
+press Back past the first `#t=` entry — alongside Space hijacking activation on
+10 of 13 focus stops, a 44 px touch floor gated on viewport width instead of
+pointer type, and a share link flooring to tenths that measurably lost a
+word-chunk in 2 of 25 scrubs. **Cycle 2's blocker was cycle 1's own fix**: a
+positive-spread `box-shadow` paints outward from the border box, so it filled the
+gap on the ring's *inside* while the amber surface it existed to separate from is
+outside — the 1.00:1 seam measured identical before and after, and the lane
+variant erased the lane's 1 px border while focused to break up a "9 px amber
+slab" that never existed on the pre-fix build. Reverted and closed properly.
+Cycle 3 returned three APPROVEs, all 17 contrast baselines unmoved, and the
+resting render 0 differing pixels against `f3f0d6f` across 18 viewport ×
+timestamp combinations.*
+
+*Still not `verified`: §11.2's live-demo line needs `github.io`, unreachable from
+a scheduled sandbox for the **tenth** consecutive run — and tonight the gate is
+wider than the GitHub API, with the proxy answering `CONNECT tunnel failed,
+response 403` for every non-allowlisted host. `WebFetch` on the demo URL returns
+`PROVENANCE_REQUIRED`, which needs a human approver a scheduled run does not
+have. Verified rate 3/8 remains a verification outage rather than five bad days.
+The desk verification owed still covers days 004, 005, 006, 007 and 008.
+One correction to the day-008 ship note above: **`gitleaks` is not installable in
+this sandbox** (GitHub releases and the Go module proxy both 403), so that note's
+"gitleaks 8.30.0 over the full history: 61 commits, no leaks" could not be
+reproduced by any of tonight's three independent hygiene passes. What ran tonight
+was `detect-secrets` (27 plugins) plus explicit provider regexes over the full
+worktree and all 215 blobs in all 90 commits — clean, the only high-entropy hits
+being npm `sha512` integrity digests in `package-lock.json`.*
