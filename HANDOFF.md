@@ -1037,3 +1037,160 @@ number and quietly lowered seven. Cycle 3's was a phrase the same day had
 already ruled untrue and fixed in exactly one of the four places it lived. None
 of the three would have been caught by reading a diff, and each was caught by a
 context that had never seen the previous one.
+
+# Day 008 evening shift — 2026-08-01, 20:00 PT
+
+**Status: day 008 POLISHED, still not `verified`.** `trace-lens` main is at
+`6c0e031`; the noon shift left it at `f3f0d6f`. 33 commits tonight, all pushed
+over the git plane at three stable points. The **tenth** consecutive scheduled
+run with no repo enrollment — the routing table near the top of this file holds
+exactly, re-probed at boot: `/user` 200 (`yinggarykairui`), every `/repos/...`
+call 403 with the `add_repo` message, `github.io` unreachable (curl exit 56 —
+tonight the proxy answers `CONNECT tunnel failed, response 403` for *all*
+non-allowlisted egress, `example.com` included), git-over-HTTPS open including
+push via the `GIT_CONFIG_GLOBAL=/dev/null` bypass. Still no `add_repo` tool;
+ToolSearch finds nothing. `WebFetch` on the demo URL returns
+`PROVENANCE_REQUIRED` — it needs a human to approve the fetch, and a scheduled
+run has none.
+
+So the mandate's last step is again the one step that cannot be taken. Polish
+ran; §11.2's live-demo line did not.
+
+## What the evening shift did
+
+Three cycles under §11's evening budget, each one a fresh-context crew that had
+never seen the previous cycle's transcript. Feature freeze held throughout: no
+fence item moved, no scope added, `screenshot.png` never re-captured (verified
+untouched — same blob at `f3f0d6f` and `6c0e031`).
+
+**Cycle 1 — playtester + all three critics. Three of the four returned BLOCK.**
+The blocker was a must-pass line: the README's deep-link paragraph ended *"so
+the address bar and the replay stay in agreement"*, and it is false. Autoplay,
+click an in-page `#t=30.0` link, press Back **once**: the replay stays parked at
+0:30 and `location.hash` goes empty. The behaviour is correct and deliberate — a
+bare hash is junk, and junk never moves the viewer — so the fix was prose, not
+code. Ten defects closed in 13 commits (`8a3baab`–`1f9226d`), including: Space
+hijacking activation on 10 of 13 focus stops (focus Restart, press Space, and
+the clock *starts playing* instead — a silently wrong action); the 44 px touch
+floor living inside `@media (max-width: 480px)`, so a phone in landscape got
+33.7 px targets; right-click on the lane seeking the replay; the last unguarded
+DOM call in the file; and the share link flooring to tenths, which was measured
+losing a whole word-chunk in 2 of 25 scrubs — the increment whose premise is
+"the address bar is the share link".
+
+**Cycle 2 — and the honest headline is that cycle 1's own focus-ring fix was
+wrong.** One of the three critics blocked, and it was right. Cycle 1 had added
+`box-shadow: 0 0 0 2px var(--bg)` to break up the 1.00:1 seam where a focused
+chip's amber ring runs into a neighbouring *selected* chip's amber fill. But a
+positive-spread box-shadow paints **outward from the border box**, so with
+`outline-offset: 2px` it fills the gap on the ring's **inside** — and the amber
+surface it needed separating from is on the outside. Measured across the seam
+before and after: an unbroken amber run both times, **1.00:1 unchanged**. Since
+`--bg` is byte-identical to the page background, the rule was a literal no-op
+everywhere else (an unfocused A/B renders 0 differing pixels), and the one place
+it was visible it carved a black notch into the selected chip. The same commit
+had also swapped the lane's ring to a −2 px inset to break a "9 px amber slab"
+that, re-measured on the pre-fix build, **never existed** — three pixels of
+non-amber already separated the ring from the rail — and in doing so it painted
+over the lane's own 1 px `#5c657a` border (gone entirely while focused) and
+shaved the progress rail from 3.75 px to 2.75 px.
+
+Cycle 2 reverted both, kept the one part that worked (the selected chip's own
+dark moat, 9.66:1), and closed the seam properly with a spread *larger* than the
+outline's outer edge, so the outline repaints the amber over the middle and
+leaves `--bg` on both sides. Four ring geometries became two. 11 commits
+(`1ba91c0`–`3edf306`), also returning Space to the two scroll panes cycle 1 had
+promoted to ringed tab stops without adding them to the exception list, and
+correcting nine records that the shift's own commits had made stale inside one
+cycle.
+
+**Cycle 3 — all three critics APPROVE.** Independently confirmed: both reverts
+landed (lane border present and `#5c657a` while focused, rail back to 3.75 px),
+the seam is closed on all four sides at 1440 / 375 / 320, **all 17 contrast
+baselines unmoved to two decimals**, and the resting fine-pointer render is
+**0 differing pixels** against `f3f0d6f` across 18 viewport × timestamp
+combinations. The one finding worth acting on was a records defect: the file's
+last "## Open threads" list — the one `PROJECT.md:4` tells the next revisit's
+planner to diff against — still said the canvas was unfocusable, that there was
+no legend, and that live `hashchange` was "the fence item to open next". All
+three shipped in increment 3. A planner reading it would have re-specced work
+already done. Closed in a prose-only pass, 9 commits (`0a494e4`–`6c0e031`),
+along with a fence list that contradicted its own done-map, a scroll figure that
+disagreed with the source comment recording the same measurement, and six
+sections in one file all called "cycle N, day 008 evening" when three of them
+were the *build* shift's, run at 13:07 PT.
+
+## What this shift could not do
+
+- **§11.2's live-demo line.** `github.io` is unreachable and `WebFetch` needs a
+  human approver. Tenth consecutive scheduled run. Day 008 therefore **cannot be
+  relabelled `verified` tonight**, independently of the API gate that also makes
+  the label unwritable.
+- **Repo description and topics** — same gate, same two must-pass lines
+  unverifiable as days 004–008.
+- **gitleaks.** §9.1 names the tool; it is not installable here. GitHub releases
+  return 403 through the proxy and `proxy.golang.org` is not allowlisted, so both
+  the binary and `go install` are closed. The scan that *was* run is recorded in
+  the sign-off in the tool's place, honestly labelled. **The day-008 noon
+  sign-off's claim of "gitleaks 8.30.0 over the full history: 61 commits, no
+  leaks" could not be reproduced by any of tonight's three hygiene passes** —
+  treat that line as unverified.
+
+## Replay these issue-plane actions (day 008 evening, after day 008's ship)
+
+1. Post the evening comment below on the day-008 build issue (the one item 1 of
+   the day-008 noon section files). Post it **after** the noon sign-off, as a
+   separate comment.
+2. **§11.2 spot-check for day 008 — desk session only.** Use the noon section's
+   item 5 checklist, and add these, all of which are new tonight:
+   press Space with Restart focused (Restart must run, and the clock must not
+   start playing) · Tab to a speed chip that is *not* the selected one and
+   confirm its focus ring reads as a ring rather than merging into the selected
+   chip beside it · focus the timeline and confirm the lane keeps its thin
+   outline and the amber progress rail its full height · right-click the lane
+   (nothing must move) · scrub, and confirm the address bar shows two decimals
+   where the moment needs them (`#t=17.51`) and one where it does not (`#t=30.0`)
+   · confirm the README footer reads **Day 008**.
+   Clean → relabel the closed issue `verified`. Not clean → §11.3.
+3. Nothing else changes. No label was writable tonight; no label is owed beyond
+   the `verified` in item 2.
+
+### The day-008 evening comment (post verbatim at replay, item 1)
+
+```
+EVENING day-008 trace-lens (§11 evening mandate)
+polished: 33 commits, f3f0d6f → 6c0e031, three cycles, feature freeze held. Cycle 1 (playtester + three critics, three BLOCK): the README's "so the address bar and the replay stay in agreement" is false — Back past the first #t= entry leaves the address bar empty with the replay parked where it was — plus Space hijacking activation on 10 of 13 focus stops (Restart focused + Space started the clock instead of restarting), the 44px touch floor gated on viewport width so a landscape phone got 33.7px targets, right/middle-click seeking the lane, the last unguarded DOM call, and a share link flooring to tenths that lost a whole word-chunk in 2 of 25 scrubs. Cycle 2 (three critics, one BLOCK): cycle 1's own focus-ring fix was wrong — a positive-spread box-shadow paints outward from the border box, so it filled the gap on the ring's *inside* while the amber surface it existed to separate from is outside; the 1.00:1 seam was unchanged before and after, the rule was a no-op everywhere else, and the lane variant erased the lane's 1px border while focused and shaved the progress rail from 3.75px to 2.75px to break up a "9px amber slab" that never existed. Reverted; seam closed properly with a spread past the outline's outer edge; four ring geometries down to two. Cycle 3 (three critics, all APPROVE): reverts confirmed, all 17 contrast baselines unmoved, resting render 0 differing pixels against f3f0d6f across 18 viewport × timestamp combinations — and one records defect worth the pass, the open-thread list the next planner reads still holding increment 3's three shipped features open. Closed prose-only.
+verified: NO — §11.2's live-demo line is unsatisfiable from a scheduled sandbox for the tenth consecutive run. github.io is unreachable (the proxy 403s all non-allowlisted egress tonight) and WebFetch returns PROVENANCE_REQUIRED, which needs a human approver. Everything checkable from the git plane is clean: committed docs/ byte-identical to a fresh build of HEAD (verified independently five times tonight), tsc clean, zero console errors/warnings/pageerrors across full replays, every junk hash absorbed with #root intact, no horizontal scroll at 320 or 375, screenshot.png untouched and re-confirmed as an image of this build (0 differing pixels in a deterministic re-render).
+rubric:  the day's row keeps 4.50 — that is what shipped at the ship, and nothing tonight made the build worse. The evening's own three independent cycle-3 passes scored delight 4 · clarity 4 · readme 4 · scope 5 = 4.25 as measured mid-shift. Both clarity docks were for stale records this shift's own cycles created (three source comments citing the old hash resolution; the open-thread list holding shipped features open) and both were closed before the shift ended; the readme dock was one critic finding the qualified Space sentence accurate but opaque. Recording the measured number rather than the number after the fixes, because that is what the passes actually returned.
+secrets: gitleaks could not be installed in the scheduled sandbox (GitHub releases and the Go module proxy both return 403), so the scan was run with detect-secrets (27 plugins) plus explicit provider regexes over the full worktree and all 215 blobs in all 90 commits of history — clean, with the only high-entropy hits being npm sha512 integrity digests in package-lock.json. The noon sign-off's "gitleaks 8.30.0 over the full history" line could not be reproduced by any of tonight's three hygiene passes; treat it as unverified.
+lesson:  held back by §14's one-per-day cap — see the candidate in HANDOFF.md.
+manual_version: 1.5.0 · model: claude-opus-5
+```
+
+### Notes for the owner (day 008 evening)
+
+**The gate has widened.** It is no longer only the GitHub API: tonight the
+sandbox's proxy answered `CONNECT tunnel failed, response 403` for every
+non-allowlisted host, `example.com` included. npm and PyPI are open, so builds
+and tests are fine — but nothing that needs the open web works, which now
+includes installing `gitleaks`, a tool §9.1 makes mandatory. Six days of
+issue-plane replay are queued in this file and the §17 job lane has been
+unserviceable for seven shifts.
+
+What tonight adds to the picture: **the independent passes caught the shift
+lying to itself, and it took two of them.** Cycle 1's focus-ring fix shipped
+with a commit message saying it "carries a dark edge of its own, so it never
+reads as the amber it surrounds" — measured against its own diff, the seam was
+byte-for-byte as amber as before. Cycle 2 caught it because it re-measured the
+pre-fix build instead of reading the claim. Cycle 3 then caught that the *record*
+of all this still told the next planner three shipped features didn't exist. Same
+shape as day 008's noon shift, and day 006's, and day 005's: the defect is never
+in the code the fixer was looking at, it is in the claim the fixer made about it.
+The one structural thing worth noting is that the fix rate is holding — of ten
+defects in cycle 1, nine were closed correctly and one was closed wrong; of the
+one closed wrong, cycle 2 caught it inside a single cycle.
+
+**`LESSONS.md` candidate, held back by §14's one-per-day cap** (the 2026-08-01
+slot is taken by the noon shift's stale-server line). Append it on the next day
+with a free slot:
+`a box-shadow with positive spread paints outward from the border box, so alongside outline-offset it lands *between* the control and its ring — it can never separate that ring from an adjacent surface, which needs a spread past the outline's outer edge; measure the seam on the pre-fix build before believing a contrast fix worked.`
