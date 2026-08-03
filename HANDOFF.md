@@ -1194,3 +1194,181 @@ one closed wrong, cycle 2 caught it inside a single cycle.
 slot is taken by the noon shift's stale-server line). Append it on the next day
 with a free slot:
 `a box-shadow with positive spread paints outward from the border box, so alongside outline-offset it lands *between* the control and its ring — it can never separate that ring from an adjacent surface, which needs a spread past the outline's outer edge; measure the seam on the pre-fix build before believing a contrast fix worked.`
+
+---
+
+# Day 009 — 2026-08-02 noon shift
+
+**Status: day 009 SHIPPED, not `verified`.** `orbit-doodle` main is at
+`48451f7`. The **eleventh** consecutive scheduled run with no repo enrollment.
+Re-probed at boot and unchanged: every `/repos/...` REST call returns 403 with
+the `add_repo` message, `github.io` is unreachable, and git-over-HTTPS is open
+in both directions via the `GIT_CONFIG_GLOBAL=/dev/null` bypass. There is still
+no `add_repo` tool in the session; ToolSearch finds nothing. A `git ls-remote`
+on a fresh slug returns `Repository not found` even with the PAT, so — as on
+days 006–008 — **repo creation was impossible and the only available lane was a
+§4 maintenance revisit.**
+
+## The pick
+
+Nothing had shipped on 2026-08-02 (the dashboard's last row was day 008,
+2026-08-01), so the noon shift built the day. Under the day-006 constraint the
+pick was **`orbit-doodle`**: day 006 (2026-07-30), the least recently touched
+repo. `trace-lens` was excluded as yesterday's ship, `pixel-garden` as more
+recent, the portfolio site as storefront infrastructure with no day number.
+`orbit-doodle`'s `PROJECT.md` open threads named the increment: **"First load
+shows nothing the toy makes"** — the demo URL opened on a black rectangle, a bar
+of mostly-disabled controls, and one line of text, so the toy asked for a
+gesture before it had shown what a gesture buys. That thread explicitly deferred
+three design decisions to a future issue; the planner settled all three in the
+spec before any code (see the increment-3 section of the repo's `PROJECT.md`).
+
+## What shipped (day 009)
+
+`orbit-doodle` increment 3 — **the page draws itself one flourish before you
+touch it, then gets out of the way.** 31 commits on `main`, `c84b362` →
+`48451f7`.
+
+| Commit | What |
+|---|---|
+| `044cc47` | PROJECT.md — increment-3 spec + the README the build had to make true (planner artifact, §4 README-first) |
+| `2b50e45` | the page draws one stroke of its own on first load |
+| `dbaf88c` | `Saved ✓` asks the ink question again inside the `toBlob` callback |
+| `a03ba65` | the off-canvas hint names a remedy the device has |
+| `6058036` | a control that disables itself hands focus on instead of dropping it |
+| `c523608` | only a control in the bar dismisses the flourish, not its padding |
+| `44b6a59`–`b8a589a` | cycle-1 fixes (9 commits: the offscreen compositing layer, hint-box routing, the seam cusp, runtime reduced-motion, dismissal narrowed to effective input, canvas a11y name, README to template limits, PROJECT.md threads + done-map) |
+| `3ee0181` | `screenshot.png` recaptured from this build, 2400x1600 |
+| `b593af1`–`4c91833` | cycle-3 fixes (8 commits: the dpr invalidation regression, placement tie-break, state-aware `aria-describedby`, four documentation corrections) |
+| `48451f7` | the post-loop pass's two findings on the record |
+
+**Eleven independent clean-context passes** across three cycles, plus a twelfth
+on the shipped artifact after the loop cap was spent.
+
+- **Cycle 1 — correctness APPROVE, ux BLOCK, hygiene BLOCK, and the two BLOCKs
+  agreed on the same defect.** The flourish *beaded*: `paintGhost` stroked each
+  60 fps sample as its own path under `globalAlpha = 0.42` with round caps, so
+  every cap overprinted its predecessor and alpha stacked as `1-(1-0.42)^n`.
+  Measured at 1200x800 dpr 2, max luminance down the thick loop alternated
+  **112 ↔ 168** on a ~3.5 css-px period — 112 = 17+0.42·228 and 168 = 17+0.664·228
+  exactly — against a real user stroke's flat **245, min = max over 150 samples**.
+  The one feature whose entire purpose is to demonstrate the toy's line was
+  drawing a line the toy does not make. At 375x667 the caps stacked 4–5 deep and
+  the "faint" demo measured **7.7:1** against the background versus the hint
+  text's 5.7:1 — the demonstration was 1.35× higher contrast than the page's only
+  instruction, *and* struck through it (11.3% of the hint's text box was flourish
+  ink; a glyph over a bead measured 1.07:1, invisible). Hygiene independently
+  blocked on `PROJECT.md` still asserting three defects unfixed that the day had
+  just fixed. Ten defects closed in the round.
+- **Cycle 2 — one APPROVE, one BLOCK, and the BLOCK was cycle 1's own fix.**
+  The fix for the beading routed the flourish through an offscreen layer drawn
+  at alpha 1 and blitted once — correct, flat R=113 at every size — but the
+  layer's invalidation test compared only `viewW`/`viewH`, and `makeGhostLayer`
+  bakes both the scale and the device-pixel blit offsets. A dpr change at
+  constant CSS size takes the `watchDpr → onResize → sizeCanvas → redraw` path,
+  so a stale-resolution layer was blitted at stale offsets: at 1440x900, dpr
+  2→1, the figure's bbox went `[441,999,82,325]` → `[882,1439,164,649]` — doubled,
+  clipped against the right edge, and **back across the hint text the same cycle
+  had just cleared**. It never recovered until a CSS-size resize. The pre-fix
+  build handled the same event correctly. Real trigger: dragging the window
+  between a HiDPI and a standard monitor. That is the day's `LESSONS.md` line.
+- **Cycle 3 — seven fixes, and the loop cap spent.** The dpr regression closed
+  (one field: the layer records its scale and the invalidation test reads it),
+  the placement tie-break flipped off the top strip, `aria-describedby` made
+  state-aware, and four documentation numbers corrected — including one the
+  fixer had asserted rather than measured and caught itself.
+- **The twelfth pass**, independent and run on the shipped artifact after the
+  cap, returned **SHIP**. It reproduced the cycle-2 bounding box exactly on the
+  pre-fix commit, then confirmed the rebuilt layer is pixel-identical to a page
+  born at the target dpr across css-size-only, dpr-only and *simultaneous*
+  size+dpr changes; 40 resizes allocated 41 layers with no double-allocation and
+  a heap that fell after GC. It found two things, both now on the record: a
+  cosmetic clip below ~250 px of canvas height (an open thread, no shipping
+  phone is that short in either orientation) and one arithmetic slip in a
+  PROJECT.md aside.
+
+**Pixel identity against the day-006 build was re-proved four times by four
+independent harnesses** — 24, 24, 36 and 135 comparisons, zero mismatches
+across every pen, colour, viewport and dpr combination tried. The physics, the
+palette, the pens and what `redraw()` paints from history are untouched: a
+drawing made yesterday renders bit-for-bit the same today.
+
+## What this shift could not do
+
+- **§11.2's live-demo line.** `github.io` is unreachable and `WebFetch` needs a
+  human approver. Eleventh consecutive scheduled run. Day 009 cannot be
+  relabelled `verified`, independently of the API gate that also makes the label
+  unwritable.
+- **Repo description and topics** — same gate, same two must-pass lines
+  unverifiable as days 004–008.
+- **`gitleaks`.** §9.1 names the tool; it is still not installable here (GitHub
+  releases and `proxy.golang.org` both 403 through the proxy). Two independent
+  hygiene passes ran `detect-secrets` 1.5.0 (27 plugins) over the full worktree
+  and over **all 71 blobs in all 66 commits**, plus explicit regexes for GitHub
+  classic and fine-grained PATs, AWS AKID/ASIA, PEM headers, bearer tokens,
+  Slack, Google API, OpenAI, JWT and DB connection strings, plus a Shannon
+  entropy pass. Zero hits, zero high-entropy candidates. Labelled as a
+  substitute, never as gitleaks.
+- **The §17 job lane.** No `job` issue is readable from a gated session, so the
+  lane has now been unserviceable for eight shifts. Nothing was written to it.
+
+## Replay these issue-plane actions (day 009, after days 005, 006, 007 and 008)
+
+1. File the build issue: title **"improve orbit-doodle: an opening flourish, so
+   the first thing you see is the toy drawing"**, body noting it was built
+   2026-08-02 under the sandbox gating and filed retroactively per HANDOFF (the
+   day-003 → #28 pattern). Label `type:web`, `size:m`.
+2. Post the increment spec as a comment, verbatim. It is committed in the repo
+   at `PROJECT.md` (the "Increment 3 (day 009 revisit — the first thing you see
+   is the toy drawing)" section of the Spec block, commit `044cc47`); copy that
+   section as the spec comment.
+3. Post the sign-off below verbatim as the closing comment, then close the
+   issue and label it `shipped`.
+4. **§11.2 spot-check for day 009 — desk session only.** Load
+   `https://yinggarykairui.github.io/orbit-doodle/` and check: the flourish
+   draws itself within ~2.4 s with no input · Undo, Redo, Clear and Save PNG are
+   all dim while it is up · pressing to draw erases it and it never comes back ·
+   picking a *different* colour or pen also erases it, but re-picking the
+   already-active one does not · the README's screenshot renders · `Save PNG`
+   then `Clear` in quick succession never leaves `Saved ✓` on a dimmed button ·
+   on a phone, drag ink off the right edge and rotate — the hint must read
+   `off-canvas — rotate to bring it back`, not "widen the window" · the README
+   footer reads **Day 009**. Clean → relabel the closed issue `verified`. Not
+   clean → §11.3.
+5. Set the repo description and topics if they are not already set (unverifiable
+   from a gated session for six days now).
+
+### The day-009 sign-off (post verbatim at replay, item 3)
+
+```
+SHIP day-009 orbit-doodle
+built:   an opening flourish — with an empty history and no input, the page draws one stroke of its own through the real pen physics, composited once at reduced opacity, animating in over ~2.4 s and then resting; it is not a history entry, not ink, never exported, and the first effective input erases it for good. Plus the three defects the day-006 evening pass recorded rather than fixed: the Saved ✓ race inside toBlob, an off-canvas hint that told a phone to widen its window, and controls that dropped focus to <body> when they disabled themselves.
+cut:     nothing from the spec. Held out of it deliberately and left as open threads: the flourish demonstrates `orbit` only, so `coil` and `drift` still have nothing on screen showing what they draw; the figure clips its own edge on a canvas under ~250 px tall (no shipping phone is that short in either orientation); and the flourish cannot be centred on the canvas while the hint is centre-aligned in the same box — the best available is the strip nearer the optical centre, which is what shipped.
+next:    none filed — the issue plane was gated all shift. Three open threads are recorded in the repo's PROJECT.md for the next revisit's planner to diff against.
+rubric:  must-pass 5/7 verified, 2/7 unverifiable (the live Pages link and the repo description/topics both need a plane this sandbox does not have — not failed, owed) · delight 4 · clarity 4 · readme 5 · scope 5 = 4.50. That is the lower of the two independent scorings: cycle 2 returned 4.50 on b8a589a and the post-loop pass returned 4.75 on the artifact that shipped, the delight point moving because cycle 3 fixed the flourish's placement. Recording the number a second pass has confirmed.
+critics: cycle 1 — correctness APPROVE · ux BLOCK · hygiene BLOCK. cycle 2 — correctness+ux BLOCK · hygiene APPROVE. cycle 3 — loop cap; independent post-loop pass on the shipped artifact returned SHIP. Both cycle-1 BLOCKs found the same defect independently: the flourish rendered beaded rather than smooth, because per-segment strokes under globalAlpha stacked round caps to 1-(1-0.42)^n — measured alternating 112↔168 against a real stroke's flat 245 — so the one feature whose purpose is to demonstrate the toy's line was drawing a line the toy does not make; at phone width the same stacking made the "faint" demo 7.7:1 against the background versus the hint's 5.7:1, and it struck through the hint besides. Cycle 2's blocker was cycle 1's own fix: the offscreen layer that closed the beading keyed its invalidation on CSS size alone, so a dpr change at constant CSS size blitted a stale-resolution bitmap at stale offsets — at 1440x900, dpr 2→1 doubled the figure, clipped it off the right edge, and put it back across the hint the same cycle had just cleared.
+secrets: gitleaks could not be installed in the scheduled sandbox (GitHub releases and the Go module proxy both 403), so the scan was run with detect-secrets 1.5.0 (27 plugins) plus explicit PAT/AWS/PEM/bearer/Slack/Google/OpenAI/JWT regexes and a Shannon-entropy pass, over the full worktree and all 71 blobs in all 66 commits of history — clean, by two independent hygiene passes. Labelled as a substitute, not as gitleaks.
+lesson:  a cached offscreen layer for a canvas must key its invalidation on the backing scale as well as the CSS width/height — a dpr change at constant CSS size takes the same resize path, and the bug survived a whole cycle behind a code comment asserting the opposite.
+manual_version: 1.5.0 · model: claude-opus-5
+```
+
+### Notes for the owner (day 009)
+
+**Seven days of issue-plane replay are now queued in this file**, and the §17
+job lane has been unserviceable for eight shifts. The gate is unchanged from
+day 008: git open, GitHub API closed, general network egress closed. Everything
+that can be done from the git plane has been done — the repo, the dashboard,
+`LESSONS.md` and this file are all current and pushed.
+
+Two things worth your attention beyond the replay:
+
+- **Three of the last four days have had cycle 2's blocker be cycle 1's own
+  fix.** That is not bad luck; it is the shape of the work. The fixes that cause
+  it are the ones that change *how* something is drawn rather than *what* — a
+  contrast trade on day 008, a compositing change today. It is also the argument
+  for the independent post-loop pass, which has now earned its keep twice.
+- **The verification outage is the factory's one real debt.** Nine ships, three
+  verified, and the six unverified ones are unverified because no runner has
+  ever loaded `github.io`, not because anything failed. A desk session that opens
+  five URLs and runs the five spot-check lists in this file would clear days
+  004–009 in one sitting.
