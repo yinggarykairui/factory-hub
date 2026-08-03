@@ -1372,3 +1372,135 @@ Two things worth your attention beyond the replay:
   ever loaded `github.io`, not because anything failed. A desk session that opens
   five URLs and runs the five spot-check lists in this file would clear days
   004–009 in one sitting.
+
+---
+
+# Day 010 (2026-08-03, noon shift) — sixth consecutive gated day
+
+Same gate as days 005–009, re-probed at boot and unchanged: `git` open,
+`api.github.com/repos/...` 403 ("not enabled for this session, use add_repo" —
+no `add_repo` mechanism exists in this session), general outbound egress closed
+(`curl https://yinggarykairui.github.io/pixel-garden/` → 000). `git ls-remote`
+on a fresh slug 404s, so repo creation is still impossible and the day's only
+lane was a maintenance revisit (the 2026-07-30 lesson, applied at boot rather
+than discovered after the spec).
+
+## The pick
+
+Nothing had shipped on 2026-08-03 (the dashboard's last row was day 009,
+2026-08-02), so the noon shift built the day. Rotation put **`pixel-garden`**
+up: last touched day 007 (2026-07-31), `orbit-doodle` was yesterday and
+`trace-lens` the day before. The repo's `PROJECT.md` open threads named the
+increment and had explicitly deferred it: the dotted keyboard cursor had become
+**unreachable dead code** ("deleting them is a next-increment change, not a
+same-night one"), and a **live region** for the keyboard walk had been priced
+out of increment 3's scope. One adds a voice, the other removes a ghost.
+
+## What shipped (day 010)
+
+`pixel-garden` increment 4 — **the keyboard walk speaks.** 16 commits on
+`main`, `9eb0f4f` → `00143ae`.
+
+| Commit | What |
+|---|---|
+| `8825b4a` | PROJECT.md — increment-4 spec + the README the build had to make true (planner artifact, §4 README-first) |
+| `85ac823` | delete the keyboard cursor that could no longer be drawn |
+| `e14d47f` | a live region names each plant the walk lands on |
+| `62a9207`–`d7a11c1` | cycle-1 fixes (6 commits: Enter/Space re-announces, the vertical arrows returned to the page, the spoken position became an ordinal, speech spells the month out, the de-dup compare dropped, focus follows `share garden`) |
+| `29dffeb`–`37229f6` | cycle-2 docs (README made true; done-map ticked; open threads opened and closed) |
+| `d74f386`–`1ed3dd0` | cycle-3 fixes (the scroll-key comment; README true when read in its own order; the "net-negative lines" claim corrected) |
+| `00143ae` | three threads the post-loop pass found unrecorded |
+
+**The zero-pixel invariant held.** The rendered canvas is byte-identical to the
+pre-increment build (`8825b4a`) at 1280/375/320/240 px, unselected, selected and
+mid-grow-in — proved four times by four independent harnesses (16/16, 72/72,
+16/16, 16/16 states; a 50-garden sweep and an all-twelve-months sweep among
+them), each built from scratch against a `git worktree` of the base commit. The
+`pixel-garden.v1` storage bytes, the `#g=` share hash and the `rng()` call order
+are byte-identical too, so every existing garden regrows exactly as before.
+
+## What this shift could not do
+
+- Write anything to the issue plane (items 1–3 below are owed).
+- Load the live demo, so §8's Pages line is **unverifiable, not failed** —
+  the seventh straight day. Item 4 below is the desk-session spot-check.
+- Read or set the repo description and topics (item 5) — unverifiable for a
+  seventh day.
+- Run `gitleaks`: it is not installable here (GitHub releases and the Go module
+  proxy both 403). Two independent hygiene passes ran `detect-secrets` 1.5.0
+  with all 27 plugins over the full worktree **and** every blob in history
+  (56 and 171 blobs respectively, including unreachable objects), plus 16–17
+  explicit PAT/AWS/PEM/bearer/JWT/Slack/Google/OpenAI/Anthropic/Stripe/npm
+  regexes and a Shannon-entropy pass, each with a positive control proving the
+  harness detects rather than measures nothing. Clean, both. Labelled a
+  substitute for gitleaks, never as gitleaks.
+- Service §17: no open `job` issue is readable from a gated session. The lane
+  has now been unserviceable for nine shifts.
+
+## Replay these issue-plane actions (day 010, after days 005, 006, 007, 008 and 009)
+
+1. File the build issue: title **"improve pixel-garden: the keyboard walk
+   speaks, and the cursor nobody could see goes"**, body noting it was built
+   2026-08-03 under the sandbox gating and filed retroactively per HANDOFF (the
+   day-003 → #28 pattern). Label `type:web`, `size:m`.
+2. Post the increment spec as a comment, verbatim. It is committed in the repo
+   at `PROJECT.md` (the increment-4 section of the Spec block, commit
+   `8825b4a`); copy that section as the spec comment.
+3. Post the sign-off below verbatim as the closing comment, then close the
+   issue and label it `shipped`.
+4. **§11.2 spot-check for day 010 — desk session only.** Load
+   `https://yinggarykairui.github.io/pixel-garden/` and check: the garden loads
+   and your existing plants are all still there, unchanged (the zero-pixel
+   invariant, checked by a human eye) · `Tab` puts the focus ring on the canvas
+   and `←`/`→` walk the plants, moving the highlight and label each step ·
+   with a screen reader on, each step is spoken as `<species>, <Month> <D>,
+   <N>th of <M>` — **this is the one claim no factory runner has ever been able
+   to test**, and the README says so · `Enter` on a plant already named says it
+   again · `↑`/`↓` scroll the page instead of walking · no dotted outline
+   appears around any plant in any state · `share garden` moves the focus ring
+   onto the permalink it reveals · the README's screenshot renders · the README
+   footer reads **Day 001 (revisited days 003, 007 and 010)**. Clean → relabel
+   the closed issue `verified`. Not clean → §11.3.
+5. Set the repo description and topics if they are not already set. Description
+   = the README's one-sentence opener; topics from `type:web`. Unverifiable from
+   a gated session for seven days now.
+
+### The day-010 sign-off (post verbatim at replay, item 3)
+
+```
+SHIP day-010 pixel-garden
+built:   the keyboard walk speaks — a hidden aria-live region names each plant the selection lands on (species, month and day or "today", and its ordinal place in the row: "fern, July 26, 3rd of 8"), silent through the 2 s grow-in, silent at both ends of the walk, cleared on dismiss. Enter or Space says the current plant again. The dotted keyboard cursor that increment 3 left unreachable is deleted along with keyboardFocus(), hasFocus, the focus/blur listeners and the dotted branch of traceSilhouette(). Three defects found along the way: the vertical arrows were swallowing page scroll on a landscape phone whose controls sit below the fold, "share garden" dropped focus to <body> with no way back short of a reload, and the spoken position collided with the visible "plant 8 of 40" status line.
+cut:     nothing from the spec. Four defects were found, investigated and deliberately left unpatched, each recorded in the repo's PROJECT.md rather than papered over. The one that cost the most: the spoken ordinal is derived from drawn x, which is width-dependent, so a resize can renumber the row and leave the last thing spoken stale — measured at 3 of 7 random 40-plant gardens. Both candidate fixes are worse than the defect (sorting on the only width-independent key changes the 1280 px walk order in 200/200 random gardens; pinning to a reference layout makes the right-arrow move the highlight *left* up to 11 of 39 steps at narrow widths — the exact defect the day-007 correction exists to prevent). The other three, scoped out under §7.4 after surviving two cycles: 15 px-tall links against WCAG 2.5.8's 24 px, a landscape phone showing only sky with the controls below the fold, and encodeGarden() returning null on pre-2020 stored days leaving no focusable control. A fifth, pre-existing and the only one that loses data — travelling the clock backwards across a timezone drops a future-dated plant permanently — is out of the fence because the fix opens the storage schema, and is now recorded as the thread that should lead the next schema-opening increment.
+next:    none filed — the issue plane was gated all shift, as it has been for six days. Twelve open threads are recorded in the repo's PROJECT.md for the next revisit's planner to diff against.
+rubric:  must-pass 5/7 verified, 2/7 unverifiable (the live Pages link and the repo description/topics both need a plane this sandbox has not had since day 004 — not failed, owed) · delight 4 · clarity 4 · readme 5 · scope 5 = 4.50. Four independent passes scored it; this is the post-loop pass's number, which is also the median.
+critics: cycle 1 — correctness BLOCK · ux BLOCK · hygiene BLOCK (all three independently on the same must-pass line: the README had not been made true). cycle 2 — correctness APPROVE · ux BLOCK · hygiene APPROVE. cycle 3 — loop cap; independent post-loop pass on the shipped artifact returned SHIP. Cycle 2's blocker was **not** cycle 1's own fix, breaking a run of three days in four — it was the README, which described a key order that does not work when followed from a cold load: "click a plant to name it" already leaves focus on the canvas, so the next sentence's "Tab moves focus to the canvas" moved it off onto the share link, and every key the sentence after that promised then did nothing. Two passes read those sentences as independent claims and passed them.
+secrets: gitleaks could not be installed in the scheduled sandbox (GitHub releases and the Go module proxy both 403), so the scan was run with detect-secrets 1.5.0 (27 plugins) plus 16–17 explicit PAT/AWS/PEM/bearer/JWT/Slack/Google/OpenAI/Anthropic/Stripe/npm regexes and a Shannon-entropy pass, over the full worktree and every blob in history including unreachable objects — clean, by two independent hygiene passes, each with a positive control. Labelled as a substitute, not as gitleaks.
+lesson:  a README's steps can each be true while the sequence is false — test the instructions as one run from a cold load, carrying state forward, not as a list of independent claims.
+manual_version: 1.5.0 · model: claude-opus-5
+```
+
+### Notes for the owner (day 010)
+
+**Eight days of issue-plane replay are now queued in this file**, and the §17
+job lane has been unserviceable for nine shifts. The gate is unchanged from
+day 009. Everything reachable from the git plane is done and pushed: the repo,
+the dashboard, `LESSONS.md`, the profile storefront and this file.
+
+Two things worth your attention beyond the replay:
+
+- **Today's ship is the one the factory cannot grade itself.** The whole
+  increment is an accessibility feature, and no runner here has a screen
+  reader — the announcements were verified through Chromium's accessibility
+  tree and observed live-region text changes, which is the strongest evidence
+  available in this sandbox and is not the same thing. A critic also raised,
+  and could not settle, that the canvas carries `role="img"`: a screen reader
+  left in browse mode may take the arrow keys before the page sees them, so the
+  spoken walk may never start at default settings. The README says all of this
+  in plain words rather than claiming support it has not earned. **Five minutes
+  with VoiceOver or NVDA on the live demo would settle the day's central
+  claim** — it is the single highest-value thing you could do at your desk.
+- **The verification debt is now seven days deep.** Ten ships, three verified;
+  the seven unverified ones are unverified because no runner has loaded
+  `github.io` since day 004, not because anything failed. A desk session that
+  opens four URLs and runs the spot-check lists in this file would clear days
+  004–010 in one sitting.

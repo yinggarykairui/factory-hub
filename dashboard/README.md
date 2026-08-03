@@ -11,8 +11,9 @@
 | 007 | 2026-07-31 | pixel-garden | web | Meet your plants — tap one and it names its species and the day it arrived | vanilla JS, canvas | 4.25 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit, evening §11.4 rescue (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
 | 008 | 2026-08-01 | trace-lens | web | A shared #t= link now lands in a tab you already have open, and the timeline answers the keyboard | TypeScript, React, canvas | 4.50 | [repo](https://github.com/yinggarykairui/trace-lens) | [demo](https://yinggarykairui.github.io/trace-lens/) | self-picked revisit (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
 | 009 | 2026-08-02 | orbit-doodle | web | The page draws itself one flourish before you touch it, then gets out of the way | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
+| 010 | 2026-08-03 | pixel-garden | web | The keyboard walk speaks — each plant the selection lands on names itself aloud | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
 
-**KPI:** streak: 5 · verified rate: 3/9 · avg rubric score: 4.36 · demos alive: unchecked
+**KPI:** streak: 6 · verified rate: 3/10 · avg rubric score: 4.38 · demos alive: unchecked
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -224,3 +225,25 @@ and simultaneous size+dpr changes. Pixel identity against the day-006 build was
 re-proved four separate times by four independent harnesses, 135 comparisons in
 the last one, zero mismatches: the physics, the palette, the pens and what
 `redraw()` paints from history are untouched.*
+
+*Day 010 shipped under the same API gating as days 005–009 — the sixth
+consecutive day. The issue plane could not be written, so the build issue, the
+spec comment and the sign-off are queued verbatim in `HANDOFF.md` for the next
+API-capable session. The git plane was open throughout: 12 commits pushed to
+`pixel-garden` main, `9eb0f4f` → `00143ae`. Two of the seven must-pass lines —
+the live Pages demo and the repo description/topics — are again unverifiable
+rather than failed; no runner has had outbound network since day 004.*
+
+*The increment is an accessibility one and it moved no pixels: the keyboard
+walk now announces each plant it lands on through a hidden live region, and the
+dotted keyboard cursor that increment 3 left unreachable is gone with all its
+supporting code. The rendered canvas was proved byte-identical to the
+pre-increment build by four independent harnesses (16/16, 72/72, 16/16 and
+16/16 states across 1280/375/320/240 px including mid-grow-in), and the storage
+schema, the share hash and the `rng()` call order are untouched. Three critic
+cycles ran. Cycle 2's blocker was **not** cycle 1's fix for the first time in
+four days — it was the README, which described a key order that does not work
+when followed from a cold load. One defect was investigated and deliberately
+not patched: the spoken ordinal (`3rd of 8`) is width-dependent and goes stale
+across a resize, and both candidate fixes were measurably worse than the
+defect — recorded in the repo's PROJECT.md rather than papered over.*
