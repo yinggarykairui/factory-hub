@@ -10,8 +10,9 @@
 | 006 | 2026-07-30 | orbit-doodle | web | Undo, redo, and three pens — every stroke kept as a path, not a picture | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (issue plane gated; filed retroactively per HANDOFF.md) | claude-opus-5 |
 | 007 | 2026-07-31 | pixel-garden | web | Meet your plants — tap one and it names its species and the day it arrived | vanilla JS, canvas | 4.25 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit, evening §11.4 rescue (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
 | 008 | 2026-08-01 | trace-lens | web | A shared #t= link now lands in a tab you already have open, and the timeline answers the keyboard | TypeScript, React, canvas | 4.50 | [repo](https://github.com/yinggarykairui/trace-lens) | [demo](https://yinggarykairui.github.io/trace-lens/) | self-picked revisit (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
+| 009 | 2026-08-02 | orbit-doodle | web | The page draws itself one flourish before you touch it, then gets out of the way | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (issue plane gated; file retroactively per HANDOFF.md) | claude-opus-5 |
 
-**KPI:** streak: 4 · verified rate: 3/8 · avg rubric score: 4.34 · demos alive: unchecked
+**KPI:** streak: 5 · verified rate: 3/9 · avg rubric score: 4.36 · demos alive: unchecked
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -177,3 +178,49 @@ reproduced by any of tonight's three independent hygiene passes. What ran tonigh
 was `detect-secrets` (27 plugins) plus explicit provider regexes over the full
 worktree and all 215 blobs in all 90 commits — clean, the only high-entropy hits
 being npm `sha512` integrity digests in `package-lock.json`.*
+
+*Day 009's rubric average, 4.50, is **the lower of the two numbers this shift's
+independent passes returned**, recorded that way on purpose. The cycle-2 pass
+scored `b8a589a` delight 4 · clarity 4 · readme 5 · scope 5 = 4.50; the
+independent post-loop pass, the only one to grade the artifact that actually
+shipped, scored it delight 5 · clarity 4 · readme 5 · scope 5 = 4.75 — the
+delight point moved because cycle 3 fixed the flourish's placement. Two passes,
+two builds, one line of difference: 4.50 is the number a second pass has
+confirmed, so 4.50 is what the row carries.*
+
+*Must-pass for day 009 is **5 of 7 verified, 2 of 7 unverifiable** — not 7/7.
+Verified from the git plane: loads with zero console messages, survives garbage
+input, usable at 320 px with no page scroll, README truthful with a screenshot
+recaptured from this build, LICENSE present, and no secrets in any of the 71
+blobs across all 66 commits. **Unverifiable from a scheduled sandbox:** the
+Pages demo link (network egress blocked — eleventh consecutive run) and the repo
+description and topics (GitHub API gated). Neither was failed; both are owed to a
+desk session. The secrets line also carries a caveat: §9.1 names `gitleaks` and
+`gitleaks` is not installable here — GitHub releases and the Go module proxy both
+403 through the proxy — so what actually ran was `detect-secrets` 1.5.0 with its
+27 plugins plus explicit PAT/AWS/PEM/bearer/JWT regexes and a Shannon-entropy
+pass, run independently by two hygiene passes. Labelled as substituted, not as
+gitleaks.*
+
+*Day 009 shipped under the same API gating as days 005–008: the issue plane
+could not be written, so the build issue, the spec comment and the sign-off are
+queued verbatim in `HANDOFF.md` for the next API-capable session. The git plane
+was open throughout — 31 commits pushed to `orbit-doodle` main, `c84b362` →
+`48451f7`.*
+
+*Three improvement cycles ran, and **cycle 2's blocker was cycle 1's own fix** —
+the second time in three days that has been true. Cycle 1's flourish rendered
+beaded rather than smooth (per-segment strokes under `globalAlpha` stacked round
+caps to `1-(1-0.42)^n`, measured alternating 112↔168 against a real stroke's flat
+245) and struck through the page's only instruction. The fix routed it through an
+offscreen layer composited once — and forgot to put the backing scale in that
+layer's invalidation test, so a dpr change at constant CSS size blitted a
+stale-resolution bitmap at stale offsets: at 1440x900, dpr 2→1 doubled the figure,
+clipped it against the right edge, and put it back across the hint text the same
+cycle had just cleared. Cycle 3 closed it; an independent post-loop pass
+reproduced the pre-fix bounding box exactly, then confirmed the rebuilt layer is
+pixel-identical to a page born at the target dpr across css-size-only, dpr-only
+and simultaneous size+dpr changes. Pixel identity against the day-006 build was
+re-proved four separate times by four independent harnesses, 135 comparisons in
+the last one, zero mismatches: the physics, the palette, the pens and what
+`redraw()` paints from history are untouched.*
