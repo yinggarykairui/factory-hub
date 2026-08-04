@@ -1504,3 +1504,150 @@ Two things worth your attention beyond the replay:
   `github.io` since day 004, not because anything failed. A desk session that
   opens four URLs and runs the spot-check lists in this file would clear days
   004–010 in one sitting.
+
+---
+
+# Day 010 evening + the late shift — 2026-08-03, 20:39–22:5x PT
+
+Two things happened after the day-010 noon ship, and neither had reached the
+hub until this file was written.
+
+## 1. An evening polish pass ran, and left no hub record
+
+`pixel-garden` carries eight commits timestamped 20:39–20:56 PT on 2026-08-03,
+`42f8a6e` → `ae38f78`, authored by a shift that ran a playtester and three
+critics against the day-010 increment. All three critics returned REJECT,
+hygiene on a **must-pass line**. The fixer closed six defects and skipped one.
+The pass is fully documented in the repo at `PROJECT.md` (the "Evening polish
+pass (day 010)" section, commit `ae38f78`) — but **nothing was written to the
+hub**: no dashboard note, no HANDOFF entry, no verification. The last hub
+commit before this one is `c587f15`, the noon ship at 13:41 PT.
+
+The pass itself is sound and its work is pushed and safe. What was lost was
+only the hub-side record, and this section is it. What landed:
+
+| Commit | What |
+|---|---|
+| `42f8a6e` | README: what a damaged share link actually does — the **must-pass hygiene failure**. "A bad or truncated link falls back to your own garden" was untrue: `decodeGarden()` rejects only non-base64url input and byte lengths not a multiple of 6, so a substituted character, an 8-char truncation and 8 appended characters all decode, into a different or partial garden shown as the sender's with no note. The prose now says both halves. The decoder was left alone — widening it is an increment, not an evening. |
+| `f4e7d32` | README: the seed does not choose where a plant stands. `slot = (index * 17) % MAX` — the planting index picks the slot, the seed only jitters inside it. |
+| `8348218` | A modifier chord is the browser's, not the walk's. The keydown handler had no modifier check, so `Ctrl+Home/End`, `Alt+←/→`, `Meta+←/→` and `Ctrl+←/→` all moved the selection and were `preventDefault()`ed — Back, Forward and the ends of the document dead on a focused canvas. |
+| `79102f5` | The live region compares before it writes again. The de-dup guard dropped in `5135e4f` for an unsound reason: the pass **built** the garden the post-loop search could not find (21 plants, paired a year apart on the same month/day, same species, on neighbouring `(i*17)%40` slots — at 412 px `Home` then `→`×17 says `stalk, June 21, 18th of 21`; widen to 1280 px and the next `→` says it again, byte-identical, while the canvas changed underneath). |
+| `493ac32` | Retiring the hint no longer pulls the page's only link upwards — `retireHint()` set `display:none`, taking 23 px out of the flow and moving the share link out from under the pointer that had just tapped a plant. Measured shift now 0 px at 320/375/1280. |
+| `af37dd0` | `.gitleaks.toml`: `pixel-garden.v1` is a localStorage key name, allowlisted by an anchored regex and nothing else, so every shift stops re-triaging the same §9.1 hit by hand. |
+| `7c8e22d`, `ae38f78` | PROJECT.md — the pass on record, with the skipped defect and the threads it opened. |
+
+The pass held the canvas byte-identical throughout (nine captures, three widths
+x three states, all equal) and **skipped one defect deliberately**: the canvas
+has no perceivable boundary (sky `#182420` on page `#101613` is 1.14:1 where
+WCAG 1.4.11 asks 3:1). The 1 px border was applied, measured and reverted — it
+cannot be added without re-blending the antialiasing inside the four 6 px
+corners (56 differing pixels with `border`, 48 with `box-shadow`), and the
+proposed colour reaches only 1.53:1 anyway. Recorded, not patched.
+
+## 2. This shift (§4 already-shipped path)
+
+Woken as the noon shift at **22:31 PT on 2026-08-03** — see the owner note
+below, the timing is itself a finding. The dashboard's last row is
+2026-08-03 (day 010), so under §4 the day was already shipped: no build, and
+the §11.2 spot-check instead. Findings:
+
+- **gitleaks is installable in this sandbox after all.** Day 010's noon shift
+  recorded that GitHub releases 403 and used `detect-secrets` as a labelled
+  substitute. The release tarball downloaded here without incident:
+  `gitleaks 8.18.4`, **61 commits scanned, no leaks**, and clean again on the
+  worktree. §9.1 is satisfied by the real tool for the first time in six days.
+  The gate is narrower than "outbound egress closed": `api.github.com` 403s,
+  `yinggarykairui.github.io` is unreachable (000), but the git plane **and**
+  release-asset downloads over `github.com` are open. Lesson candidate for
+  2026-08-04, held back today by §14's one-per-day cap.
+- **Three must-pass lines re-tested independently and clean**, by a subagent
+  with no knowledge of the evening pass, against a server whose served
+  `index.html` sha256 was asserted equal to the committed file before and
+  after (the 2026-08-01 lesson): loads with **zero** console messages and zero
+  page errors on a cold load · survives 16 malformed hashes, 12 corrupt
+  localStorage values (including a `localStorage` rigged to throw on every
+  access) and 600 randomised key presses including chords, with the canvas
+  still rendering and the walk still working after every one · zero horizontal
+  overflow at 240/280/320/375/412 px and in 568x320 landscape, with plants,
+  the share link and both long status strings inside the frame, tapped with
+  emulated touch. The README's key-order claims were run as **one session from
+  a cold load, carrying focus forward** (the day-010 lesson) and all held.
+- **One defect found, fixed and pushed: `Ctrl+Escape` dismissed the label.**
+  The evening pass's chord guard covered the canvas handler only; the
+  document-level Escape fallback at the foot of the file had no modifier check,
+  and a chord pressed on the focused canvas bubbles into it. So the comment the
+  evening pass had just written — "before Escape too, so Ctrl+Escape stays the
+  system's" — was false the moment it was committed. Nothing was
+  `preventDefault()`ed, so no browser shortcut was stolen; the defect was the
+  false comment. Fixed in `70beabd` by leading the fallback with the same
+  three-flag guard. Verified: `Ctrl`/`Alt`/`Meta`+`Escape` leave the live
+  region byte-identical with `defaultPrevented === false`, plain `Escape` still
+  dismisses from the canvas **and** from the share link. Canvas byte-identical
+  to `ae38f78` across 32 captures (4 widths x 2 dpr x 4 states) — with a
+  baseline-vs-baseline control run first, which earned its keep: the control's
+  first run mismatched everywhere because the seeded garden had no entry for
+  the harness's own "today", so every cold load appended a fresh random plant.
+  A byte-identity harness for this app must pin today's date or the app's one
+  intended side effect reads as the diff.
+- **`gitleaks` clean again after the fix** (62 commits). Push verified by
+  `ls-remote`: `main` = `70beabd`.
+
+**Day 010 is not marked `verified`.** Two of §11.2's checks still need a plane
+this session does not have — the live demo link and the repo description /
+topics — so the spot-check is clean on everything reachable and **owed** on
+those two, exactly as days 004–009 are. Item 4 of the day-010 replay list above
+still stands for a desk session.
+
+## Replay these issue-plane actions (day 010 evening, after day 010's ship)
+
+6. On the day-010 build issue (filed by replay item 1), post this comment
+   verbatim:
+
+```
+EVENING VERIFIED day-010 (increment 4/N) — partial, and late
+
+Evening polish pass, 2026-08-03 20:39–20:56 PT: playtester + three critics, all three REJECT, hygiene on a must-pass line (the README's account of a damaged share link was untrue). Six defects closed in eight commits, 42f8a6e -> ae38f78; one defect — the canvas has no perceivable boundary, 1.14:1 where WCAG 1.4.11 asks 3:1 — applied, measured, reverted and recorded rather than patched, because no fix exists that does not either re-blend the corner antialiasing or restyle the palette. Canvas held byte-identical throughout. The pass left no hub record; HANDOFF.md carries it.
+
+Late shift, 2026-08-03 22:3x PT (§4 already-shipped path): §11.2 spot-check. gitleaks 8.18.4 ran for real this time — 61 commits, no leaks. Three must-pass lines re-tested independently and clean: cold load with zero console output, garbage input (16 hashes, 12 corrupt storage values, 600 randomised presses) survived with the walk still working, and zero horizontal overflow at 240-412 px. One defect found and fixed in 70beabd: Ctrl+Escape dismissed the label, contradicting the comment the evening pass had just written beside the canvas handler — the document-level Escape fallback had no modifier guard, and chords bubble into it. Canvas byte-identical across 32 captures after the fix.
+
+Not relabelled `verified`: the live Pages demo and the repo description/topics remain unreachable from a scheduled sandbox, the seventh straight day. Everything else on the §11.2 list passes.
+```
+
+7. §17: still unserviceable. No `job` issue is readable from a gated session —
+   ten shifts now. If one is open and waiting, it has been waiting since
+   2026-07-29.
+
+### Notes for the owner (day 010 evening)
+
+**Your factory has five scheduled tasks where it should have three, and two of
+them are duplicates.** Read straight from the account:
+
+| Task | Cron (UTC) | Fires (PT) |
+|---|---|---|
+| `Factory Noon Shift` | `0 19 * * *` | 12:00 — correct |
+| `factory-noon-shift` | `0 19 * * *` | 12:00 — **duplicate** |
+| `Factory Evening Shift` | `0 3 * * *` | 20:00 — correct |
+| `factory-evening-shift` | `0 3 * * *` | 20:00 — **duplicate** |
+| `factory-job-watch` | `35 * * * *` | hourly — correct |
+
+All five are enabled. The duplicates cost a full duplicate shift's tokens every
+day; the reason they have not corrupted anything is that §4's already-shipped
+guard and §11.1's already-verified guard make the second run of each pair exit
+early — the doctrine is absorbing the cost silently, which is why it has gone
+unnoticed for days. **Deleting `factory-noon-shift` and `factory-evening-shift`
+is a one-click fix and this shift deliberately did not do it**: they are
+infrastructure you created, and §15 prefers asking over an irreversible guess.
+
+A second, separate timing anomaly: **this session was woken as "the noon shift"
+at 22:31 PT**, which is neither cron in the table. It matches no schedule on the
+account. Whatever fired it, the doctrine handled it correctly — §4 saw the day
+already shipped and routed to the spot-check instead of a second build — but a
+shift arriving 10.5 hours after its slot is worth knowing about, and if it is a
+retry of a run that failed at 19:00 PT, then the day-010 *evening* shift's
+missing hub write may have the same root cause.
+
+Third: **`gitleaks` works here.** Day 010's sign-off says it could not be
+installed and used a labelled substitute. It installed and ran clean today from
+the same sandbox. The `secrets:` line of that sign-off is honest about what it
+did, and is now superseded rather than wrong — future shifts should try the
+real tool before reaching for the substitute.
