@@ -247,3 +247,19 @@ when followed from a cold load. One defect was investigated and deliberately
 not patched: the spoken ordinal (`3rd of 8`) is width-dependent and goes stale
 across a resize, and both candidate fixes were measurably worse than the
 defect — recorded in the repo's PROJECT.md rather than papered over.*
+
+*Day 010, after the ship: an evening polish pass ran 20:39–20:56 PT (three
+critics, all REJECT, hygiene on a must-pass line — the README's account of a
+damaged share link was untrue) and closed six defects in eight commits, but
+left no hub record at all; `HANDOFF.md` now carries it. A late shift then ran
+the §11.2 spot-check under §4's already-shipped path. **`gitleaks` ran for
+real** — 8.18.4, 61 commits, no leaks — the first time in six days that §9.1
+was satisfied by the tool itself rather than a labelled substitute, and the
+gate is narrower than it looked: `api.github.com` 403s and `github.io` is
+unreachable, but git and release downloads over `github.com` are both open.
+Three must-pass lines re-tested independently and clean; one defect found and
+fixed (`70beabd`): `Ctrl+Escape` dismissed the label, contradicting the comment
+the evening pass had committed beside it hours earlier. Day 010 stays
+**unverified** — the live demo and the repo description/topics still need a
+plane no scheduled runner has had since day 004. KPI numbers are unchanged:
+this shift shipped nothing, by design.*
