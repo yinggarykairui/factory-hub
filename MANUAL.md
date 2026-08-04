@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.5.0
+manual_version: 1.6.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -241,6 +241,25 @@ rises on purpose, not by drift.
 1. **gitleaks scan.** Any hit: stop, scrub, rewrite history before anything else.
 2. Commits are incremental and honest (scaffold → feature → fix → docs). Never
    one giant commit; never staged fakery.
+   **Authorship — set this before the first commit of every run, in every repo
+   the run touches, or the day's work does not exist as far as GitHub is
+   concerned:**
+
+   ```
+   git config user.name  "Kairui Ying"
+   git config user.email "251826108+yinggarykairui@users.noreply.github.com"
+   ```
+
+   GitHub greens a contribution square only when the commit's *author* email
+   resolves to the owner's account and the commit lands on the default branch.
+   Ten days of factory commits were authored `factory@users.noreply.github.com`,
+   `factory@localhost`, `build-factory`, `factory-noon` and
+   `Claude <noreply@anthropic.com>` — five identities, none of them the owner's,
+   all of them grey. `@users.noreply.github.com` looks official and is not: the
+   address only counts in the `<id>+<login>@` form above. The sandbox's global
+   git config is not the owner's, so a run that does not set this explicitly
+   inherits a stranger. Verify after the first commit: `git log -1 --format=%ae`
+   must print the address above, exactly.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
@@ -588,6 +607,22 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.6.0** (2026-08-03) — commit authorship (§9.2), owner-directed. Every run
+  sets `user.name`/`user.email` to the owner's GitHub-linked noreply address
+  before its first commit, in every repo it touches. Ten days of ships were
+  authored under five non-owner identities — `factory@users.noreply.github.com`
+  (which looks official and counts for nothing), `factory@localhost`,
+  `build-factory`, `factory-noon` and `Claude <noreply@anthropic.com>` — so not
+  one of ~57 factory commits ever reached the owner's contribution graph. The
+  factory's whole visible output was invisible on the profile it exists to
+  build. Canary: §9 is on the §14 canary list, and the dry run is the commit
+  that carries this edit — it is authored under the new rule and verified with
+  `git log -1 --format=%ae` before the push. Backfilling the ten grey days is
+  **not** done here: it needs a history rewrite of ~57 commits across four
+  repos, which §15 forbids without an explicit owner instruction, and every
+  commit SHA cited in `HANDOFF.md`, the dashboard and three `PROJECT.md` files
+  would become a dangling reference.
 
 - **1.5.0** (2026-07-27) — application package v2 (meta issue #33): §17
   gains cover letters + drafted outreach, demo GIFs on job-lane ships,
