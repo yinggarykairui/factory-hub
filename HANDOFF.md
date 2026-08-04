@@ -15,7 +15,7 @@ day 005, then day 006's ship, then the day-006 evening comment.
 **Status: day 005 SHIPPED and POLISHED, not `verified`.** The noon shift wrote
 the spec and died before any code; the evening rescue finished the increment
 under §11.3 and pushed it; the 20:00 evening shift then ran the §11 evening
-mandate's polish cycles over it. `trace-lens` main is at `008668e`. What is
+mandate's polish cycles over it. `trace-lens` main is at `efa7dd2`. What is
 still owed is the issue-plane record and the §11.2 live-demo verification —
 both below, and the verification **cannot** be done from a scheduled sandbox.
 
@@ -26,7 +26,7 @@ fifth** occurrences.
 
 **Noon (12:00 PT).** Could not read or write the issue plane. Picked a
 self-picked maintenance revisit of `trace-lens`, wrote the increment spec into
-`PROJECT.md` (commit `2c3f7e0`) and posted the full spec into this file — then
+`PROJECT.md` (commit `7e9fb07`) and posted the full spec into this file — then
 died before writing a line of code.
 
 **Evening rescue (the first 20:00-window run).** Booted to verify today's ship
@@ -34,14 +34,14 @@ and found there wasn't one: the dashboard's last row was day 004 (2026-07-27),
 and **2026-07-28 was a zero day** — no row, no commits, no trace of either
 shift. So the evening mandate fell through to §11.3, and that shift built the
 increment from the noon shift's verbatim spec, ran two critic→fix cycles, and
-shipped it at `8b938c2`.
+shipped it at `997eeb5`.
 
 **Evening shift (20:00 PT, this run).** Booted, read the dashboard's last row —
 day 005, shipped, not verified — and ran the §11 evening mandate: independent
 verification with fresh eyes, then polish. Same gating (see the routing table
 below; it still holds exactly). **The spot-check found a blocker**, so under
 §11.2 the ship was treated as mid-flight and finished under §7: three
-critic→fix cycles, 14 commits, `8b938c2` → `008668e`. Details in the
+critic→fix cycles, 14 commits, `997eeb5` → `efa7dd2`. Details in the
 "What the evening shift did" section. The one thing it could not do is the one
 thing the mandate ends with: load the live demo.
 
@@ -86,17 +86,17 @@ scope added, every fence item held. Commits on `main`:
 
 | Commit | What |
 |---|---|
-| `0d8f22d` | D3 — one muted hint line in the empty pane when paused before the first event |
-| `4e95a0b` | D2 — card expand state keyed by `call_id`, held in `Transcript` outside the projection |
-| `18548b1` | deep-link — `#t=<seconds>` read once at load, written back debounced via `replaceState` |
-| `f1017ba` | cycle-1 fixes (critic blockers: dead Play button, README) |
-| `a75d465` | cycle-2 fixes (residual silent-tail window, README clamping clause) |
-| `8b938c2` | README share paragraph split per STYLE.md; PROJECT.md done-map + open threads |
+| `e5251c2` | D3 — one muted hint line in the empty pane when paused before the first event |
+| `723c1a5` | D2 — card expand state keyed by `call_id`, held in `Transcript` outside the projection |
+| `2171592` | deep-link — `#t=<seconds>` read once at load, written back debounced via `replaceState` |
+| `e63399b` | cycle-1 fixes (critic blockers: dead Play button, README) |
+| `4284209` | cycle-2 fixes (residual silent-tail window, README clamping clause) |
+| `997eeb5` | README share paragraph split per STYLE.md; PROJECT.md done-map + open threads |
 
 ## What the evening shift did (2026-07-29, 20:00 PT)
 
 Read `trace-lens`'s `PROJECT.md` for the full record — it is committed at
-`008668e` and is the durable version of this section.
+`efa7dd2` and is the durable version of this section.
 
 **Independent verification with fresh eyes, per the mandate.** Two adversarial
 critic pairs with clean context (playtester + correctness; ux + hygiene) drove
@@ -167,7 +167,7 @@ evening rescue. 9–11 are the evening shift's.
    filed retroactively per HANDOFF (the day-003 → #28 pattern). Label
    `type:web`, `size:s`.
 2. Post the increment spec as a comment, verbatim — it is preserved in this
-   file's git history at commit `2ccaaff` (`git show 2ccaaff:HANDOFF.md`,
+   file's git history at commit `11d3ce9` (`git show 11d3ce9:HANDOFF.md`,
    section "The increment spec"), and mirrored in `trace-lens`'s `PROJECT.md`
    under "Increment 2".
 3. Post the ship-day sign-off (below) as the closing comment, close the issue,
@@ -247,7 +247,7 @@ found:    the spot-check FAILED, so §11.2 sent this to mid-flight and §7 cycle
           evaluation — before React mounted — and the page was permanently
           blank, no UI. The ship-day sign-off's "survives garbage input" line
           was false within hours; this comment is the correction.
-polished: 3 cycles, 14 commits, 8b938c2 → 008668e, no scope added and no fence
+polished: 3 cycles, 14 commits, 997eeb5 → efa7dd2, no scope added and no fence
           item moved. Also closed: negative virtual time (could publish
           #t=-0.1 and render -1:-1 / 0:47), stale hashes surviving Play-at-end
           / Restart / the run's own end, a draw-vs-seek coordinate mismatch
@@ -320,7 +320,7 @@ been certifiable by the runners that were awake.
 # Day 006 — 2026-07-30 noon shift
 
 **Status: day 006 SHIPPED, not `verified`.** `orbit-doodle` main is at
-`38e0c5b`. Same sandbox gating as 2026-07-29 — the **sixth** consecutive
+`c5d52a6`. Same sandbox gating as 2026-07-29 — the **sixth** consecutive
 scheduled run with no repo enrollment. The routing table above still holds
 exactly, re-probed at boot: `/user` 200, every `/repos/...` call 403 with the
 `add_repo` message, `github.io` unreachable (curl exit 56, no status code),
@@ -348,18 +348,18 @@ day number.
 
 `orbit-doodle` increment 2: stroke history with undo/redo, Clear as one
 undoable step, replay-based resize, and a three-pen picker. 16 commits on
-`main`, `5f379bb` → `38e0c5b`:
+`main`, `0280e24` → `c5d52a6`:
 
 | Commit | What |
 |---|---|
-| `42c6c0c` | PROJECT.md — back-filled v0 spec + increment-2 spec (the repo had none) |
-| `5aa36f2` | refactor: strokes recorded as replayable pen paths; `redraw()` is the only bulk paint |
-| `c48915c` | feat: undo and redo — buttons and Ctrl/Cmd+Z, one code path |
-| `f7652c0` | feat: Clear becomes one undoable step |
-| `7edf1dc` | feat: three pens — orbit, coil, drift |
-| `feb499f`–`7a525c9` | cycle-1 fixes (5 commits) |
-| `7f508b1`–`05412d6` | cycle-2 fixes (4 commits) |
-| `44ad721`, `b1e799a`, `38e0c5b` | screenshot recapture, PROJECT.md done-map, phone hint fits one line |
+| `4c853bf` | PROJECT.md — back-filled v0 spec + increment-2 spec (the repo had none) |
+| `15d7787` | refactor: strokes recorded as replayable pen paths; `redraw()` is the only bulk paint |
+| `57e97ca` | feat: undo and redo — buttons and Ctrl/Cmd+Z, one code path |
+| `5c91e12` | feat: Clear becomes one undoable step |
+| `da5852e` | feat: three pens — orbit, coil, drift |
+| `f8f4140`–`33f4523` | cycle-1 fixes (5 commits) |
+| `f1400cc`–`4034223` | cycle-2 fixes (4 commits) |
+| `bf6d076`, `0a7adfd`, `c5d52a6` | screenshot recapture, PROJECT.md done-map, phone hint fits one line |
 
 Two adversarial cycles, four independent clean-context critic passes, all three
 critic roles ending APPROVE. Cycle 1 found two real state-corruption blockers
@@ -379,7 +379,7 @@ regression, and invisible to every pass that only read the diff.
    `type:web`, `size:m`.
 2. Post the increment spec as a comment, verbatim. It is preserved in
    the appendix at the end of this file, and mirrored in `orbit-doodle`'s
-   `PROJECT.md` at `38e0c5b` under "Increment 2".
+   `PROJECT.md` at `c5d52a6` under "Increment 2".
 3. Post the sign-off below as the closing comment, close the issue, label
    `shipped`.
 4. If the queue held a `priority` or `job` issue this shift could not see: note
@@ -556,7 +556,7 @@ step, no network. Same as day 004; §13 applies unchanged.
 # Day 006 evening shift — 2026-07-30, 20:00 PT
 
 **Status: day 006 POLISHED, still not `verified`.** `orbit-doodle` main is at
-`c84b362` (was `38e0c5b` at the ship). The **seventh** consecutive scheduled run
+`6e47766` (was `c5d52a6` at the ship). The **seventh** consecutive scheduled run
 with no repo enrollment; the routing table above holds exactly, re-probed at
 boot: `/user` and `/rate_limit` 200, every `/repos/...` path 403 with the
 `add_repo` message, GraphQL blocked, `github.io` unreachable (curl exit 56),
@@ -616,7 +616,7 @@ recorded the Save-ack race as closed when it is not. `ackSave()` runs inside
 the async `toBlob` callback while the guard runs synchronously, so emptying the
 canvas during the 20–47 ms encode leaves a dimmed button reading `Saved ✓` for
 the rest of the 1.6 s timer. No state corruption, self-heals, export still
-correct. `c84b362` corrects the done-map and files the race, the phone-hostile
+correct. `6e47766` corrects the done-map and files the race, the phone-hostile
 "widen the window" copy, and a focus-drop nit as open threads.
 
 Rubric, independently re-scored: delight 4 · clarity 4 · readme 5 · scope 5 =
@@ -679,7 +679,7 @@ found:    the spot-check FAILED. The blocker was in the README — the §9.4
           from a phone-canvas edge, because penScale measured the viewport,
           which counts the control bar as drawing surface.
 polished: 3 cycles + a fourth independent verification pass, 18 commits,
-          38e0c5b -> c84b362, no scope added and no fence item moved. Also
+          c5d52a6 -> 6e47766, no scope added and no fence item moved. Also
           closed: zero :hover rules across 12 controls, no :focus-visible (a
           tabbed swatch was indistinguishable from the selected one), no
           aria-pressed on either toggle group and swatches labelled "color 1",
@@ -703,7 +703,7 @@ kept:     a Save-ack race found by the fourth pass after the loop cap was spent
           synchronously, so emptying the canvas during the 20-47 ms encode
           leaves a dimmed button reading "Saved ✓" until the 1.6 s timer. No
           state corruption, correct export, self-heals. PROJECT.md had recorded
-          this as closed; c84b362 corrects that line and files the race, the
+          this as closed; 6e47766 corrects that line and files the race, the
           phone-hostile "widen the window" copy, and a keyboard focus-drop as
           open threads. Also kept: the residual 20% edge loss and the phone pen
           compression (both design calls), and replay cost growing linearly with
@@ -754,7 +754,7 @@ shifts from an environment that already has them.
 # Day 007 — 2026-07-31 evening shift (§11.4 rescue)
 
 **Status: day 007 SHIPPED, not `verified`.** `pixel-garden` main is at
-`9eb0f4f` (the ship is `756dadb`; `9eb0f4f` is the doc correction the fifth
+`325faca` (the ship is `b444a7d`; `325faca` is the doc correction the fifth
 independent pass forced). The **eighth** consecutive scheduled run with no repo enrollment;
 the routing table near the top of this file still holds exactly, re-probed at
 boot: `/user` 200, every `/repos/...` call 403 with the `add_repo` message,
@@ -786,21 +786,21 @@ labelled `<species> · <date>` (today's own plant reads `today`); the canvas is
 focusable and `←`/`→`/Home/End walk it left to right, Enter/Space names, Escape
 dismisses. No new state: species derives from the seed the plant already draws
 from, the date is the `day` field storage and the share hash already carry.
-18 commits on `main`, `1a635b3` → `756dadb`.
+18 commits on `main`, `847195c` → `b444a7d`.
 
 | Commit | What |
 |---|---|
-| `52cf6e4` | PROJECT.md — increment-3 spec (planner artifact; §4 README-first sentence inside) |
-| `9e9495f` | refactor: expose species; per-plant geometry hoisted into a `layout()` pass |
-| `545dbe0` | feat: tap a plant to meet it — highlight + `species · date` label |
-| `0ac46d9` | feat: keyboard walk — tabindex, arrows, Home/End, Enter, Escape |
-| `e566b68` | feat: accessible name follows the selection |
-| `25a476a`, `5ef02d5` | docs: README (increment 3, provenance footer) + screenshot |
-| `d6524f7`–`dbf4ea7` | cycle-1 fixes (8 commits, F1–F10) |
-| `f8a74a2`–`ff6abf3` | docs: screenshot recaptured, caption, increment-3 done-map |
-| `cfbdc4d`–`c661e30` | cycle-3 fixes (6 commits, G1–G6) |
-| `9c1db6a`–`756dadb` | ship-blocker round (4 commits) |
-| `9eb0f4f` | docs: corrections forced by the fifth independent pass |
+| `e907df0` | PROJECT.md — increment-3 spec (planner artifact; §4 README-first sentence inside) |
+| `d5fdca8` | refactor: expose species; per-plant geometry hoisted into a `layout()` pass |
+| `37437b0` | feat: tap a plant to meet it — highlight + `species · date` label |
+| `bd5b555` | feat: keyboard walk — tabindex, arrows, Home/End, Enter, Escape |
+| `f2dccaa` | feat: accessible name follows the selection |
+| `2998928`, `9bd7d5c` | docs: README (increment 3, provenance footer) + screenshot |
+| `29945c7`–`7978898` | cycle-1 fixes (8 commits, F1–F10) |
+| `99d18e3`–`a1b7dd0` | docs: screenshot recaptured, caption, increment-3 done-map |
+| `09ea9b5`–`e336cb1` | cycle-3 fixes (6 commits, G1–G6) |
+| `84e8a1c`–`b444a7d` | ship-blocker round (4 commits) |
+| `325faca` | docs: corrections forced by the fifth independent pass |
 
 **Four independent clean-context critic passes plus a fifth fix round.**
 Cycle 1: two critics both returned BLOCK on the same defect independently — the
@@ -824,8 +824,8 @@ measurements before the deadline.
    retroactively per HANDOFF (the day-003 → #28 pattern). Label `type:web`,
    `size:s`.
 2. Post the increment spec as a comment, verbatim. It is preserved in this
-   repo's git history at commit `52cf6e4`
-   (`git show 52cf6e4:PROJECT.md` is the hub-side copy of the day's plan; the
+   repo's git history at commit `e907df0`
+   (`git show e907df0:PROJECT.md` is the hub-side copy of the day's plan; the
    authoritative text is `pixel-garden`'s `PROJECT.md` under "Increment 3",
    including its *Spec correction (day 007, adversarial review)* note).
 3. Post the sign-off below as the closing comment, close the issue, label
@@ -843,15 +843,15 @@ measurements before the deadline.
    `screenshot.png` renders in the README; repo description and topics are set.
    Clean → relabel the closed issue `verified`. Not clean → §11.3.
 6. **Carry these two forward.** A fifth independent pass ran on the blocker
-   fixes alone (`9c1db6a`..`756dadb`) and returned **APPROVE**, re-measuring
+   fixes alone (`84e8a1c`..`b444a7d`) and returned **APPROVE**, re-measuring
    both claims with the pre-fix build as a positive control. It found no
    functional defect and two record-quality ones, both already corrected in
-   `9eb0f4f` rather than smoothed over: **(a)** the dotted keyboard cursor is
+   `325faca` rather than smoothed over: **(a)** the dotted keyboard cursor is
    now unreachable — the fixes leave `drawCursor()` guarded out of every state
    a user can reach, so `keyboardFocus()`, `drawCursor()` and
    `traceSilhouette()`'s `dotted` branch are dead code that the prose still
    describes; deleting them is the first item of the next increment and
-   `pixel-garden`'s PROJECT.md open threads carry it. **(b)** commit `0a6090b`
+   `pixel-garden`'s PROJECT.md open threads carry it. **(b)** commit `9f180e5`
    (411 px) and PROJECT.md (215 px) gave different residual-paint figures for
    the same measurement; the number is outline-length and therefore
    fixture-specific, and PROJECT.md now says so alongside the independent
@@ -874,8 +874,8 @@ SHIP day-007 pixel-garden
 built:   pixel-garden increment 3 — "meet your plants": tap or click any plant (own garden or shared) and a highlight traces its own pixels while a label names it `<species> · <date>`, with today's own plant reading `today`; the canvas is focusable and ←/→/Home/End walk it left to right, Enter/Space names the plant under the cursor, Escape dismisses; a `tap a plant to meet it` hint retires on first selection. No new state — species comes from the seed the plant already draws from, the date from the `day` field storage and the share hash already carry.
 cut:     nothing from the spec — all 7 done-checklist items shipped. One spec line was corrected mid-build rather than followed: the arrows were specced to walk *planting* order, which with `slot = (index*17) % 40` placement moved the highlight backwards on 5 of 13 presses; they walk drawn-x order instead, and PROJECT.md carries the correction with its reasoning. Left open and disclosed in PROJECT.md: the hint returns on every load until a plant is selected (remembering "seen" needs a storage key the fence forbids), the keyboard walk does not wrap, the accessible name follows the label but is not announced without a live region (priced out of scope), and two pre-existing v0 geometry items (sub-232px vertical stretch, ~0.003% of seeds producing ferns wide enough to invert the lateral clamp).
 next:    none filed — the issue plane was unreachable. PROJECT.md's open threads carry the next increment's scope.
-rubric:  must-pass 5/7 verified · 2 unverifiable this shift (repo description/topics, and the live Pages URL — the GitHub API and github.io were both egress-blocked for the eighth consecutive scheduled run) · delight 4 · clarity 4 · readme 4 · scope 5 = 4.25. gitleaks clean (its one hit is the localStorage key name `pixel-garden.v1`, flagged on entropy). The unselected 40-plant garden renders pixel-identical to the previous ship (`1a635b3`) and emits a byte-identical share hash — independently re-measured by three separate passes, so no existing garden in the world was reshaped.
-critics: correctness PASS · ux PASS · hygiene PASS — after five independent clean-context passes and four fix rounds. Passes 1 and 2 both returned BLOCK independently on the same defect; pass 3 APPROVE; pass 4 BLOCK on two defects passes 1–3 had all read past; pass 5, on the blocker fixes alone, APPROVE — it re-measured both fix claims with the pre-fix build as a positive control and asserted after every step of 14 mixed pointer/keyboard sequences that the canvas is exactly one reference frame and the label agrees with what is highlighted (zero mismatches, zero stray paint). Pass 5's two findings were record-quality, not functional, and are corrected in `9eb0f4f`: two shipped records disagreed on a fixture-specific pixel count, and the dotted keyboard cursor is now unreachable dead code the prose still described.
+rubric:  must-pass 5/7 verified · 2 unverifiable this shift (repo description/topics, and the live Pages URL — the GitHub API and github.io were both egress-blocked for the eighth consecutive scheduled run) · delight 4 · clarity 4 · readme 4 · scope 5 = 4.25. gitleaks clean (its one hit is the localStorage key name `pixel-garden.v1`, flagged on entropy). The unselected 40-plant garden renders pixel-identical to the previous ship (`847195c`) and emits a byte-identical share hash — independently re-measured by three separate passes, so no existing garden in the world was reshaped.
+critics: correctness PASS · ux PASS · hygiene PASS — after five independent clean-context passes and four fix rounds. Passes 1 and 2 both returned BLOCK independently on the same defect; pass 3 APPROVE; pass 4 BLOCK on two defects passes 1–3 had all read past; pass 5, on the blocker fixes alone, APPROVE — it re-measured both fix claims with the pre-fix build as a positive control and asserted after every step of 14 mixed pointer/keyboard sequences that the canvas is exactly one reference frame and the label agrees with what is highlighted (zero mismatches, zero stray paint). Pass 5's two findings were record-quality, not functional, and are corrected in `325faca`: two shipped records disagreed on a fixture-specific pixel count, and the dotted keyboard cursor is now unreachable dead code the prose still described.
 lesson:  an arrow key that both moves the cursor and selects as it goes makes a `select(selected === cursor ? -1 : cursor)` toggle permanently dead, so the README's "press Enter to name a plant" shipped meaning the opposite. Three critic passes read that branch; the pass that caught it was the one that pressed the keys in the README's own documented order. Grade the documented path, not the code path.
 manual_version: 1.5.0 · model: claude-opus-5
 ```
@@ -896,8 +896,8 @@ what it built, and tonight that cost the day its final independent pass.
 
 # Day 008 — 2026-08-01 noon shift
 
-**Status: day 008 SHIPPED, not `verified`.** `trace-lens` main is at `f3f0d6f`
-(the ship is `321ed7f`; `f3f0d6f` is a one-line log correction the independent
+**Status: day 008 SHIPPED, not `verified`.** `trace-lens` main is at `25fbe11`
+(the ship is `db8afd2`; `25fbe11` is a one-line log correction the independent
 post-loop pass forced). The **ninth** consecutive scheduled run with no repo
 enrollment; the routing table near the top of this file still holds exactly,
 re-probed at boot: `/user` 200 (`yinggarykairui`), every `/repos/...` call 403
@@ -921,24 +921,24 @@ recipient.
 
 `trace-lens` increment 3 — **a shared link that works on a tab you already have
 open, and a timeline that answers the keyboard.** 30 commits on `main`,
-`7a903ac` → `f3f0d6f`.
+`48f6207` → `25fbe11`.
 
 | Commit | What |
 |---|---|
-| `7a903ac` | PROJECT.md — increment-3 spec (planner artifact; §4 README-first sentences inside) |
-| `602e878`–`5d59d3d` | A — a `#t=` link arriving in an open tab seeks and pauses there; README; docs/ |
-| `5f85985`–`9f8b89b` | B — `seek()` clamps once and returns where it landed; the timeline takes focus and answers the keyboard; README; docs/ |
-| `d4181a7`–`e495645` | C — a legend under the lane names each tool's colour; README + caption; docs/ |
-| `a2b91d6` | done-map for what increment 3 landed |
-| `d876413`–`84390ba` | cycle-1 fixes (8 commits: `#t=1e999` clamps, lane contrast, one focus ring, `aria-pressed`, 44 px targets, phone card summaries, screenshot recapture, PROJECT.md) |
-| `095918a`–`b5df429` | cycle-2 fixes (6 commits: the progress rail, the caption, the opener, the header, screenshot recapture, PROJECT.md) |
-| `7252537`–`f3f0d6f` | cycle-3 fixes (4 commits: two README claims, the page metadata, PROJECT.md ×2) |
+| `48f6207` | PROJECT.md — increment-3 spec (planner artifact; §4 README-first sentences inside) |
+| `050dfac`–`4798013` | A — a `#t=` link arriving in an open tab seeks and pauses there; README; docs/ |
+| `6be1f98`–`a2b5031` | B — `seek()` clamps once and returns where it landed; the timeline takes focus and answers the keyboard; README; docs/ |
+| `da84f10`–`43a27d4` | C — a legend under the lane names each tool's colour; README + caption; docs/ |
+| `cbf936e` | done-map for what increment 3 landed |
+| `53002b5`–`00e8b6d` | cycle-1 fixes (8 commits: `#t=1e999` clamps, lane contrast, one focus ring, `aria-pressed`, 44 px targets, phone card summaries, screenshot recapture, PROJECT.md) |
+| `167378c`–`64078ec` | cycle-2 fixes (6 commits: the progress rail, the caption, the opener, the header, screenshot recapture, PROJECT.md) |
+| `c3ef746`–`25fbe11` | cycle-3 fixes (4 commits: two README claims, the page metadata, PROJECT.md ×2) |
 
 **Eight independent clean-context passes across three cycles**, plus a ninth on
 the last fix round alone.
 
 - **Cycle 1 — all three critics returned BLOCK, independently, on the same
-  defect.** `e495645` had rewritten the README's screenshot caption to describe
+  defect.** `43a27d4` had rewritten the README's screenshot caption to describe
   the new legend without recapturing `screenshot.png`, which was still the
   day-005 image: 0 px of legend where the build draws 18.6 px. Every prose
   sentence was true; the hero image was the lie. The same round found nine
@@ -955,7 +955,7 @@ the last fix round alone.
 - **Cycle 3 — one APPROVE, one BLOCK, agreeing on two truth defects.** The
   README still said the text streams "word by word" and that a seek lands "even
   mid-word", and `index.html`'s `description` and `og:description` still said
-  "token-by-token" — a phrase the same day's `1863456` had already ruled untrue
+  "token-by-token" — a phrase the same day's `a8332da` had already ruled untrue
   one line above and not grepped for. Measured: 87 deltas, 80 internal
   boundaries, **0** non-whitespace; `project.ts` appends whole deltas only, so a
   partial word cannot render.
@@ -973,7 +973,7 @@ the last fix round alone.
    2026-08-01 under the sandbox gating and filed retroactively per HANDOFF (the
    day-003 → #28 pattern). Label `type:web`, `size:m`.
 2. Post the increment spec as a comment, verbatim. It is committed in
-   `trace-lens` at `7a903ac` — `git show 7a903ac:PROJECT.md`, the section
+   `trace-lens` at `48f6207` — `git show 48f6207:PROJECT.md`, the section
    "## Increment 3 spec (day 008 revisit — planner artifact)". The authoritative
    copy is `trace-lens`'s current `PROJECT.md` under the same heading, whose
    only edits since are the two log corrections named in this file.
@@ -1041,7 +1041,7 @@ context that had never seen the previous one.
 # Day 008 evening shift — 2026-08-01, 20:00 PT
 
 **Status: day 008 POLISHED, still not `verified`.** `trace-lens` main is at
-`6c0e031`; the noon shift left it at `f3f0d6f`. 33 commits tonight, all pushed
+`60406fa`; the noon shift left it at `25fbe11`. 33 commits tonight, all pushed
 over the git plane at three stable points. The **tenth** consecutive scheduled
 run with no repo enrollment — the routing table near the top of this file holds
 exactly, re-probed at boot: `/user` 200 (`yinggarykairui`), every `/repos/...`
@@ -1061,7 +1061,7 @@ ran; §11.2's live-demo line did not.
 Three cycles under §11's evening budget, each one a fresh-context crew that had
 never seen the previous cycle's transcript. Feature freeze held throughout: no
 fence item moved, no scope added, `screenshot.png` never re-captured (verified
-untouched — same blob at `f3f0d6f` and `6c0e031`).
+untouched — same blob at `25fbe11` and `60406fa`).
 
 **Cycle 1 — playtester + all three critics. Three of the four returned BLOCK.**
 The blocker was a must-pass line: the README's deep-link paragraph ended *"so
@@ -1069,7 +1069,7 @@ the address bar and the replay stay in agreement"*, and it is false. Autoplay,
 click an in-page `#t=30.0` link, press Back **once**: the replay stays parked at
 0:30 and `location.hash` goes empty. The behaviour is correct and deliberate — a
 bare hash is junk, and junk never moves the viewer — so the fix was prose, not
-code. Ten defects closed in 13 commits (`8a3baab`–`1f9226d`), including: Space
+code. Ten defects closed in 13 commits (`c1d86fc`–`2063b2a`), including: Space
 hijacking activation on 10 of 13 focus stops (focus Restart, press Space, and
 the clock *starts playing* instead — a silently wrong action); the 44 px touch
 floor living inside `@media (max-width: 480px)`, so a phone in landscape got
@@ -1099,7 +1099,7 @@ Cycle 2 reverted both, kept the one part that worked (the selected chip's own
 dark moat, 9.66:1), and closed the seam properly with a spread *larger* than the
 outline's outer edge, so the outline repaints the amber over the middle and
 leaves `--bg` on both sides. Four ring geometries became two. 11 commits
-(`1ba91c0`–`3edf306`), also returning Space to the two scroll panes cycle 1 had
+(`5047514`–`1870ca7`), also returning Space to the two scroll panes cycle 1 had
 promoted to ringed tab stops without adding them to the exception list, and
 correcting nine records that the shift's own commits had made stale inside one
 cycle.
@@ -1108,13 +1108,13 @@ cycle.
 landed (lane border present and `#5c657a` while focused, rail back to 3.75 px),
 the seam is closed on all four sides at 1440 / 375 / 320, **all 17 contrast
 baselines unmoved to two decimals**, and the resting fine-pointer render is
-**0 differing pixels** against `f3f0d6f` across 18 viewport × timestamp
+**0 differing pixels** against `25fbe11` across 18 viewport × timestamp
 combinations. The one finding worth acting on was a records defect: the file's
 last "## Open threads" list — the one `PROJECT.md:4` tells the next revisit's
 planner to diff against — still said the canvas was unfocusable, that there was
 no legend, and that live `hashchange` was "the fence item to open next". All
 three shipped in increment 3. A planner reading it would have re-specced work
-already done. Closed in a prose-only pass, 9 commits (`0a494e4`–`6c0e031`),
+already done. Closed in a prose-only pass, 9 commits (`0047822`–`60406fa`),
 along with a fence list that contradicted its own done-map, a scroll figure that
 disagreed with the source comment recording the same measurement, and six
 sections in one file all called "cycle N, day 008 evening" when three of them
@@ -1159,7 +1159,7 @@ were the *build* shift's, run at 13:07 PT.
 
 ```
 EVENING day-008 trace-lens (§11 evening mandate)
-polished: 33 commits, f3f0d6f → 6c0e031, three cycles, feature freeze held. Cycle 1 (playtester + three critics, three BLOCK): the README's "so the address bar and the replay stay in agreement" is false — Back past the first #t= entry leaves the address bar empty with the replay parked where it was — plus Space hijacking activation on 10 of 13 focus stops (Restart focused + Space started the clock instead of restarting), the 44px touch floor gated on viewport width so a landscape phone got 33.7px targets, right/middle-click seeking the lane, the last unguarded DOM call, and a share link flooring to tenths that lost a whole word-chunk in 2 of 25 scrubs. Cycle 2 (three critics, one BLOCK): cycle 1's own focus-ring fix was wrong — a positive-spread box-shadow paints outward from the border box, so it filled the gap on the ring's *inside* while the amber surface it existed to separate from is outside; the 1.00:1 seam was unchanged before and after, the rule was a no-op everywhere else, and the lane variant erased the lane's 1px border while focused and shaved the progress rail from 3.75px to 2.75px to break up a "9px amber slab" that never existed. Reverted; seam closed properly with a spread past the outline's outer edge; four ring geometries down to two. Cycle 3 (three critics, all APPROVE): reverts confirmed, all 17 contrast baselines unmoved, resting render 0 differing pixels against f3f0d6f across 18 viewport × timestamp combinations — and one records defect worth the pass, the open-thread list the next planner reads still holding increment 3's three shipped features open. Closed prose-only.
+polished: 33 commits, 25fbe11 → 60406fa, three cycles, feature freeze held. Cycle 1 (playtester + three critics, three BLOCK): the README's "so the address bar and the replay stay in agreement" is false — Back past the first #t= entry leaves the address bar empty with the replay parked where it was — plus Space hijacking activation on 10 of 13 focus stops (Restart focused + Space started the clock instead of restarting), the 44px touch floor gated on viewport width so a landscape phone got 33.7px targets, right/middle-click seeking the lane, the last unguarded DOM call, and a share link flooring to tenths that lost a whole word-chunk in 2 of 25 scrubs. Cycle 2 (three critics, one BLOCK): cycle 1's own focus-ring fix was wrong — a positive-spread box-shadow paints outward from the border box, so it filled the gap on the ring's *inside* while the amber surface it existed to separate from is outside; the 1.00:1 seam was unchanged before and after, the rule was a no-op everywhere else, and the lane variant erased the lane's 1px border while focused and shaved the progress rail from 3.75px to 2.75px to break up a "9px amber slab" that never existed. Reverted; seam closed properly with a spread past the outline's outer edge; four ring geometries down to two. Cycle 3 (three critics, all APPROVE): reverts confirmed, all 17 contrast baselines unmoved, resting render 0 differing pixels against 25fbe11 across 18 viewport × timestamp combinations — and one records defect worth the pass, the open-thread list the next planner reads still holding increment 3's three shipped features open. Closed prose-only.
 verified: NO — §11.2's live-demo line is unsatisfiable from a scheduled sandbox for the tenth consecutive run. github.io is unreachable (the proxy 403s all non-allowlisted egress tonight) and WebFetch returns PROVENANCE_REQUIRED, which needs a human approver. Everything checkable from the git plane is clean: committed docs/ byte-identical to a fresh build of HEAD (verified independently five times tonight), tsc clean, zero console errors/warnings/pageerrors across full replays, every junk hash absorbed with #root intact, no horizontal scroll at 320 or 375, screenshot.png untouched and re-confirmed as an image of this build (0 differing pixels in a deterministic re-render).
 rubric:  the day's row keeps 4.50 — that is what shipped at the ship, and nothing tonight made the build worse. The evening's own three independent cycle-3 passes scored delight 4 · clarity 4 · readme 4 · scope 5 = 4.25 as measured mid-shift. Both clarity docks were for stale records this shift's own cycles created (three source comments citing the old hash resolution; the open-thread list holding shipped features open) and both were closed before the shift ended; the readme dock was one critic finding the qualified Space sentence accurate but opaque. Recording the measured number rather than the number after the fixes, because that is what the passes actually returned.
 secrets: gitleaks could not be installed in the scheduled sandbox (GitHub releases and the Go module proxy both return 403), so the scan was run with detect-secrets (27 plugins) plus explicit provider regexes over the full worktree and all 215 blobs in all 90 commits of history — clean, with the only high-entropy hits being npm sha512 integrity digests in package-lock.json. The noon sign-off's "gitleaks 8.30.0 over the full history" line could not be reproduced by any of tonight's three hygiene passes; treat it as unverified.
@@ -1200,7 +1200,7 @@ with a free slot:
 # Day 009 — 2026-08-02 noon shift
 
 **Status: day 009 SHIPPED, not `verified`.** `orbit-doodle` main is at
-`48451f7`. The **eleventh** consecutive scheduled run with no repo enrollment.
+`c989154`. The **eleventh** consecutive scheduled run with no repo enrollment.
 Re-probed at boot and unchanged: every `/repos/...` REST call returns 403 with
 the `add_repo` message, `github.io` is unreachable, and git-over-HTTPS is open
 in both directions via the `GIT_CONFIG_GLOBAL=/dev/null` bypass. There is still
@@ -1226,21 +1226,21 @@ spec before any code (see the increment-3 section of the repo's `PROJECT.md`).
 ## What shipped (day 009)
 
 `orbit-doodle` increment 3 — **the page draws itself one flourish before you
-touch it, then gets out of the way.** 31 commits on `main`, `c84b362` →
-`48451f7`.
+touch it, then gets out of the way.** 31 commits on `main`, `6e47766` →
+`c989154`.
 
 | Commit | What |
 |---|---|
-| `044cc47` | PROJECT.md — increment-3 spec + the README the build had to make true (planner artifact, §4 README-first) |
-| `2b50e45` | the page draws one stroke of its own on first load |
-| `dbaf88c` | `Saved ✓` asks the ink question again inside the `toBlob` callback |
-| `a03ba65` | the off-canvas hint names a remedy the device has |
-| `6058036` | a control that disables itself hands focus on instead of dropping it |
-| `c523608` | only a control in the bar dismisses the flourish, not its padding |
-| `44b6a59`–`b8a589a` | cycle-1 fixes (9 commits: the offscreen compositing layer, hint-box routing, the seam cusp, runtime reduced-motion, dismissal narrowed to effective input, canvas a11y name, README to template limits, PROJECT.md threads + done-map) |
-| `3ee0181` | `screenshot.png` recaptured from this build, 2400x1600 |
-| `b593af1`–`4c91833` | cycle-3 fixes (8 commits: the dpr invalidation regression, placement tie-break, state-aware `aria-describedby`, four documentation corrections) |
-| `48451f7` | the post-loop pass's two findings on the record |
+| `c2ee6f5` | PROJECT.md — increment-3 spec + the README the build had to make true (planner artifact, §4 README-first) |
+| `a68d591` | the page draws one stroke of its own on first load |
+| `2cb494f` | `Saved ✓` asks the ink question again inside the `toBlob` callback |
+| `6ef6e2d` | the off-canvas hint names a remedy the device has |
+| `55ce71d` | a control that disables itself hands focus on instead of dropping it |
+| `74f8eb8` | only a control in the bar dismisses the flourish, not its padding |
+| `2fe459c`–`8a0e599` | cycle-1 fixes (9 commits: the offscreen compositing layer, hint-box routing, the seam cusp, runtime reduced-motion, dismissal narrowed to effective input, canvas a11y name, README to template limits, PROJECT.md threads + done-map) |
+| `41b364d` | `screenshot.png` recaptured from this build, 2400x1600 |
+| `74e8887`–`639dc1d` | cycle-3 fixes (8 commits: the dpr invalidation regression, placement tie-break, state-aware `aria-describedby`, four documentation corrections) |
+| `c989154` | the post-loop pass's two findings on the record |
 
 **Eleven independent clean-context passes** across three cycles, plus a twelfth
 on the shipped artifact after the loop cap was spent.
@@ -1320,7 +1320,7 @@ drawing made yesterday renders bit-for-bit the same today.
    day-003 → #28 pattern). Label `type:web`, `size:m`.
 2. Post the increment spec as a comment, verbatim. It is committed in the repo
    at `PROJECT.md` (the "Increment 3 (day 009 revisit — the first thing you see
-   is the toy drawing)" section of the Spec block, commit `044cc47`); copy that
+   is the toy drawing)" section of the Spec block, commit `c2ee6f5`); copy that
    section as the spec comment.
 3. Post the sign-off below verbatim as the closing comment, then close the
    issue and label it `shipped`.
@@ -1345,7 +1345,7 @@ SHIP day-009 orbit-doodle
 built:   an opening flourish — with an empty history and no input, the page draws one stroke of its own through the real pen physics, composited once at reduced opacity, animating in over ~2.4 s and then resting; it is not a history entry, not ink, never exported, and the first effective input erases it for good. Plus the three defects the day-006 evening pass recorded rather than fixed: the Saved ✓ race inside toBlob, an off-canvas hint that told a phone to widen its window, and controls that dropped focus to <body> when they disabled themselves.
 cut:     nothing from the spec. Held out of it deliberately and left as open threads: the flourish demonstrates `orbit` only, so `coil` and `drift` still have nothing on screen showing what they draw; the figure clips its own edge on a canvas under ~250 px tall (no shipping phone is that short in either orientation); and the flourish cannot be centred on the canvas while the hint is centre-aligned in the same box — the best available is the strip nearer the optical centre, which is what shipped.
 next:    none filed — the issue plane was gated all shift. Three open threads are recorded in the repo's PROJECT.md for the next revisit's planner to diff against.
-rubric:  must-pass 5/7 verified, 2/7 unverifiable (the live Pages link and the repo description/topics both need a plane this sandbox does not have — not failed, owed) · delight 4 · clarity 4 · readme 5 · scope 5 = 4.50. That is the lower of the two independent scorings: cycle 2 returned 4.50 on b8a589a and the post-loop pass returned 4.75 on the artifact that shipped, the delight point moving because cycle 3 fixed the flourish's placement. Recording the number a second pass has confirmed.
+rubric:  must-pass 5/7 verified, 2/7 unverifiable (the live Pages link and the repo description/topics both need a plane this sandbox does not have — not failed, owed) · delight 4 · clarity 4 · readme 5 · scope 5 = 4.50. That is the lower of the two independent scorings: cycle 2 returned 4.50 on 8a0e599 and the post-loop pass returned 4.75 on the artifact that shipped, the delight point moving because cycle 3 fixed the flourish's placement. Recording the number a second pass has confirmed.
 critics: cycle 1 — correctness APPROVE · ux BLOCK · hygiene BLOCK. cycle 2 — correctness+ux BLOCK · hygiene APPROVE. cycle 3 — loop cap; independent post-loop pass on the shipped artifact returned SHIP. Both cycle-1 BLOCKs found the same defect independently: the flourish rendered beaded rather than smooth, because per-segment strokes under globalAlpha stacked round caps to 1-(1-0.42)^n — measured alternating 112↔168 against a real stroke's flat 245 — so the one feature whose purpose is to demonstrate the toy's line was drawing a line the toy does not make; at phone width the same stacking made the "faint" demo 7.7:1 against the background versus the hint's 5.7:1, and it struck through the hint besides. Cycle 2's blocker was cycle 1's own fix: the offscreen layer that closed the beading keyed its invalidation on CSS size alone, so a dpr change at constant CSS size blitted a stale-resolution bitmap at stale offsets — at 1440x900, dpr 2→1 doubled the figure, clipped it off the right edge, and put it back across the hint the same cycle had just cleared.
 secrets: gitleaks could not be installed in the scheduled sandbox (GitHub releases and the Go module proxy both 403), so the scan was run with detect-secrets 1.5.0 (27 plugins) plus explicit PAT/AWS/PEM/bearer/Slack/Google/OpenAI/JWT regexes and a Shannon-entropy pass, over the full worktree and all 71 blobs in all 66 commits of history — clean, by two independent hygiene passes. Labelled as a substitute, not as gitleaks.
 lesson:  a cached offscreen layer for a canvas must key its invalidation on the backing scale as well as the CSS width/height — a dpr change at constant CSS size takes the same resize path, and the bug survived a whole cycle behind a code comment asserting the opposite.
@@ -1399,20 +1399,20 @@ out of increment 3's scope. One adds a voice, the other removes a ghost.
 ## What shipped (day 010)
 
 `pixel-garden` increment 4 — **the keyboard walk speaks.** 16 commits on
-`main`, `9eb0f4f` → `00143ae`.
+`main`, `325faca` → `30dc887`.
 
 | Commit | What |
 |---|---|
-| `8825b4a` | PROJECT.md — increment-4 spec + the README the build had to make true (planner artifact, §4 README-first) |
-| `85ac823` | delete the keyboard cursor that could no longer be drawn |
-| `e14d47f` | a live region names each plant the walk lands on |
-| `62a9207`–`d7a11c1` | cycle-1 fixes (6 commits: Enter/Space re-announces, the vertical arrows returned to the page, the spoken position became an ordinal, speech spells the month out, the de-dup compare dropped, focus follows `share garden`) |
-| `29dffeb`–`37229f6` | cycle-2 docs (README made true; done-map ticked; open threads opened and closed) |
-| `d74f386`–`1ed3dd0` | cycle-3 fixes (the scroll-key comment; README true when read in its own order; the "net-negative lines" claim corrected) |
-| `00143ae` | three threads the post-loop pass found unrecorded |
+| `6778df1` | PROJECT.md — increment-4 spec + the README the build had to make true (planner artifact, §4 README-first) |
+| `54e9d96` | delete the keyboard cursor that could no longer be drawn |
+| `ffc1772` | a live region names each plant the walk lands on |
+| `85670a5`–`bf29630` | cycle-1 fixes (6 commits: Enter/Space re-announces, the vertical arrows returned to the page, the spoken position became an ordinal, speech spells the month out, the de-dup compare dropped, focus follows `share garden`) |
+| `653d0aa`–`2d443ca` | cycle-2 docs (README made true; done-map ticked; open threads opened and closed) |
+| `2b6b43d`–`70bb329` | cycle-3 fixes (the scroll-key comment; README true when read in its own order; the "net-negative lines" claim corrected) |
+| `30dc887` | three threads the post-loop pass found unrecorded |
 
 **The zero-pixel invariant held.** The rendered canvas is byte-identical to the
-pre-increment build (`8825b4a`) at 1280/375/320/240 px, unselected, selected and
+pre-increment build (`6778df1`) at 1280/375/320/240 px, unselected, selected and
 mid-grow-in — proved four times by four independent harnesses (16/16, 72/72,
 16/16, 16/16 states; a 50-garden sweep and an all-twelve-months sweep among
 them), each built from scratch against a `git worktree` of the base commit. The
@@ -1445,7 +1445,7 @@ are byte-identical too, so every existing garden regrows exactly as before.
    day-003 → #28 pattern). Label `type:web`, `size:m`.
 2. Post the increment spec as a comment, verbatim. It is committed in the repo
    at `PROJECT.md` (the increment-4 section of the Spec block, commit
-   `8825b4a`); copy that section as the spec comment.
+   `6778df1`); copy that section as the spec comment.
 3. Post the sign-off below verbatim as the closing comment, then close the
    issue and label it `shipped`.
 4. **§11.2 spot-check for day 010 — desk session only.** Load
@@ -1515,26 +1515,26 @@ hub until this file was written.
 ## 1. An evening polish pass ran, and left no hub record
 
 `pixel-garden` carries eight commits timestamped 20:39–20:56 PT on 2026-08-03,
-`42f8a6e` → `ae38f78`, authored by a shift that ran a playtester and three
+`04fe1b9` → `5020c1b`, authored by a shift that ran a playtester and three
 critics against the day-010 increment. All three critics returned REJECT,
 hygiene on a **must-pass line**. The fixer closed six defects and skipped one.
 The pass is fully documented in the repo at `PROJECT.md` (the "Evening polish
-pass (day 010)" section, commit `ae38f78`) — but **nothing was written to the
+pass (day 010)" section, commit `5020c1b`) — but **nothing was written to the
 hub**: no dashboard note, no HANDOFF entry, no verification. The last hub
-commit before this one is `c587f15`, the noon ship at 13:41 PT.
+commit before this one is `5c3816d`, the noon ship at 13:41 PT.
 
 The pass itself is sound and its work is pushed and safe. What was lost was
 only the hub-side record, and this section is it. What landed:
 
 | Commit | What |
 |---|---|
-| `42f8a6e` | README: what a damaged share link actually does — the **must-pass hygiene failure**. "A bad or truncated link falls back to your own garden" was untrue: `decodeGarden()` rejects only non-base64url input and byte lengths not a multiple of 6, so a substituted character, an 8-char truncation and 8 appended characters all decode, into a different or partial garden shown as the sender's with no note. The prose now says both halves. The decoder was left alone — widening it is an increment, not an evening. |
-| `f4e7d32` | README: the seed does not choose where a plant stands. `slot = (index * 17) % MAX` — the planting index picks the slot, the seed only jitters inside it. |
-| `8348218` | A modifier chord is the browser's, not the walk's. The keydown handler had no modifier check, so `Ctrl+Home/End`, `Alt+←/→`, `Meta+←/→` and `Ctrl+←/→` all moved the selection and were `preventDefault()`ed — Back, Forward and the ends of the document dead on a focused canvas. |
-| `79102f5` | The live region compares before it writes again. The de-dup guard dropped in `5135e4f` for an unsound reason: the pass **built** the garden the post-loop search could not find (21 plants, paired a year apart on the same month/day, same species, on neighbouring `(i*17)%40` slots — at 412 px `Home` then `→`×17 says `stalk, June 21, 18th of 21`; widen to 1280 px and the next `→` says it again, byte-identical, while the canvas changed underneath). |
-| `493ac32` | Retiring the hint no longer pulls the page's only link upwards — `retireHint()` set `display:none`, taking 23 px out of the flow and moving the share link out from under the pointer that had just tapped a plant. Measured shift now 0 px at 320/375/1280. |
-| `af37dd0` | `.gitleaks.toml`: `pixel-garden.v1` is a localStorage key name, allowlisted by an anchored regex and nothing else, so every shift stops re-triaging the same §9.1 hit by hand. |
-| `7c8e22d`, `ae38f78` | PROJECT.md — the pass on record, with the skipped defect and the threads it opened. |
+| `04fe1b9` | README: what a damaged share link actually does — the **must-pass hygiene failure**. "A bad or truncated link falls back to your own garden" was untrue: `decodeGarden()` rejects only non-base64url input and byte lengths not a multiple of 6, so a substituted character, an 8-char truncation and 8 appended characters all decode, into a different or partial garden shown as the sender's with no note. The prose now says both halves. The decoder was left alone — widening it is an increment, not an evening. |
+| `c1e0d2a` | README: the seed does not choose where a plant stands. `slot = (index * 17) % MAX` — the planting index picks the slot, the seed only jitters inside it. |
+| `f2d640e` | A modifier chord is the browser's, not the walk's. The keydown handler had no modifier check, so `Ctrl+Home/End`, `Alt+←/→`, `Meta+←/→` and `Ctrl+←/→` all moved the selection and were `preventDefault()`ed — Back, Forward and the ends of the document dead on a focused canvas. |
+| `2f50dfe` | The live region compares before it writes again. The de-dup guard dropped in `7ee6c28` for an unsound reason: the pass **built** the garden the post-loop search could not find (21 plants, paired a year apart on the same month/day, same species, on neighbouring `(i*17)%40` slots — at 412 px `Home` then `→`×17 says `stalk, June 21, 18th of 21`; widen to 1280 px and the next `→` says it again, byte-identical, while the canvas changed underneath). |
+| `39d366e` | Retiring the hint no longer pulls the page's only link upwards — `retireHint()` set `display:none`, taking 23 px out of the flow and moving the share link out from under the pointer that had just tapped a plant. Measured shift now 0 px at 320/375/1280. |
+| `91110f1` | `.gitleaks.toml`: `pixel-garden.v1` is a localStorage key name, allowlisted by an anchored regex and nothing else, so every shift stops re-triaging the same §9.1 hit by hand. |
+| `c947822`, `5020c1b` | PROJECT.md — the pass on record, with the skipped defect and the threads it opened. |
 
 The pass held the canvas byte-identical throughout (nine captures, three widths
 x three states, all equal) and **skipped one defect deliberately**: the canvas
@@ -1579,18 +1579,18 @@ the §11.2 spot-check instead. Findings:
   evening pass had just written — "before Escape too, so Ctrl+Escape stays the
   system's" — was false the moment it was committed. Nothing was
   `preventDefault()`ed, so no browser shortcut was stolen; the defect was the
-  false comment. Fixed in `70beabd` by leading the fallback with the same
+  false comment. Fixed in `00de981` by leading the fallback with the same
   three-flag guard. Verified: `Ctrl`/`Alt`/`Meta`+`Escape` leave the live
   region byte-identical with `defaultPrevented === false`, plain `Escape` still
   dismisses from the canvas **and** from the share link. Canvas byte-identical
-  to `ae38f78` across 32 captures (4 widths x 2 dpr x 4 states) — with a
+  to `5020c1b` across 32 captures (4 widths x 2 dpr x 4 states) — with a
   baseline-vs-baseline control run first, which earned its keep: the control's
   first run mismatched everywhere because the seeded garden had no entry for
   the harness's own "today", so every cold load appended a fresh random plant.
   A byte-identity harness for this app must pin today's date or the app's one
   intended side effect reads as the diff.
 - **`gitleaks` clean again after the fix** (62 commits). Push verified by
-  `ls-remote`: `main` = `70beabd`.
+  `ls-remote`: `main` = `00de981`.
 
 **Day 010 is not marked `verified`.** Two of §11.2's checks still need a plane
 this session does not have — the live demo link and the repo description /
@@ -1606,9 +1606,9 @@ still stands for a desk session.
 ```
 EVENING VERIFIED day-010 (increment 4/N) — partial, and late
 
-Evening polish pass, 2026-08-03 20:39–20:56 PT: playtester + three critics, all three REJECT, hygiene on a must-pass line (the README's account of a damaged share link was untrue). Six defects closed in eight commits, 42f8a6e -> ae38f78; one defect — the canvas has no perceivable boundary, 1.14:1 where WCAG 1.4.11 asks 3:1 — applied, measured, reverted and recorded rather than patched, because no fix exists that does not either re-blend the corner antialiasing or restyle the palette. Canvas held byte-identical throughout. The pass left no hub record; HANDOFF.md carries it.
+Evening polish pass, 2026-08-03 20:39–20:56 PT: playtester + three critics, all three REJECT, hygiene on a must-pass line (the README's account of a damaged share link was untrue). Six defects closed in eight commits, 04fe1b9 -> 5020c1b; one defect — the canvas has no perceivable boundary, 1.14:1 where WCAG 1.4.11 asks 3:1 — applied, measured, reverted and recorded rather than patched, because no fix exists that does not either re-blend the corner antialiasing or restyle the palette. Canvas held byte-identical throughout. The pass left no hub record; HANDOFF.md carries it.
 
-Late shift, 2026-08-03 22:3x PT (§4 already-shipped path): §11.2 spot-check. gitleaks 8.18.4 ran for real this time — 61 commits, no leaks. Three must-pass lines re-tested independently and clean: cold load with zero console output, garbage input (16 hashes, 12 corrupt storage values, 600 randomised presses) survived with the walk still working, and zero horizontal overflow at 240-412 px. One defect found and fixed in 70beabd: Ctrl+Escape dismissed the label, contradicting the comment the evening pass had just written beside the canvas handler — the document-level Escape fallback had no modifier guard, and chords bubble into it. Canvas byte-identical across 32 captures after the fix.
+Late shift, 2026-08-03 22:3x PT (§4 already-shipped path): §11.2 spot-check. gitleaks 8.18.4 ran for real this time — 61 commits, no leaks. Three must-pass lines re-tested independently and clean: cold load with zero console output, garbage input (16 hashes, 12 corrupt storage values, 600 randomised presses) survived with the walk still working, and zero horizontal overflow at 240-412 px. One defect found and fixed in 00de981: Ctrl+Escape dismissed the label, contradicting the comment the evening pass had just written beside the canvas handler — the document-level Escape fallback had no modifier guard, and chords bubble into it. Canvas byte-identical across 32 captures after the fix.
 
 Not relabelled `verified`: the live Pages demo and the repo description/topics remain unreachable from a scheduled sandbox, the seventh straight day. Everything else on the §11.2 list passes.
 ```
@@ -1728,3 +1728,50 @@ Preferred, if only one is taken:
 Second candidate, if the day earns two (it will not — the cap is one):
 `gitleaks` installs and runs in this sandbox; day 010 recorded that it could
 not and used a labelled substitute. Same root cause as the line above.
+
+---
+
+# History rewrite — 2026-08-04, owner-instructed
+
+All four repos had their author and committer identities rewritten to
+`Kairui Ying <yinggarykairui@gmail.com>` and force-pushed to `main`. §15
+forbids force-pushing `main`; this ran on the owner's explicit instruction,
+which is the only thing that authorises it.
+
+**Why.** 281 of 282 commits credited nobody or the wrong account: 99 to
+`noreply@anthropic.com`, 59 to `factory@users.noreply.github.com` (which looks
+official and resolves to no account), 54 to `factory@localhost`, and **68 to
+`kairuigy@stanford.edu`, which verifies on a *second* GitHub account,
+`kairuigy` (id 297273710)** — the owner's institutional identity, not this
+one. Ten days of daily shipping produced an empty contribution graph on the
+profile the factory exists to build.
+
+| Repo | Commits | Old `main` (backed up) | New `main` |
+|---|---|---|---|
+| `pixel-garden` | 66 | `70beabd3` | `00de981f` |
+| `orbit-doodle` | 67 | `48451f7b` | `c989154e` |
+| `trace-lens` | 99 | `6c0e0313` | `60406fa3` |
+| `factory-hub` | 50 | `9d687c2f` | `0c54afb3` |
+
+**Rollback.** Every repo carries a `pre-rewrite-backup` branch pinned to its
+pre-rewrite `main`. `git push --force origin pre-rewrite-backup:main` undoes
+any of them completely. Delete those branches once the graph is confirmed.
+
+**What was proved before each push**, and no repo was pushed unless all four
+held: commit count identical · `HEAD^{tree}` identical · the SHA-256 of the
+tree of *every* commit in the history identical (so not one byte of file
+content moved in any historical snapshot) · author/committer timestamps and
+subjects identical · every author and committer email now the owner's.
+
+**Citations.** 142 short SHAs were cited across `HANDOFF.md` (96),
+`dashboard/README.md` (9) and three `PROJECT.md` files (37), and every one
+pointed at a commit that no longer exists. All were remapped through
+filter-repo's commit-map and verified: 96/96 of HANDOFF's now resolve to real
+commits in the rewritten repos. Historical *snapshots* of these files still
+carry the old SHAs — unavoidable, and harmless.
+
+**Going forward** the doctrine is §9.2 (manual 1.6.1): every run sets
+`user.name`/`user.email` before its first commit, in every repo it touches.
+The owner's own machine keeps `kairuigy@stanford.edu` as its git default for
+GitLab and Stanford work, with a per-remote `includeIf` swapping to the gmail
+for `github.com/yinggarykairui` repos.

@@ -47,7 +47,7 @@ rate is 3/6 because days 004, 005 and 006 have never met a runner that could
 load github.io — a verification outage, not three bad days.*
 
 *Day 006's evening polish (2026-07-30, 20:00 PT): three critic→fix cycles plus
-a fourth independent verification pass, 18 commits, `38e0c5b` → `c84b362`, no
+a fourth independent verification pass, 18 commits, `c5d52a6` → `6e47766`, no
 scope added. The average holds at **4.50** but the composition moved — the
 evening's independent scores are delight 4 · clarity 4 · readme 5 · scope 5,
 where the ship day scored delight 5 · clarity 4 · readme 4 · scope 5. README
@@ -143,7 +143,7 @@ able to load the URL. The desk verification owed now covers days 004, 005, 006,
 007 and 008.*
 
 *Day 008's evening polish (2026-08-01, 20:00 PT — MANUAL §11 evening mandate):
-three critic→fix cycles, 33 commits, `f3f0d6f` → `6c0e031`, no scope added and
+three critic→fix cycles, 33 commits, `25fbe11` → `60406fa`, no scope added and
 `screenshot.png` never re-captured. **The row keeps 4.50** — that is what shipped
 at the ship, and nothing tonight made the build worse. The evening's own three
 independent cycle-3 passes scored delight 4 · clarity 4 · readme 4 · scope 5 =
@@ -162,7 +162,7 @@ outside — the 1.00:1 seam measured identical before and after, and the lane
 variant erased the lane's 1 px border while focused to break up a "9 px amber
 slab" that never existed on the pre-fix build. Reverted and closed properly.
 Cycle 3 returned three APPROVEs, all 17 contrast baselines unmoved, and the
-resting render 0 differing pixels against `f3f0d6f` across 18 viewport ×
+resting render 0 differing pixels against `25fbe11` across 18 viewport ×
 timestamp combinations.*
 
 *Still not `verified`: §11.2's live-demo line needs `github.io`, unreachable from
@@ -182,7 +182,7 @@ being npm `sha512` integrity digests in `package-lock.json`.*
 
 *Day 009's rubric average, 4.50, is **the lower of the two numbers this shift's
 independent passes returned**, recorded that way on purpose. The cycle-2 pass
-scored `b8a589a` delight 4 · clarity 4 · readme 5 · scope 5 = 4.50; the
+scored `8a0e599` delight 4 · clarity 4 · readme 5 · scope 5 = 4.50; the
 independent post-loop pass, the only one to grade the artifact that actually
 shipped, scored it delight 5 · clarity 4 · readme 5 · scope 5 = 4.75 — the
 delight point moved because cycle 3 fixed the flourish's placement. Two passes,
@@ -206,8 +206,8 @@ gitleaks.*
 *Day 009 shipped under the same API gating as days 005–008: the issue plane
 could not be written, so the build issue, the spec comment and the sign-off are
 queued verbatim in `HANDOFF.md` for the next API-capable session. The git plane
-was open throughout — 31 commits pushed to `orbit-doodle` main, `c84b362` →
-`48451f7`.*
+was open throughout — 31 commits pushed to `orbit-doodle` main, `6e47766` →
+`c989154`.*
 
 *Three improvement cycles ran, and **cycle 2's blocker was cycle 1's own fix** —
 the second time in three days that has been true. Cycle 1's flourish rendered
@@ -230,7 +230,7 @@ the last one, zero mismatches: the physics, the palette, the pens and what
 consecutive day. The issue plane could not be written, so the build issue, the
 spec comment and the sign-off are queued verbatim in `HANDOFF.md` for the next
 API-capable session. The git plane was open throughout: 12 commits pushed to
-`pixel-garden` main, `9eb0f4f` → `00143ae`. Two of the seven must-pass lines —
+`pixel-garden` main, `325faca` → `30dc887`. Two of the seven must-pass lines —
 the live Pages demo and the repo description/topics — are again unverifiable
 rather than failed; no runner has had outbound network since day 004.*
 
@@ -258,7 +258,7 @@ was satisfied by the tool itself rather than a labelled substitute, and the
 gate is narrower than it looked: `api.github.com` 403s and `github.io` is
 unreachable, but git and release downloads over `github.com` are both open.
 Three must-pass lines re-tested independently and clean; one defect found and
-fixed (`70beabd`): `Ctrl+Escape` dismissed the label, contradicting the comment
+fixed (`00de981`): `Ctrl+Escape` dismissed the label, contradicting the comment
 the evening pass had committed beside it hours earlier. Day 010 stays
 **unverified** — the live demo and the repo description/topics still need a
 plane no scheduled runner has had since day 004. KPI numbers are unchanged:
