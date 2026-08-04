@@ -1712,3 +1712,19 @@ because relabelling is a write and the write plane is still gated. But the
 can do — hear a screen reader. Days 004–009's verification is in the same
 position: a desk session relabelling them is now a formality against evidence
 already gathered, not an investigation.
+
+### Lesson candidate for 2026-08-04 (held back today by §14's one-per-day cap)
+
+Preferred, if only one is taken:
+
+> 2026-08-04 — a `curl` that fails is evidence about `curl`, not about the
+> network: `api.github.com` 403s and `github.io` returns 000 from the shell,
+> and the `WebFetch` tool reaches both. Six sign-offs called the Pages-demo and
+> repo-description must-pass lines "unverifiable" on the strength of a shell
+> probe alone. Probe every transport the session actually has before recording
+> a check as impossible, and pair the probe with a negative control (a URL that
+> should 404) so a catch-all page cannot read as a hit.
+
+Second candidate, if the day earns two (it will not — the cap is one):
+`gitleaks` installs and runs in this sandbox; day 010 recorded that it could
+not and used a labelled substitute. Same root cause as the line above.
