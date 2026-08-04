@@ -263,3 +263,21 @@ the evening pass had committed beside it hours earlier. Day 010 stays
 **unverified** — the live demo and the repo description/topics still need a
 plane no scheduled runner has had since day 004. KPI numbers are unchanged:
 this shift shipped nothing, by design.*
+
+*Also day 010, and overdue: **the read plane was never closed.** `curl` to
+`api.github.com` 403s and to `github.io` returns 000 — every shift since day
+004 read that as proof the outside world was unreachable. The `WebFetch` tool
+reaches both. It is read-only, so the queued issue-plane writes still wait, but
+every §8/§11.2 check that only reads has been performable since day 005. Run
+today with a 404 negative control: **all three demos are alive** (`pixel-garden`,
+`orbit-doodle`, `trace-lens` each serve their own page), and **description,
+topics and MIT licence are set on all three repos** — the must-pass line six
+sign-offs have called unverifiable. `demos alive` is 3/3, not unchecked. Also
+now readable: there is **no open `job` issue** — §17 has not been starved for
+ten shifts, it has had nothing to service — and the queue holds 16 ideas.
+Two hygiene defects surfaced and are queued in HANDOFF for the next API-capable
+session: `trace-lens`'s repo description still says the agent run is
+"recorded", the exact falsehood the day-005 evening shift struck from its
+README, and `pixel-garden`'s description has drifted from its README opener.*
+
+**KPI:** streak: 6 · verified rate: 3/10 (evidence complete for 004–010, relabelling owed) · avg rubric score: 4.38 · demos alive: 3/3
