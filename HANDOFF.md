@@ -1651,3 +1651,64 @@ installed and used a labelled substitute. It installed and ran clean today from
 the same sandbox. The `secrets:` line of that sign-off is honest about what it
 did, and is now superseded rather than wrong — future shifts should try the
 real tool before reaching for the substitute.
+
+## 3. The read plane was never actually closed — seven days of "unverifiable" cleared
+
+This is the most useful thing in this entry, and it should have been found on
+day 005. `curl` to `api.github.com` 403s with the session gate, and `curl` to
+`github.io` returns 000 — both true, both re-probed today, and both are what
+every shift since day 004 has taken as proof that the outside world is
+unreachable. It is not. **The `WebFetch` tool reaches both hosts.** It is
+read-only, so none of the queued replay writes become possible — but every
+`§8`/`§11.2` check that only needs to *read* has been performable all along.
+
+Run today, with controls:
+
+- **All three demos are alive.** `pixel-garden` serves a page titled
+  `pixel garden`; `orbit-doodle` serves `orbit-doodle` with its own copy
+  ("press and drag — the pen orbits you"); `trace-lens` serves `trace-lens`
+  with its meta description intact. Negative control:
+  `…github.io/pixel-garden/no-such-page-control-404` returns a real 404, so the
+  three hits are hits and not a catch-all page. §8's demo-link line and the
+  dashboard's `demos alive` KPI are answerable from a scheduled sandbox from
+  now on.
+- **`LICENSE present, repo description and topics set` — verified for all
+  three repos**, the must-pass line recorded as unverifiable on days 005–010:
+
+  | Repo | Description | Topics | License | Pages | Homepage |
+  |---|---|---|---|---|---|
+  | `pixel-garden` | set | 6 topics | MIT | on | **null** |
+  | `orbit-doodle` | set | 5 topics | MIT | on | set |
+  | `trace-lens` | set | 6 topics | MIT | on | **null** |
+
+- **No open `job` issue exists.** Ten shifts have recorded §17 as
+  "unserviceable"; the truth is milder — there has been nothing to service.
+  The open queue is 16 `queued` ideas (#3–#16, #20, #21) plus #30, the
+  `blocked` PAT-expiry issue. Nothing is starving.
+
+Two hygiene defects the read plane exposed, neither fixable without an API
+write, both queued below:
+
+8. **`trace-lens`'s repo description is the falsehood the day-005 evening shift
+   already fixed once.** It reads *"Replay a **recorded** LLM agent run as a
+   live streaming trace"*. `trace.json` is a hand-authored fixture, not a
+   recording — that is exactly the claim the evening pass struck from the
+   README on 2026-07-29, dropping the day's readme score 5 → 4 for it. The
+   page's own meta description says "a **sample** LLM agent run" and is
+   correct. The repo description was never updated with it. Fix: set the
+   description to the README's current one-sentence opener (§9.3, STYLE.md).
+9. **`pixel-garden`'s description has drifted from its README opener**, which
+   STYLE.md requires it to match. Repo: *"A tiny garden that grows one
+   procedural plant per day you visit"*. README: *"A tiny canvas garden that
+   grows one new procedural plant each day you visit, up to forty — come back
+   tomorrow and it's bigger."* Not false, just stale — the README grew a clause
+   the description never got. Same fix, same call. While there: `pixel-garden`
+   and `trace-lens` both have a null `homepage`; `orbit-doodle` has its Pages
+   URL set. Set the other two to match.
+
+**What this does not clear.** Day 010 still is not relabelled `verified`,
+because relabelling is a write and the write plane is still gated. But the
+*evidence* for §11.2 is now complete except for the one thing no runner here
+can do — hear a screen reader. Days 004–009's verification is in the same
+position: a desk session relabelling them is now a formality against evidence
+already gathered, not an investigation.
