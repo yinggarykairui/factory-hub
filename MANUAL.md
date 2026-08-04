@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.6.0
+manual_version: 1.6.1
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -247,8 +247,18 @@ rises on purpose, not by drift.
 
    ```
    git config user.name  "Kairui Ying"
-   git config user.email "251826108+yinggarykairui@users.noreply.github.com"
+   git config user.email "yinggarykairui@gmail.com"
    ```
+
+   Owner's choice, made 2026-08-04. The address must stay one that is verified
+   on the `yinggarykairui` account — `kairuigy@stanford.edu` is **not**: it
+   verifies on a *second* GitHub account, `kairuigy` (id 297273710), which is
+   where 68 of this factory's commits went. Never author as the Stanford
+   address; it is the owner's institutional identity and belongs to their
+   GitLab work, not here. The private alternative, if the owner ever wants the
+   gmail out of public commit metadata, is
+   `251826108+yinggarykairui@users.noreply.github.com` — same account, address
+   never exposed.
 
    GitHub greens a contribution square only when the commit's *author* email
    resolves to the owner's account and the commit lands on the default branch.
@@ -607,6 +617,14 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.6.1** (2026-08-04) — authorship address set to the owner's choice,
+  `yinggarykairui@gmail.com` (§9.2), replacing the noreply form 1.6.0 shipped
+  with. Recorded with it: `kairuigy@stanford.edu` verifies on a **second**
+  GitHub account, `kairuigy` (id 297273710) — the 68 commits authored with it
+  across the four repos credited that account, not the owner's. It is the
+  owner's institutional address and is reserved for their GitLab work; the
+  factory never authors as it.
 
 - **1.6.0** (2026-08-03) — commit authorship (§9.2), owner-directed. Every run
   sets `user.name`/`user.email` to the owner's GitHub-linked noreply address
