@@ -1844,3 +1844,59 @@ because §11 owns verification and `verified` is immutable once set):
    and `factory-evening-shift`, duplicating `Factory Noon Shift` and
    `Factory Evening Shift`) are still enabled and still burning a duplicate shift's
    tokens every day. Deleting them remains an owner decision, deliberately not taken.
+
+## The replay is done — days 005–010 now exist in the issue plane
+
+Filed and closed the same afternoon, through the API, in the normal way:
+
+| Day | Slug | Issue | Comments replayed |
+|---|---|---|---|
+| 005 | trace-lens | [#35](https://github.com/yinggarykairui/factory-hub/issues/35) | spec + sign-off + evening note |
+| 006 | orbit-doodle | [#36](https://github.com/yinggarykairui/factory-hub/issues/36) | spec + sign-off + evening note |
+| 007 | pixel-garden | [#37](https://github.com/yinggarykairui/factory-hub/issues/37) | sign-off |
+| 008 | trace-lens | [#38](https://github.com/yinggarykairui/factory-hub/issues/38) | sign-off + evening note |
+| 009 | orbit-doodle | [#39](https://github.com/yinggarykairui/factory-hub/issues/39) | sign-off |
+| 010 | pixel-garden | [#40](https://github.com/yinggarykairui/factory-hub/issues/40) | sign-off + `EVENING VERIFIED` note |
+
+All six are `shipped` + size/type knobs, closed, and verified to have landed exactly
+once (no duplicate titles across the hub's 40 issues). The dashboard's idea-source
+cells for those rows now link the issue instead of promising a retroactive filing.
+
+**Replay, not reconstruction.** Every spec comment, sign-off and evening note above is
+byte-identical to its preserved source — extracted programmatically, not transcribed.
+Day 005's spec comment is not in the current `HANDOFF.md` at all; it was recovered from
+`factory-hub@11d3ce9:HANDOFF.md` L55–85, the pointer this file gives. Days 007–010 have
+**no preserved spec comment** — only pointers to the relevant repo's `PROJECT.md`
+increment — so those issues carry a sign-off and no spec, which is the honest shape.
+
+The **six issue bodies are the only authored text**, because `HANDOFF.md` never
+preserved an issue body for any of these days — only an instruction about what one
+should say. Each body says so in the body itself, so nobody reading the archive later
+mistakes it for a contemporaneous record.
+
+### Contradictions the extraction surfaced — recorded, deliberately not resolved
+
+Resolving these means deciding which of two factory records is wrong, and the shifts
+that wrote them are gone. They are listed so a retro can adjudicate rather than
+inherit them silently:
+
+- **Day 005 scores.** The sign-off records readme 5 (average 4.75); the dashboard was
+  corrected to 4.50 by the evening shift's re-score. Both are now in the plane, saying
+  different things. The dashboard note explains the correction; the sign-off does not
+  know about it.
+- **`gitleaks`, four ways.** Day 006's sign-off says 8.18.4 over 21 commits while its
+  own evening comment says 8.28.0 over full history. Days 008–010 alternately declare
+  the tool uninstallable and then install it. Day 008's "8.30.0, 61 commits" is called
+  unreproducible by its own evening entry. Day 011 ran 8.28.0 clean over
+  `--all --full-history`; the tool has been available the whole time.
+- **Day 010 commit count:** 16 in HANDOFF, 12 in the dashboard, over the identical
+  endpoints `325faca` → `30dc887`. Day 010's chain from `30dc887` to the evening's
+  `04fe1b9` is unexplained.
+- **Day 007 residual paint** is recorded as 411 px, 215 px and 127 px in three places.
+- **Day 006** states 16 commits in prose and tables 17.
+- **All six sign-offs** call repo description/topics and the Pages demo "unverifiable".
+  Both are contradicted by the 2026-08-03 entry (which read them fine with `WebFetch`)
+  and by day 011 (which read them fine from the API). The sign-offs are honest about
+  what those shifts could see; they are wrong about what was there.
+
+No SHA was corrected anywhere, per the 2026-08-04 history-rewrite note.
