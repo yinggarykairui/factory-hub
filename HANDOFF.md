@@ -1900,3 +1900,46 @@ inherit them silently:
   what those shifts could see; they are wrong about what was there.
 
 No SHA was corrected anywhere, per the 2026-08-04 history-rewrite note.
+
+---
+
+## 2026-08-04 evening shift → tomorrow's noon shift
+
+Two items are owed forward. Nothing here blocks tomorrow's build.
+
+### 1. Lesson queued for 2026-08-05 (held back by §14's one-per-day cap)
+
+Today's lesson slot was already spent by the noon shift (the `curl --noproxy '*'`
+proxy finding). Append this one tomorrow, dated the day it is appended, with the
+carried-over note — the same form the 2026-07-29 → 07-30 carry-over used:
+
+```
+- 2026-08-04 (carried over — held back on the day by §14's one-per-day cap, appended 2026-08-05) — §9.2's `git config user.name/user.email` is a property of **each clone**, not of the run: a subagent handed a fresh `git clone` of a project repo inherits the sandbox's global identity and commits as `Claude <noreply@anthropic.com>`, which is exactly the grey-commit failure 1.6.0 and 1.6.1 were written about. Eight of the evening's fourteen commits landed that way and were pushed before the check ran. Set the two config values in **every** working copy at the moment it is created — before delegating, not after — and read `git log -1 --format='%an <%ae>'` back after the first commit of every subagent, not only after the run's own.
+```
+
+A second candidate, if the day earns no better one (concrete, and it cost this
+evening a whole cycle):
+
+```
+- 2026-08-04 — a synthetic `click` cannot be told from a touch `click` by timing: a touch click carries its **pointerup** timestamp, so any "was there a recent pointerdown?" guard passes for any press held longer than the window, and a pointerup flag cleared on a `setTimeout(…, 0)` still loses ~2% of the time because Chromium may dispatch the click a task late. Discriminate on a property of the event instead — `click` is a `PointerEvent` whose `pointerType` is `"mouse"`/`"touch"` when a pointer made it and `""` when an AT synthesised it. Both timing versions passed a full clean matrix before failing under repetition; a matrix that passes once is not proof.
+```
+
+### 2. `tiny-synth` carries eight commits authored as Claude, not the owner
+
+`ed4ce42`, `b2ae96b`, `c167f32`, `6201f2d`, `71693fd`, `bbab094`, `297f524`,
+`16d9c47` — all eight authored **and** committed `Claude <noreply@anthropic.com>`.
+They are pushed. Every other commit in the repo (25 before them, 6 after) is
+`Kairui Ying <yinggarykairui@gmail.com>`.
+
+Reattributing them is a history rewrite plus a force-push to `main`, which §15
+forbids outright — its one exception is the §9.1 secret scrub. The 2026-08-04
+rewrite (`df96304`, 282 commits) is precedent that the owner may sanction one, but
+that is the owner's call and not a shift's. **Filed as a `blocked` issue with the
+owner @mentioned; do not act on it without an explicit instruction.** If the owner
+does sanction a rewrite, note that no SHA from this range is cited anywhere yet
+except in this file, today's dashboard note and that issue — so the remap is
+cheap today and gets more expensive with every citation.
+
+The doctrine gap behind it (§9.2 says "in every repo the run touches" but does not
+say that a delegated subagent's clone is one of them, nor that its first commit
+must be read back) is filed separately as a `meta` issue.

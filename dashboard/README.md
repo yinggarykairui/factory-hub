@@ -14,7 +14,7 @@
 | 010 | 2026-08-03 | pixel-garden | web | The keyboard walk speaks — each plant the selection lands on names itself aloud | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit (filed retroactively as [#40](https://github.com/yinggarykairui/factory-hub/issues/40) on day 011) | claude-opus-5 |
 | 011 | 2026-08-04 | tiny-synth | web | A playable keyboard synth — one oscillator, eight voices, four waveforms, ADSR sliders, keys that light up | vanilla JS, WebAudio | 4.50 | [repo](https://github.com/yinggarykairui/tiny-synth) | [demo](https://yinggarykairui.github.io/tiny-synth/) | seeded (#3) | claude-opus-5 |
 
-**KPI:** streak: 7 · verified rate: 3/11 (evidence complete for 004–011; relabelling owed) · avg rubric score: 4.39 · demos alive: 4/4
+**KPI:** streak: 8 · verified rate: 4/11 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.39 · demos alive: 4/4
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -281,7 +281,7 @@ session: `trace-lens`'s repo description still says the agent run is
 "recorded", the exact falsehood the day-005 evening shift struck from its
 README, and `pixel-garden`'s description has drifted from its README opener.*
 
-**KPI:** streak: 7 · verified rate: 3/11 (evidence complete for 004–011; relabelling owed) · avg rubric score: 4.39 · demos alive: 4/4
+**KPI:** streak: 8 · verified rate: 4/11 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.39 · demos alive: 4/4
 
 *Day 011 — **the API plane was never gated.** Ten shifts, days 005 through 010,
 recorded the GitHub API as blocked and fell back to the HANDOFF protocol, because
@@ -316,3 +316,45 @@ demo was checked against a string unique to the newest commit with a 404 negativ
 control, and description/topics/licence/homepage were read back from the API. Real
 `gitleaks` 8.28.0 ran over `--all --full-history`: no leaks. All 25 commits carry
 `Kairui Ying <yinggarykairui@gmail.com>` as both author and committer.*
+
+*Day 011's evening shift (2026-08-04, 20:00 PT): three polish cycles, 14 commits,
+`c1578f9` → `cd243dc`, no scope added, then §11.2 verification — **day 011 is
+`verified`.** The rubric average holds at **4.50**; the evening's four independent
+clean-context passes score delight 4 · clarity 4 · readme 5 · scope 5 by majority
+per line, the same average the ship day recorded. Must-pass **7/7**, all seven
+tested rather than assumed: gitleaks 8.30.1 over `--all --full-history` (38
+commits, no leaks), description/topics/licence read back from the API, and the
+live demo confirmed loading the current build — the Pages API reports the latest
+build `built` at `cd243dc`, and `raw.githubusercontent.com` serves a
+`docs/index.html` whose md5 matches the local file exactly. All four demos are
+alive and all four Pages builds are green.*
+
+*What the evening actually caught. Cycle 1 closed ten defects (three independent
+roles all found the same one: on short and narrow screens the bottom of the keybed
+fell below the fold, and making the window **taller** across 560px made it worse —
+a gloss line reappearing while the keys grew). Cycle 2 then returned **2 of 3
+REJECT**, and the blocker was a regression cycle 1 had just introduced: the new
+`click` handler, added so a screen reader's "activate" would play a note, guarded
+itself with a 700ms timestamp heuristic against the last `pointerdown` — but a
+touch `click` carries the **pointerup** timestamp, so any tap held longer than
+0.7s fired a phantom second note at the moment the finger lifted, and under an
+eight-voice load the phantom stole a legitimately held note. Press-and-hold is the
+primary phone interaction. Cycle 3 replaced the heuristic with a property of the
+event (`PointerEvent.pointerType` is `""` only for a synthesised activation) after
+its own first attempt — a pointerup flag cleared on a zero-delay timer — flaked at
+two phantoms per 120 taps because Chromium sometimes dispatches the click a task
+late. An independent verifier then failed to reproduce a phantom in ~2,120 pointer
+releases across two device profiles at 1x and 6x CPU throttling. **A fix that
+passes a clean matrix once is not a fix**; both wrong versions did.*
+
+*One thing this evening did **not** do well: eight of its fourteen commits
+(`ed4ce42`..`16d9c47`) are authored and committed as `Claude
+<noreply@anthropic.com>`, not the owner. §9.2's `git config` was set on the hub
+clone but the fix subagent worked in a fresh clone of `tiny-synth` and inherited
+the sandbox's global identity — the exact failure manual 1.6.0 and 1.6.1 were
+written about, one layer down. They were pushed before it was noticed; §15 forbids
+the force-push that would reattribute them, so they stand, grey, pending an owner
+decision (issue filed). The six commits after it are correct. The lesson —
+authorship is a property of every clone, and a delegated subagent inherits the
+sandbox, not your intent — is queued in HANDOFF.md for tomorrow, held back by
+§14's one-lesson-per-day cap.*
