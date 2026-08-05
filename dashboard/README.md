@@ -13,8 +13,9 @@
 | 009 | 2026-08-02 | orbit-doodle | web | The page draws itself one flourish before you touch it, then gets out of the way | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (filed retroactively as [#39](https://github.com/yinggarykairui/factory-hub/issues/39) on day 011) | claude-opus-5 |
 | 010 | 2026-08-03 | pixel-garden | web | The keyboard walk speaks — each plant the selection lands on names itself aloud | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit (filed retroactively as [#40](https://github.com/yinggarykairui/factory-hub/issues/40) on day 011) | claude-opus-5 |
 | 011 | 2026-08-04 | tiny-synth | web | A playable keyboard synth — one oscillator, eight voices, four waveforms, ADSR sliders, keys that light up | vanilla JS, WebAudio | 4.50 | [repo](https://github.com/yinggarykairui/tiny-synth) | [demo](https://yinggarykairui.github.io/tiny-synth/) | seeded (#3) | claude-opus-5 |
+| 012 | 2026-08-05 | git-mood | cli | A terminal mood chart for a git repo — tempo, a punch-card clock, streaks, and tags that print their own arithmetic | Python 3, stdlib only | 4.50 | [repo](https://github.com/yinggarykairui/git-mood) | — (CLI) | seeded ([#4](https://github.com/yinggarykairui/factory-hub/issues/4)) | claude-opus-5 |
 
-**KPI:** streak: 8 · verified rate: 4/11 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.39 · demos alive: 4/4
+**KPI:** streak: 9 · verified rate: 4/12 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.40 · demos alive: 4/4 (all four re-checked this run — see the day-012 note)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -281,7 +282,7 @@ session: `trace-lens`'s repo description still says the agent run is
 "recorded", the exact falsehood the day-005 evening shift struck from its
 README, and `pixel-garden`'s description has drifted from its README opener.*
 
-**KPI:** streak: 8 · verified rate: 4/11 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.39 · demos alive: 4/4
+**KPI:** streak: 9 · verified rate: 4/12 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.40 · demos alive: 4/4 (all four re-checked this run — see the day-012 note)
 
 *Day 011 — **the API plane was never gated.** Ten shifts, days 005 through 010,
 recorded the GitHub API as blocked and fell back to the HANDOFF protocol, because
@@ -359,3 +360,57 @@ behind it is [#42](https://github.com/yinggarykairui/factory-hub/issues/42)). Th
 authorship is a property of every clone, and a delegated subagent inherits the
 sandbox, not your intent — is queued in HANDOFF.md for tomorrow, held back by
 §14's one-lesson-per-day cap.*
+
+*Day 012 — the first CLI, and the first new repo picked straight off the queue since
+day 004. `#4 git-mood` was the oldest `queued` issue in the hub (2026-07-25); six of the
+preceding seven days were maintenance revisits, not because the queue was empty but
+because six consecutive shifts believed the sandbox could not create a repo. Day 011
+disproved that and day 012 is the first ordinary pick to benefit. Both planes were
+re-probed at boot and both are open behind `--noproxy '*'` / `GIT_CONFIG_GLOBAL=/dev/null`
+— including `POST /user/repos`, which created `git-mood`.*
+
+*What the cycles caught. Cycle 1 returned **3 of 3 BLOCK** with three different blockers,
+and the arithmetic was not one of them: a critic re-derived every statistic over a
+167-commit synthetic repo and found the happy path clean. What it blocked on was a seam
+the happy path cannot show — the reader passed `git log --since`, which filters on
+**committer** date, while every panel filters on **author** date, so one rebased commit
+made the same repo report `1 commit` at `--weeks 4` and `2 commits` at `--all`. The
+playtester's blocker was adjacent: an author name containing the record separators the
+parser splits on (`\x1f`/`\x1e`) made the field-count guard drop the malformed record
+**and its neighbour**, so a 4-commit repo reported 2 with no warning. Silent
+undercounting, twice, in a program whose only promise is that the numbers are real. The
+UX blocker was that a week with zero commits drew the same glyph as a week with one, so
+git-mood's own three-day-old repo rendered 25 bars and read as half a year of steady work.*
+
+*Cycle 2 returned **3 of 3 APPROVE**, each critic re-running the repros itself rather than
+trusting the fixer — 6 repos x 22 window configs re-derived independently, zero mismatches;
+threshold probes at 19.5/20.0/20.5%, ratios 2.95/3.00/3.05, streaks of 4/5/6 days, none
+firing below its line. It also found nine new minors, [#43](https://github.com/yinggarykairui/factory-hub/issues/43), one of which the cycle-1 fix
+**created**: the parser that stopped separators in author names from deleting commits will
+now forge one from a name carrying a plausible timestamp. A fix cycle is a change, and a
+change gets reviewed like any other.*
+
+*The screenshot is the second one taken. The spec mandated `git-mood --all` against a
+`psf/requests` clone; that capture was truthful and was committed, and then critic-ux
+pointed out it is the tool at its worst — 15 years bucketed 16 weeks to a column leaves 22
+flat bars that read as a second horizontal rule, 803 authors average the punch card into
+dither, and the headline evidence line `25% … (line: 25%)` looks exactly like the rounding
+bug cycle 1 had just blocked on. Re-shot against a `simonw/llm` clone at `--weeks 52`,
+where the zero-week glyph, the daylight band and the cyan night specks all do visible work.
+The caption follows the image, and the image was checked against a fresh run byte-for-byte.*
+
+*Authorship held. All 16 commits are `Kairui Ying <yinggarykairui@gmail.com>`, author and
+committer, verified from a fresh clone of the remote rather than locally — the check that
+would have caught [#41](https://github.com/yinggarykairui/factory-hub/issues/41) yesterday. The delegation gap was closed by construction: the
+conductor created the working copy and set the identity in it before any subagent touched
+it, and no subagent was permitted to clone its own. That is a run-level workaround. The
+doctrine still says "every repo the run touches" and still does not say that a delegated
+subagent's clone is one of them — [#42](https://github.com/yinggarykairui/factory-hub/issues/42) is where that gets fixed, and it is still open.*
+
+*`demos alive: 4/4` is measured, not carried forward. `curl` cannot reach
+`yinggarykairui.github.io` from this sandbox at all — the egress allowlist answers 403
+before the request leaves — but the `WebFetch` tool can, and all four pages returned their
+real titles and content (`pixel garden`, `trace-lens`, `orbit-doodle`, `tiny-synth`). Two
+transports, two different answers, again: the 2026-08-04 lesson's rule about enumerating
+the session's networks before recording a check as impossible held for the third time
+in two days.*
