@@ -78,7 +78,7 @@ def render():
     L.append("## Kairui Ying\n")
     L.append("I design autonomous systems that finish what they start. The proof runs daily:")
     L.append("a build factory I wrote specs, builds, adversarially reviews, and deploys")
-    L.append("**one small working project every day** — each with a live demo — then updates")
+    L.append("**one small working project every day** — most with a live demo — then updates")
     L.append("this page itself.\n")
     L.append(f"`streak {streak}` · `avg rubric {rubric}/5` · `demos alive {alive}`\n")
     L.append(f"### Latest ship — day {latest['day']} · [{latest['slug']}]({latest['repo']})\n")
