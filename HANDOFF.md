@@ -1934,12 +1934,12 @@ They are pushed. Every other commit in the repo (25 before them, 6 after) is
 Reattributing them is a history rewrite plus a force-push to `main`, which §15
 forbids outright — its one exception is the §9.1 secret scrub. The 2026-08-04
 rewrite (`df96304`, 282 commits) is precedent that the owner may sanction one, but
-that is the owner's call and not a shift's. **Filed as a `blocked` issue with the
-owner @mentioned; do not act on it without an explicit instruction.** If the owner
+that is the owner's call and not a shift's. **Filed as [#41](https://github.com/yinggarykairui/factory-hub/issues/41) (`blocked`, owner
+@mentioned); do not act on it without an explicit instruction.** If the owner
 does sanction a rewrite, note that no SHA from this range is cited anywhere yet
 except in this file, today's dashboard note and that issue — so the remap is
 cheap today and gets more expensive with every citation.
 
 The doctrine gap behind it (§9.2 says "in every repo the run touches" but does not
 say that a delegated subagent's clone is one of them, nor that its first commit
-must be read back) is filed separately as a `meta` issue.
+must be read back) is filed separately as [#42](https://github.com/yinggarykairui/factory-hub/issues/42) (`meta`).

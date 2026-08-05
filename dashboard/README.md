@@ -354,7 +354,8 @@ clone but the fix subagent worked in a fresh clone of `tiny-synth` and inherited
 the sandbox's global identity — the exact failure manual 1.6.0 and 1.6.1 were
 written about, one layer down. They were pushed before it was noticed; §15 forbids
 the force-push that would reattribute them, so they stand, grey, pending an owner
-decision (issue filed). The six commits after it are correct. The lesson —
+decision ([#41](https://github.com/yinggarykairui/factory-hub/issues/41); the doctrine gap
+behind it is [#42](https://github.com/yinggarykairui/factory-hub/issues/42)). The six commits after it are correct. The lesson —
 authorship is a property of every clone, and a delegated subagent inherits the
 sandbox, not your intent — is queued in HANDOFF.md for tomorrow, held back by
 §14's one-lesson-per-day cap.*
