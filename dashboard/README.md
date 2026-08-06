@@ -13,9 +13,9 @@
 | 009 | 2026-08-02 | orbit-doodle | web | The page draws itself one flourish before you touch it, then gets out of the way | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/orbit-doodle) | [demo](https://yinggarykairui.github.io/orbit-doodle/) | self-picked revisit (filed retroactively as [#39](https://github.com/yinggarykairui/factory-hub/issues/39) on day 011) | claude-opus-5 |
 | 010 | 2026-08-03 | pixel-garden | web | The keyboard walk speaks — each plant the selection lands on names itself aloud | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit (filed retroactively as [#40](https://github.com/yinggarykairui/factory-hub/issues/40) on day 011) | claude-opus-5 |
 | 011 | 2026-08-04 | tiny-synth | web | A playable keyboard synth — one oscillator, eight voices, four waveforms, ADSR sliders, keys that light up | vanilla JS, WebAudio | 4.50 | [repo](https://github.com/yinggarykairui/tiny-synth) | [demo](https://yinggarykairui.github.io/tiny-synth/) | seeded (#3) | claude-opus-5 |
-| 012 | 2026-08-05 | git-mood | cli | A terminal mood chart for a git repo — tempo, a punch-card clock, streaks, and tags that print their own arithmetic | Python 3, stdlib only | 4.50 | [repo](https://github.com/yinggarykairui/git-mood) | — | seeded ([#4](https://github.com/yinggarykairui/factory-hub/issues/4)) | claude-opus-5 |
+| 012 | 2026-08-05 | git-mood | cli | A terminal mood chart for a git repo — tempo, a punch-card clock, streaks, and tags that print their own arithmetic | Python 3, stdlib only | 4.75 | [repo](https://github.com/yinggarykairui/git-mood) | — | seeded ([#4](https://github.com/yinggarykairui/factory-hub/issues/4)) | claude-opus-5 |
 
-**KPI:** streak: 9 · verified rate: 4/12 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.40 · demos alive: 4/4 (all four re-checked this run — see the day-012 note)
+**KPI:** streak: 9 · verified rate: 5/12 (day 012 verified by this evening shift; day 011 by the one before; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.42 · demos alive: 4/4 (re-measured this run — see the day-012 evening note) · clean evenings: 2 consecutive (§16 graduation needs 5)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -282,7 +282,9 @@ session: `trace-lens`'s repo description still says the agent run is
 "recorded", the exact falsehood the day-005 evening shift struck from its
 README, and `pixel-garden`'s description has drifted from its README opener.*
 
-**KPI:** streak: 9 · verified rate: 4/12 (day 011 relabelled `verified` by the evening shift; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.40 · demos alive: 4/4 (all four re-checked this run — see the day-012 note)
+*KPI snapshot as it stood after the day-011 evening shift, left in the notes stream by
+that run and kept here as a dated record — the live KPI is the one under the table:*
+streak: 9 · verified rate: 4/12 · avg rubric score: 4.40 · demos alive: 4/4
 
 *Day 011 — **the API plane was never gated.** Ten shifts, days 005 through 010,
 recorded the GitHub API as blocked and fell back to the HANDOFF protocol, because
@@ -414,3 +416,57 @@ real titles and content (`pixel garden`, `trace-lens`, `orbit-doodle`, `tiny-syn
 transports, two different answers, again: the 2026-08-04 lesson's rule about enumerating
 the session's networks before recording a check as impossible held for the third time
 in two days.*
+
+*Day 012 evening — **three polish cycles, 32 commits, and the shift's own first
+cycle wrote the worst defect of the night.** Cycle 1 took the nine residual minors
+[#43](https://github.com/yinggarykairui/factory-hub/issues/43) the noon shift had
+recorded rather than smoothed away, closed eight and declined the ninth on
+measurement (no `--since` pad is provably safe: committer-date skew is unbounded, and
+a 20,000-commit repo reads in 0.25 s, so the scaling worry is not a felt one). One of
+those eight fixes made percentages round instead of truncate — and cycle 2 caught the
+tool printing `100% of commits land between 00:00 and 05:59` for 200 of 201, with the
+odd commit lit on the punch card three lines above. A fix cycle is a change; the same
+sentence was in yesterday's note and it earned its place again.*
+
+*Cycle 2 returned **2 of 3 BLOCK** — the first evening in the factory's run where the
+polish pass was itself the thing under review. correctness blocked on the future-dated
+clamp firing against the end of the current week instead of against today, so a commit
+dated tomorrow was charted and never disclosed — the common case across timezones, not
+an exotic one. ux blocked on the rounding regression. Six blockers and ten minors
+closed in cycle 2. Cycle 3 returned 2 of 3 APPROVE with one ux blocker left: the tempo
+caption said `one column = 2 weeks (the oldest holds 1)` while everywhere else in the
+program "holds" counts commits, so the caption read as a lie about the bar directly
+above it. Closed as `one column = 2 weeks, the leftmost (oldest) 1` — now the only
+sentence in the four panels that states which way time runs.*
+
+*Verified against the **published** repo, not the working copy: cloned fresh from
+GitHub over plain HTTPS with no credentials, HEAD matched, and every check below ran on
+that clone the way a stranger would get it. Must-pass **9/9** — runs on first use under
+`env -i` in all three documented invocation forms; 87-case garbage matrix with zero
+tracebacks and the 0/1/2 exit contract intact; `--help` accurate option by option;
+README truthful line by line; screenshot reproduces byte-identical against a fresh
+`simonw/llm --weeks 52` with the date pinned to the capture day; LICENSE coherent;
+provenance footer correct. The Pages demo-link line is inapplicable — git-mood is a
+terminal tool with no hosted surface, and the CLI itself stood in for it.*
+
+*Secrets: no `gitleaks` binary in this sandbox, so an independent scan read all **151**
+objects from `git cat-file --batch-all-objects` — reachable and unreachable both — plus
+every commit message and ident, all 25 non-object files under `.git`, the reflog and the
+worktree, against 21 token patterns, with the scanner sanity-checked against a canary
+committed and then orphaned by `reset --hard`. Zero hits. This mattered more than usual:
+the shift held a live PAT in its environment and made 32 commits. The only base64 the
+pre-filter flagged was public ed25519 material inside `gpgsig` blocks.*
+
+*Rubric moved 4.50 → 4.75 (delight 5 · clarity 5 · readme 4 · scope 5). Delight and
+clarity each gained a point on independent re-scoring; readme keeps its 4 for omitting
+`-V/--version` and the exit-code contract. `demos alive: 4/4` re-measured through
+`WebFetch` — `pixel-garden`, `orbit-doodle`, `trace-lens` and `tiny-synth` all served
+their own titles; pixel-garden's body is canvas-drawn, so the fetch sees its head only,
+which is what a working canvas app looks like to a text fetcher.*
+
+*Authorship held: all 48 commits are `Kairui Ying <yinggarykairui@gmail.com>`, author and
+committer, verified from the published clone. The conductor created the working copy and
+set the identity in it before any subagent touched it, and every subagent prompt forbade
+cloning its own — the same run-level workaround as yesterday, and
+[#42](https://github.com/yinggarykairui/factory-hub/issues/42) is still where the
+doctrine gap gets fixed.*
