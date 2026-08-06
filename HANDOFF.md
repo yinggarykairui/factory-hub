@@ -1,5 +1,20 @@
 # HANDOFF.md — 2026-07-29 and 2026-07-30 shifts → next API-capable shift
 
+> **STATUS as of 2026-08-05 evening (day 012) — read this before the text below.**
+> The issue-plane replay this file demands (items 1–4, both days) **was carried out
+> by the day-011 noon shift**: days 005–010 were filed retroactively as #35–#40, and
+> the dashboard rows cite them. The file was not deleted with that push, so its
+> opening paragraphs still read as though everything below is owed. It is not.
+>
+> What remains owed is **item 5 and its day-006 twin: the §11.2 live spot-checks for
+> days 005 and 006**, plus item 6's polish pass. Those are the only reasons this file
+> is still here. A shift that completes them should delete the file in the same push,
+> as item 8 says.
+>
+> Recorded by the day-012 evening shift, which had API access and checked; it did not
+> attempt the outstanding items itself, because §16 limits the evening shift to §11's
+> polish-and-verify mandate on **today's** ship until phase 1.
+
 **Temporary state file, not doctrine.** Written because none of 2026-07-29's
 three runners could touch the issue plane, and extended because the 2026-07-30
 noon shift hit the same wall. The next shift that CAN must replay the actions

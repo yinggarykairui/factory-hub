@@ -470,3 +470,18 @@ set the identity in it before any subagent touched it, and every subagent prompt
 cloning its own — the same run-level workaround as yesterday, and
 [#42](https://github.com/yinggarykairui/factory-hub/issues/42) is still where the
 doctrine gap gets fixed.*
+
+*One correction, logged rather than tidied away: `git-mood`'s **repo description** still
+carried the sentence cycle 3 retracted from `README.md:3` — "a verdict that shows its
+arithmetic", which `unremarkable` disproves — and this shift found it **after** setting
+`verified`. Description now matches the corrected opener verbatim; topics and licence
+were already right. The two review passes that could have caught it both marked repo
+description and topics UNCHECKED for want of API access, and the conductor, which had
+it, did not run the check until the label was on. §11.2's spot-check should carry
+"description matches the README opener" and should run before the label, not after.*
+
+*`HANDOFF.md` was audited and given a dated status banner. Its opening still read as
+though the whole day-005/006 replay were owed; that replay was carried out on day 011
+(#35–#40). What is actually left is the live §11.2 spot-check for days 005 and 006 and
+one polish pass — which is why the file has not been deleted. Left for a shift with the
+mandate to do them.*
