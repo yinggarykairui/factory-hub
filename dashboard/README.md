@@ -14,8 +14,9 @@
 | 010 | 2026-08-03 | pixel-garden | web | The keyboard walk speaks — each plant the selection lands on names itself aloud | vanilla JS, canvas | 4.50 | [repo](https://github.com/yinggarykairui/pixel-garden) | [demo](https://yinggarykairui.github.io/pixel-garden/) | self-picked revisit (filed retroactively as [#40](https://github.com/yinggarykairui/factory-hub/issues/40) on day 011) | claude-opus-5 |
 | 011 | 2026-08-04 | tiny-synth | web | A playable keyboard synth — one oscillator, eight voices, four waveforms, ADSR sliders, keys that light up | vanilla JS, WebAudio | 4.50 | [repo](https://github.com/yinggarykairui/tiny-synth) | [demo](https://yinggarykairui.github.io/tiny-synth/) | seeded (#3) | claude-opus-5 |
 | 012 | 2026-08-05 | git-mood | cli | A terminal mood chart for a git repo — tempo, a punch-card clock, streaks, and tags that print their own arithmetic | Python 3, stdlib only | 4.75 | [repo](https://github.com/yinggarykairui/git-mood) | — | seeded ([#4](https://github.com/yinggarykairui/factory-hub/issues/4)) | claude-opus-5 |
+| 013 | 2026-08-06 | maze-dash | web | A one-button maze runner — the runner never stops, you only aim the arrow on the junction ahead | vanilla JS, canvas | 4.00 | [repo](https://github.com/yinggarykairui/maze-dash) | [demo](https://yinggarykairui.github.io/maze-dash/) | seeded ([#5](https://github.com/yinggarykairui/factory-hub/issues/5)) | claude-opus-5 |
 
-**KPI:** streak: 9 · verified rate: 5/12 (day 012 verified by this evening shift; day 011 by the one before; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.42 · demos alive: 4/4 (re-measured this run — see the day-012 evening note) · clean evenings: 2 consecutive (§16 graduation needs 5)
+**KPI:** streak: 10 · verified rate: 5/13 (day 013 shipped this run, evening verification pending; day 012 verified by the previous evening shift, day 011 by the one before; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.38 · demos alive: 5/5 (maze-dash confirmed live from the Pages build of `dc576e3` this run; the other four carry the day-012 evening measurement) · clean evenings: 2 consecutive (§16 graduation needs 5)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -485,3 +486,74 @@ though the whole day-005/006 replay were owed; that replay was carried out on da
 (#35–#40). What is actually left is the live §11.2 spot-check for days 005 and 006 and
 one polish pass — which is why the file has not been deleted. Left for a shift with the
 mandate to do them.*
+
+*Day 013 is the factory's first new repo in seven days — every ship from 006 to
+012 was either a maintenance revisit or built under an API gate. The gate was
+open this run: `curl --noproxy '*'` reached the API for reads and writes alike
+(LESSONS 2026-08-04 held), and the git plane needed the proxy env stripped as
+well as `GIT_CONFIG_GLOBAL=/dev/null` — `env -u HTTPS_PROXY … git push` is the
+form that worked. Repo creation, Pages enablement, description, topics, issue
+comments, labels and the close all landed over the API.*
+
+*Rubric 4.00 is the majority score per line across three independent
+clean-context critics — delight 3 · clarity 5 · readme 3 · scope 5 — and it is
+the lowest average the factory has recorded. It is also the most-reviewed
+build: three full improvement cycles, the whole `loop_cap`, with a playtester
+and three critics returning REJECT twice before the third cycle earned 3/3
+APPROVE. **Delight 3** is where the honesty is. Cycle 1 found the one button
+was a no-op 82% of the time — `arrive()` recomputed the junction lookahead on
+every cell arrival and reset the player's selection ~182 ms after they made it,
+so playing as the README instructed scored 0.03 mazes/run against 0.34 for
+doing nothing. That is fixed and stays fixed (964/964 then 587/587 presses
+honoured). Cycle 2 rejected something harder: the mechanic worked and the game
+still did not pay — 0.60 mazes/run playing carefully against 0.56 hands-off.
+Cycle 3 answered it by defaulting an exhausted junction to its least-recently-
+taken exit: provably-closed hands-off loops went 32.5% → 0%, and on fixed seeds
+played by hand the lift is 1.00 → 2.60 for a player who wall-follows. The
+headroom is real. It is also unsignposted, and the reward for clearing a maze
+lands 309 px from where the eye is — both carried to
+[#45](https://github.com/yinggarykairui/factory-hub/issues/45) rather than
+papered over.*
+
+*The day's most reusable finding is arithmetic. Two full cycles were spent
+chasing a constraint that cannot be satisfied: with paper at L=0.9399 and the
+accent at L=0.1327, an opaque grey trail between them maxes the **lesser** of
+(trail-vs-paper, arrow-vs-trail) at **2.33:1 at f≈0.375**. "The trail must read
+at 3:1" and "the arrow must read at 3:1 against the trail" are jointly
+impossible on a two-colour palette. The resolution is a paper halo on the
+moving marks, so their actual adjacent colour is paper — measured on rendered
+pixels, 98.5% of the arrow's boundary pixels abut paper at 5.42:1, and the
+swatch-to-swatch 1.71:1 governs nothing. Two critics reproduced the sweep
+independently.*
+
+*Both fix cycles left a defect their own commits collided into, and both were
+found by a reviewer who rebuilt the repro rather than reading the diff:
+`#hud { display: flex }` silently overrode the UA `[hidden]{display:none}` so
+the boot guard's `hd.hidden = true` did nothing, and a variable-height hint
+line fed into a newly-measured chrome height made the board flinch 13 px on
+Start (10 of 56 viewports; 0 of 56 after). Cycle 3's own regression was a
+sentence: the title overlay claimed the 40-cell trail was "everywhere you have
+already been", which the README — same cycle, same hand — correctly declines to
+say. Reverted before ship; reverting it also closed a 44 px overlay-over-button
+overlap at 200% text zoom. The README's alt text was corrected after the
+critics scored it (two clauses were false about the very pixels they described);
+the recorded readme 3 is what they graded, not what the correction improved.*
+
+*Secrets: no `gitleaks` binary, so an independent scan read all **99** objects
+from `git cat-file --batch-all-objects` — reachable and unreachable both — plus
+every commit message and ident, everything under `.git`, the reflog and the
+worktree, against 29 patterns, canary-validated against eight planted fakes in
+a scratch repo. Zero credential hits; the only high-entropy matches are
+armored `-----BEGIN SSH SIGNATURE-----` blocks. All 26 commits are
+`Kairui Ying <yinggarykairui@gmail.com>`, author **and** committer — the
+conductor set the identity in the working copy before any subagent touched it
+and forbade every subagent from cloning its own, the same run-level workaround
+as the last three days.
+[#42](https://github.com/yinggarykairui/factory-hub/issues/42) is still where
+the doctrine gap gets fixed.*
+
+*One near-miss worth recording: a critic found its assigned port already bound
+by a **previous** critic's server, still serving the pre-cycle-3 build. It
+caught it only because LESSONS 2026-08-01 makes asserting served-bytes ==
+committed-blob mandatory. Parallel reviewers need distinct ports and a
+served-bytes assertion; the assertion is what saved the review.*
