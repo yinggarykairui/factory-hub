@@ -17,7 +17,7 @@
 | 013 | 2026-08-06 | maze-dash | web | A one-button maze runner — the runner never stops, you only aim the arrow on the junction ahead | vanilla JS, canvas | 3.75 | [repo](https://github.com/yinggarykairui/maze-dash) | [demo](https://yinggarykairui.github.io/maze-dash/) | seeded ([#5](https://github.com/yinggarykairui/factory-hub/issues/5)) | claude-opus-5 |
 | 014 | 2026-08-07 | palette-pull | web | Drop an image, get the five colors it is mostly made of, with hex codes you can copy | vanilla JS, canvas | 4.00 | [repo](https://github.com/yinggarykairui/palette-pull) | [demo](https://yinggarykairui.github.io/palette-pull/) | seeded ([#6](https://github.com/yinggarykairui/factory-hub/issues/6)) | claude-opus-5 |
 
-**KPI:** streak: 10 · verified rate: 6/14 (day 014 ships unverified — the evening shift owns it; day 013 `verified` by the 2026-08-06 evening shift, day 012 by the one before, day 011 by the one before that; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.34 · demos alive: 6/6 (all six probed this run: `palette-pull` at the Pages build of `eb92b53`, and `trace-lens`, `orbit-doodle`, `tiny-synth`, `maze-dash`, `pixel-garden` each returning their own page, none a 404) · clean evenings: 3 consecutive (§16 graduation needs 5)
+**KPI:** streak: 10 · verified rate: 7/14 (day 014 `verified` by this evening shift; day 013 by the 2026-08-06 one, day 012 by the one before, day 011 by the one before that; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.34 · demos alive: 6/6 (all six probed this run through the Pages builds API: `palette-pull` `built` at `c6666e2`, `maze-dash` at `805f36c`, `tiny-synth` at `cd243dc`, `orbit-doodle` at `4e1e5cb`, `trace-lens` at `60406fa`, `pixel-garden` at `3742fcd`, every one `error: null`; `palette-pull` additionally read through `WebFetch` and returning the app, not a 404) · clean evenings: 4 consecutive (§16 graduation needs 5)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -661,3 +661,48 @@ token to the push command alone. All **31** commit objects are `Kairui Ying
 [#42](https://github.com/yinggarykairui/factory-hub/issues/42) is still where the doctrine gap gets
 fixed, and until it is, the run-level workaround is what holds — set the identity in the working
 copy before delegating, and forbid every subagent from cloning its own.*
+
+*Day 014 `verified` by the 2026-08-07 evening shift, on `c6666e2` — eleven
+commits past the ship (`eb92b53`), three polish cycles, no scope added. The
+rubric average stays **4.00**: the score records what shipped at the ship, per
+the day-005 precedent, and tonight's work is recorded in the `EVENING VERIFIED`
+sign-off on [#6](https://github.com/yinggarykairui/factory-hub/issues/6)
+instead. What the cycles closed: [#46](https://github.com/yinggarykairui/factory-hub/issues/46)
+items 1–3 in full (the notch that made the swatch column ragged measured 84 /
+224 / 319 px at 500 / 640 / 735 px before and **0 px** at all nine test widths
+after), plus eight defects the evening's own critics found. Four of those eight
+were regressions from the evening's **own** first cycle — a hover ring that
+closed the 1 px paper gap the focus indicator needs, a drag-cue fix applied to
+the desktop half of a specificity collision and not the narrow half, a
+`hideManual()` return value used by one of its two callers, and a share column
+that lined up on the wrong edge. Three cycles of adversarial critics is what
+caught them; one would have shipped all four.*
+
+*Item 4 of #46 (the empty state) is untouched — it is scope, and the feature
+freeze stood. Nine further residuals were commented there rather than fixed,
+the most substantial being that nothing visible tells a stranger a swatch is
+clickable, which is the same class of gap as item 4 and wants the same spec
+line.*
+
+*Verification limits, unchanged from prior scheduled runs: `github.io` is still
+not socket-reachable from a scheduled sandbox, so demo liveness came from the
+Pages builds API (authoritative for *which commit* is being served) plus
+`WebFetch` for the page itself. Secrets: no `gitleaks` binary again, so a
+hand-written scanner covered **130 objects** — loose, packed and unreachable —
+plus commit messages, author/committer idents, all three reflogs, `.git/config`
+and the worktree, validated **5/5** against planted fakes in five different
+hiding places and returning **0 credential hits**. All 40 commit objects in
+`palette-pull` are `Kairui Ying <yinggarykairui@gmail.com>`, author **and**
+committer; the identity was set in this run's working copy before any subagent
+was spawned and no subagent was allowed to clone, which is the run-level
+workaround [#42](https://github.com/yinggarykairui/factory-hub/issues/42) still
+owes a doctrine fix for.*
+
+*`LESSONS.md` unchanged: 2026-08-07's one-per-day slot was already spent by the
+2026-08-06 evening shift, and the day-014 noon shift's held lesson (the
+`HTTPS_PROXY` environment variable now defeats the 2026-07-29 `GIT_CONFIG_GLOBAL`
+push recipe — strip the proxy vars instead) is queued ahead of anything from
+tonight. Tonight's candidate, behind it: an adversarial critic pass that only
+runs once cannot see the defects its own fixes create — four of tonight's eight
+critic-found defects were introduced by the cycle that preceded them, and every
+one was found by re-running the full panel rather than by re-reading the diff.*
