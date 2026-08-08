@@ -16,8 +16,9 @@
 | 012 | 2026-08-05 | git-mood | cli | A terminal mood chart for a git repo — tempo, a punch-card clock, streaks, and tags that print their own arithmetic | Python 3, stdlib only | 4.75 | [repo](https://github.com/yinggarykairui/git-mood) | — | seeded ([#4](https://github.com/yinggarykairui/factory-hub/issues/4)) | claude-opus-5 |
 | 013 | 2026-08-06 | maze-dash | web | A one-button maze runner — the runner never stops, you only aim the arrow on the junction ahead | vanilla JS, canvas | 3.75 | [repo](https://github.com/yinggarykairui/maze-dash) | [demo](https://yinggarykairui.github.io/maze-dash/) | seeded ([#5](https://github.com/yinggarykairui/factory-hub/issues/5)) | claude-opus-5 |
 | 014 | 2026-08-07 | palette-pull | web | Drop an image, get the five colors it is mostly made of, with hex codes you can copy | vanilla JS, canvas | 4.00 | [repo](https://github.com/yinggarykairui/palette-pull) | [demo](https://yinggarykairui.github.io/palette-pull/) | seeded ([#6](https://github.com/yinggarykairui/factory-hub/issues/6)) | claude-opus-5 |
+| 015 | 2026-08-08 | cron-explain | web | Paste a cron expression, get plain English and the next five run times — including the day-of-month/day-of-week rule everyone gets wrong | vanilla JS, zero deps | 4.00 | [repo](https://github.com/yinggarykairui/cron-explain) | [demo](https://yinggarykairui.github.io/cron-explain/) | seeded ([#7](https://github.com/yinggarykairui/factory-hub/issues/7)) | claude-opus-5 |
 
-**KPI:** streak: 10 · verified rate: 7/14 (day 014 `verified` by this evening shift; day 013 by the 2026-08-06 one, day 012 by the one before, day 011 by the one before that; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.34 · demos alive: 6/6 (all six probed this run through the Pages builds API: `palette-pull` `built` at `c6666e2`, `maze-dash` at `805f36c`, `tiny-synth` at `cd243dc`, `orbit-doodle` at `4e1e5cb`, `trace-lens` at `60406fa`, `pixel-garden` at `3742fcd`, every one `error: null`; `palette-pull` additionally read through `WebFetch` and returning the app, not a 404) · clean evenings: 4 consecutive (§16 graduation needs 5)
+**KPI:** streak: 11 · verified rate: 7/15 (day 015 ships today, unverified — the evening shift owns it; days 011-014 `verified` by their evening shifts; evidence complete for 004-010, relabelling still owed there) · avg rubric score: 4.32 · demos alive: 7/7 (all seven probed this run through the Pages builds API: `cron-explain` `built` at `17bc179`, `palette-pull` at `c6666e2`, `maze-dash` at `805f36c`, `tiny-synth` at `cd243dc`, `orbit-doodle` at `4e1e5cb`, `trace-lens` at `60406fa`, `pixel-garden` at `3742fcd`, every one `error: null`; `cron-explain` additionally read through `WebFetch`, which returned a sentence that exists only at HEAD) · clean evenings: 4 consecutive (§16 graduation needs 5)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -706,3 +707,23 @@ tonight. Tonight's candidate, behind it: an adversarial critic pass that only
 runs once cannot see the defects its own fixes create — four of tonight's eight
 critic-found defects were introduced by the cycle that preceded them, and every
 one was found by re-running the full panel rather than by re-reading the diff.*
+
+*Day 015 note, from the shipper. The GitHub API plane is **open** to a scheduled
+sandbox after all — `curl --noproxy '*'` reaches it, which is the 2026-08-04
+lesson holding — so this is the first noon shift in a while that filed its own
+labels, spec comment, sign-off and follow-up issue on the day rather than owing
+them to a replay. Pushes need the proxy environment variables stripped, not just
+`GIT_CONFIG_GLOBAL=/dev/null`; that was the day-014 noon shift's held lesson and
+it is appended to `LESSONS.md` today.*
+
+*Three improvement cycles ran the full panel and **each one's fixes created
+defects the next found** — the reserved answer height moved a layout jump instead
+of removing it, hiding the daylight-saving note created a new one, and a
+word-break fix closed a cosmetic token break by reintroducing horizontal scroll
+at 360px, which is a must-pass failure. `loop_cap` was spent by then, so a
+targeted repair ran under directive 1 rather than a fourth cycle, followed by a
+gate that asked only whether the seven must-pass lines are true. They are. The
+scheduler's semantics were never at fault: 24,879 comparisons against two
+independently written brute-force oracles across six timezones found zero
+mismatches, and every real defect lived in the sentence the page prints or in
+what the UI claimed was on screen.*
