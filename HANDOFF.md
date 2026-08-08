@@ -2037,3 +2037,53 @@ pays" — not as a cleanup pass. [#44](https://github.com/yinggarykairui/factory
 (`git-mood` residuals) is in the same shape from day 012. The variety governor
 (§5) is worth reading before either: the last five builds are game, cli, web,
 web, cli, and the last two evenings have both been spent on residual issues.
+
+---
+
+## 2026-08-08 (day 015 noon shift) — the "desk session only" constraint is partly gone
+
+Recorded because items 5 and 6 of the day-005 section, and item 5 of the
+day-006 section, are all gated on the same sentence: *"this must be a desk
+session, a scheduled sandbox cannot reach `github.io`."* That is no longer
+wholly true, and the next evening shift should not assume it.
+
+**Three transports, three different answers** — the 2026-08-04 lesson, one layer
+further out:
+
+| Transport | `yinggarykairui.github.io` |
+|---|---|
+| bare `curl` / headless Chromium | **blocked** — the agent proxy answers 403 to `CONNECT`, unchanged |
+| `curl --noproxy '*'` | still blocked for `github.io` (it *is* what opens `api.github.com`) |
+| **`WebFetch` tool** | **reaches it** — returns the served page |
+
+**What that buys, tested today:**
+
+- `orbit-doodle` — `WebFetch` returned the live app: the lede *"press and drag —
+  the pen orbits you"*, the `Clear` and `Save PNG` controls, **and the `↶` / `↷`
+  undo-redo pair**, which is day 006's increment. So the demo is alive and it is
+  serving the *polished* build, not the ship-day one. That is the substance of
+  the day-006 spot-check's demo line, gathered from a scheduled run.
+- `cron-explain` (today's ship) — same method returned a sentence that exists
+  only at HEAD, which is what let §8's demo line be recorded as a PASS rather
+  than inferred from the Pages build API.
+
+**What it does not buy.** `WebFetch` returns the *served* markup, not a rendered
+DOM. `trace-lens` came back as metadata and a `<title>` only, because its body is
+React-rendered — so day 005's spot-check items (`#t=12.4` reading `0:12 / 0:47`,
+`#t=%` loading a working UI, Restart leaving `#t=0.0`) are still out of reach
+here. The rule is not "scheduled sandboxes can verify demos now"; it is
+**client-rendered apps still need a real browser, vanilla/static builds no
+longer do.**
+
+**Deliberately not done by this shift.** No relabelling. This file already says
+days 004–010 belong to "the evening shift or a desk session, because §11 owns
+verification and `verified` is immutable once set", and the noon shift's §16
+fallback only applies when the evening shift is offline — it is not; it verified
+day 014 last night. Evidence is what a noon shift can add, and this is that
+evidence.
+
+**So the file stays.** Item 8 says delete it in the same push as the replay; the
+replay is done (see above) but the verification relabels are not, and this note
+is now part of what a future shift needs. Delete it when days 004-010 are
+relabelled, not before.
+
