@@ -18,7 +18,7 @@
 | 014 | 2026-08-07 | palette-pull | web | Drop an image, get the five colors it is mostly made of, with hex codes you can copy | vanilla JS, canvas | 4.00 | [repo](https://github.com/yinggarykairui/palette-pull) | [demo](https://yinggarykairui.github.io/palette-pull/) | seeded ([#6](https://github.com/yinggarykairui/factory-hub/issues/6)) | claude-opus-5 |
 | 015 | 2026-08-08 | cron-explain | web | Paste a cron expression, get plain English and the next five run times — including the day-of-month/day-of-week rule everyone gets wrong | vanilla JS, zero deps | 4.00 | [repo](https://github.com/yinggarykairui/cron-explain) | [demo](https://yinggarykairui.github.io/cron-explain/) | seeded ([#7](https://github.com/yinggarykairui/factory-hub/issues/7)) | claude-opus-5 |
 
-**KPI:** streak: 11 · verified rate: 7/15 (day 015 ships today, unverified — the evening shift owns it; days 011-014 `verified` by their evening shifts; evidence complete for 004-010, relabelling still owed there) · avg rubric score: 4.32 · demos alive: 7/7 (all seven probed this run through the Pages builds API: `cron-explain` `built` at `17bc179`, `palette-pull` at `c6666e2`, `maze-dash` at `805f36c`, `tiny-synth` at `cd243dc`, `orbit-doodle` at `4e1e5cb`, `trace-lens` at `60406fa`, `pixel-garden` at `3742fcd`, every one `error: null`; `cron-explain` additionally read through `WebFetch`, which returned a sentence that exists only at HEAD) · clean evenings: 4 consecutive (§16 graduation needs 5)
+**KPI:** streak: 11 · verified rate: 8/15 (day 015 `verified` by tonight's evening shift; days 011-014 by theirs; evidence complete for 004-010, relabelling still owed there) · avg rubric score: 4.32 · demos alive: 7/7 (all seven re-probed this run through the Pages builds API: `cron-explain` `built` at `2a55ea3`, `palette-pull` at `c6666e2`, `maze-dash` at `805f36c`, `tiny-synth` at `cd243dc`, `orbit-doodle` at `4e1e5cb`, `trace-lens` at `60406fa`, `pixel-garden` at `3742fcd`, every one `error: null`; `cron-explain` additionally read through `WebFetch` at its new HEAD, returning the `What you typed` column header and the reworded footer, neither of which exists before tonight) · clean evenings: **5 consecutive** (§16's graduation bar is met — evidence filed as a `meta` issue for review; the phase gate does not move without one)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -727,3 +727,31 @@ scheduler's semantics were never at fault: 24,879 comparisons against two
 independently written brute-force oracles across six timezones found zero
 mismatches, and every real defect lived in the sentence the page prints or in
 what the UI claimed was on screen.*
+
+*Day 015's evening shift (2026-08-08, 20:00 PT) spent all three polish cycles
+and then a fourth read-only confirmation pass, `17bc179` → `2a55ea3`, six
+commits. **The evening's own first cycle shipped a blocker, and the evening's
+third cycle caught it.** The fix for a fall-back hour that dropped out of the
+run list promoted a repeated wall-clock minute to its second pass — but the
+scheduler walks candidates in ascending *wall-clock* order, so minutes already
+behind `now` were promoted while minutes ahead of it were not, and `*/15 * * *
+*` from 01:20 PDT came back 09:00Z, 09:15Z, 08:30Z, 08:45Z, 10:00Z. It was
+reverted rather than re-fixed: the shipped rule (a repeated minute is listed
+once, at its first instant) is what real cron does, and the complaint that
+motivated the change was that rule seen from inside the repeat. What the
+episode actually exposed is a test gap, now closed — every ordering assertion
+in the suite entered the repeated hour from before the seam or from its second
+pass, so 313 of 313 passed while the list was out of order.*
+
+*The day-015 row keeps its ship-day rubric of 4.00; that column records what
+shipped at the ship. The evening's independent re-score of the polished
+artifact is delight 4 · clarity 4 · readme 5 · scope 5 — the ship day scored
+delight 3 · clarity 4 · readme 4 · scope 5. Readme gained a point once the
+screenshot stopped being three changes stale and its alt text stopped omitting
+a paragraph that had always been in the image; delight gained one for an
+answer that now outranks the page's own title. Verification numbers behind the
+`verified` label: `tests.html` 285/0/7 in UTC, 333/0/0 in America/Los_Angeles
+and 317/0/3 in four zones with 30-minute, one-hour and two-hour folds; an
+independent minute-by-minute sweep across full fall-back and spring-forward
+windows in three zones checked 129,960 run lists for zero ordering violations;
+no horizontal scroll at six widths across twenty expressions.*
