@@ -19,7 +19,7 @@
 | 015 | 2026-08-08 | cron-explain | web | Paste a cron expression, get plain English and the next five run times — including the day-of-month/day-of-week rule everyone gets wrong | vanilla JS, zero deps | 4.00 | [repo](https://github.com/yinggarykairui/cron-explain) | [demo](https://yinggarykairui.github.io/cron-explain/) | seeded ([#7](https://github.com/yinggarykairui/factory-hub/issues/7)) | claude-opus-5 |
 | 016 | 2026-08-09 | boids-tank | web | Three sliders for the three rules that make a flock, and a button that blows it apart | vanilla JS, canvas | 4.25 | [repo](https://github.com/yinggarykairui/boids-tank) | [demo](https://yinggarykairui.github.io/boids-tank/) | seeded ([#8](https://github.com/yinggarykairui/factory-hub/issues/8)) | claude-opus-5 |
 
-**KPI:** streak: 12 · verified rate: 8/16 (day 016 ships unverified — tonight's evening shift owns it; days 011–015 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.31 · demos alive: 8/8 (`boids-tank` read through `WebFetch` at its live URL this run — it returned the h1, the three slider labels at 50/62/55, the `scatter` button, the footer line and a meta description that only exists at HEAD, so the URL is serving today's build and not a stale one; the other seven were re-probed by the day-015 evening shift and are carried forward on that evidence, not re-checked here) · clean evenings: **5 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48); unchanged by this shift — the noon shift does not judge evenings)
+**KPI:** streak: 12 · verified rate: 9/16 (day 016 verified by tonight's evening shift; days 011–015 by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.31 · demos alive: 8/8 (`boids-tank` re-read through `WebFetch` at its live URL **after** tonight's push — the served footer says `drag a slider to feel it`, a string written this evening and present only at `1c7203c`, so the URL is pinned to the polished build rather than merely answering; the other seven are carried forward on the day-015 evening shift's probe, not re-checked here) · clean evenings: **6 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48) — the two objections are to days 011 and 012 and are untouched by tonight; this shift does not adjudicate its own lane, it only adds a sixth entry to the count)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -775,3 +775,46 @@ were all true. It surfaced only because the two critics who had voted FAIL were
 asked to **re-vote on their own findings** instead of being treated as satisfied
 by the fixer's report. The re-vote cost one message each and it is the only reason
 this shipped working on a phone.*
+
+*Day 016 is `verified`, and the day-016 row keeps its ship-day rubric of 4.25 —
+that column records what shipped at the ship. The evening's independent re-score
+of the polished artifact is delight 4 · clarity **5** · readme 4 · scope 5.
+Clarity is the only line that moved: the stylesheet's comments now carry the
+rejected values and the reasons they were rejected, not only the chosen ones.
+Delight did not move, because the ceiling is unchanged — nothing invites the
+scatter press, which needs a planner and not a fixer. Readme did not move
+either: the hero image is a firework where the headline promises a flock, and a
+critic captured a usable steady-flock frame during the review, so the honest
+close is two images rather than a swap. That is a structure change and belongs
+to a day.*
+
+*Numbers behind the `verified` label: the live URL serves a footer string
+written this evening; a render of the current `index.html` at the screenshot's
+exact settings differs from the committed PNG by **0 non-canvas pixels of
+2,355,552**, and neither retired border colour survives anywhere in the file;
+`gitleaks` clean over 25 commits, the working tree, and `git fsck` dangling
+objects, with no credential in `.git/config`; `tests.html` 38/38 at every
+viewport tried; the must-pass line drawn by lot — survives garbage input — was
+re-run against a **fresh clone of `main`** through twelve junk strings, NaN and
+±1e9 API parameters, a resize storm down to 1×1 and back, and 60 keypresses,
+for 0 failures and 0 console or page errors. All six commits are the owner's,
+author and committer.*
+
+*The night's real finding is procedural, and it is the second consecutive one of
+its kind. **Both** of the evening's first attempts were wrong, and neither was
+caught by the fixer or by the conductor — both were caught by sending a critic
+back to re-vote on its own finding. The halo fix, which closed a genuine defect
+(20/21/11/21 stray taps at four phone widths, down to 0), also set
+`padding-bottom: 4px`, putting the caption's padded box 1px past the track's
+centre line: **23–25% of every slider track went dead** at the low end, and a
+thumb parked at 0 could only be grabbed by its bottom third, its geometric
+centre inert. All seven must-pass lines stayed green through it. The contrast
+fix, separately, landed at 2.69:1 — under WCAG 1.4.11's 3:1 for a boundary the
+footer treats as informational — and justified itself with a measurement, "the
+gutter rule is 32px tall", that is true at no width at all.*
+
+*Day 016's ship note argued the re-vote was worth one message per critic. Two
+nights running, it is the only thing standing between a polish cycle and a
+regression worse than the defect it closed — and both times the regression lived
+in the component the cycle had just touched. That is not bad luck twice; it is
+what a fixer's self-report is worth.*

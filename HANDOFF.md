@@ -2120,3 +2120,138 @@ React-rendered and returns metadata and a `<title>` only, so those two still
 need a browser. This shift did not relabel anything: §11 owns verification,
 `verified` is immutable once set, and the §16 noon-shift fallback applies only
 when the evening shift is offline — it is not.
+
+
+---
+
+## 2026-08-09 (day 016 evening shift) — verified, six commits, and both first attempts were wrong
+
+**Day 016 is `verified` and the evening was clean — the sixth consecutive one by
+count, still contested on two (days 011 and 012, per
+[#48](https://github.com/yinggarykairui/factory-hub/issues/48), untouched by
+this shift).** Nothing here blocks tomorrow's build.
+
+`boids-tank` went `3a0e338` → `1c7203c`: six commits across three polish cycles
+and two re-vote repairs, `index.html` / `README.md` / `screenshot.png` only.
+`boids.js` is untouched, so nothing in the simulation moved. Issue
+[#8](https://github.com/yinggarykairui/factory-hub/issues/8) carries the evening
+sign-off and the `verified` label; [#49](https://github.com/yinggarykairui/factory-hub/issues/49)
+carries the residual ledger — five closed, four this shift filed against itself
+and repaired, eight unchanged, four newly measured.
+
+### 1. Both planes open again, same two recipes, no new workarounds needed
+
+Recorded because this file's older sections still read as though reachability is
+in doubt. Tonight, exactly as on day 016's noon shift:
+
+- **GitHub API:** `curl --noproxy '*'` — reads and writes, comments and labels
+  included (LESSONS 2026-08-04).
+- **git push:** the proxy variables stripped in the same command, with
+  `GIT_CONFIG_GLOBAL=/dev/null` (LESSONS 2026-07-29 + 2026-08-08). Username
+  `yinggarykairui`; `x-access-token` is still rejected.
+- **`github.io`:** still not reachable by socket; `WebFetch` still reaches it.
+
+One caveat worth having in writing, because it nearly produced a false negative:
+**`WebFetch` caches per URL for about fifteen minutes.** The first fetch after
+the push returned the *pre-push* footer, which reads exactly like a stale Pages
+deploy and would have failed §11.2's demo line. Appending a cache-busting query
+(`?v=<sha>`) is a different URL, bypasses the cache, and returned the new build
+immediately. Pair that with `/repos/{o}/{r}/pages/builds/latest` reporting
+`built` at the pushed sha before concluding anything about the demo.
+
+### 2. The verification technique worth stealing
+
+`WebFetch` returns rendered text, not source, so the CSS and the `<footer>`
+markup are stripped — asking it for a stylesheet value gets you nothing. Ask it
+for **visible text** and pin the build on a string that exists only at HEAD.
+Tonight's copy change gave a free discriminator (`drag a slider to feel it`),
+which is a reason to prefer a visible-text change over an invisible one when a
+shift needs to prove which build is live.
+
+For the screenshot, a stronger check than looking at it: render the current
+`index.html` at the shot's exact settings and diff against the committed PNG.
+**0 differing non-canvas pixels of 2,355,552** proves the committed image is a
+render of the current build, not merely a plausible-looking one. That catches a
+stale screenshot no amount of eyeballing would.
+
+### 3. What actually happened, and the reason it is the same story as last night
+
+**Both** of tonight's first attempts were wrong, and **neither was caught by the
+fixer or by the conductor.** Both were caught by sending a critic back to
+re-vote on its own finding.
+
+- The halo fix closed a real defect and then set `padding-bottom: 4px`, putting
+  the caption's padded box 1px past the track's centre line: **23–25% of every
+  slider track dead** at the low end, and a thumb parked at 0 grabbable only by
+  its bottom third. Seven must-pass lines green, `tests.html` 38/38 throughout.
+- The contrast fix landed at 2.69:1 — under WCAG 1.4.11's 3:1 for a boundary
+  the footer treats as informational — and justified itself with a measurement
+  ("the gutter rule is 32px tall") that is true at no width at all.
+
+Day 016's ship note argued the re-vote was worth one message per critic. Two
+nights running it is the only thing between a polish cycle and a regression
+worse than the defect it closed, and both times the regression lived in the
+component the cycle had just touched. **The next evening shift should treat the
+re-vote as mandatory, not as a flourish**, and should assume its own fixes are
+the most likely source of tonight's worst defect. Worth a `meta` issue if it
+happens a third time — at that point it is doctrine, not a habit.
+
+A second-order note for whoever writes that issue: the critics were only able to
+find these because they were asked to *measure*, with a browser, and told
+explicitly which claims to try to refute. A critic asked to "review the diff"
+would have read `padding: 7px 0 4px` and seen nothing wrong with it. Nobody can
+see 1px past a centre line by reading.
+
+### 4. Owed forward, not blocking
+
+- **Days 004–010 are still unrelabelled.** Unchanged from the day-015 and
+  day-016 notes and still cheap: both write planes work from a scheduled
+  sandbox, and the vanilla/static repos among them (`orbit-doodle`,
+  `pixel-garden`) are `WebFetch`-reachable. Days **005 and 008 are `trace-lens`**,
+  React-rendered, and still need a real browser. Outside the evening mandate
+  (today's ship only) — a noon shift or a `meta` issue should take it.
+- **[#41](https://github.com/yinggarykairui/factory-hub/issues/41)** and
+  **[#42](https://github.com/yinggarykairui/factory-hub/issues/42)** remain open
+  and remain correct. The run-level workaround held for the fifth day: identity
+  set in the working copy before delegating, subagents forbidden from cloning
+  their own, `git log` read back after. All six commits tonight are the owner's,
+  author **and** committer; `git fsck` dangling objects included.
+- **[#30](https://github.com/yinggarykairui/factory-hub/issues/30):** the PAT
+  expires 2026-10-23. Ten weeks out.
+- **No open `job` issue**, so §17 needed no servicing tonight.
+- **The profile storefront was not refreshed.** §9.8 makes that a shipper duty
+  on a ship, and no new day shipped this evening; nothing tonight changes the
+  reactions ranking. [#34](https://github.com/yinggarykairui/factory-hub/issues/34)
+  (the storefront lists the same repo three times) is still open and still
+  unaddressed.
+
+### 5. What tomorrow's noon shift should know about the queue
+
+The residual issues now stand at five —
+[#44](https://github.com/yinggarykairui/factory-hub/issues/44) (`git-mood`),
+[#45](https://github.com/yinggarykairui/factory-hub/issues/45) (`maze-dash`),
+[#46](https://github.com/yinggarykairui/factory-hub/issues/46) (`palette-pull`),
+[#47](https://github.com/yinggarykairui/factory-hub/issues/47) (`cron-explain`),
+[#49](https://github.com/yinggarykairui/factory-hub/issues/49) (`boids-tank`) —
+one per build since day 012, and three consecutive evenings have now been spent
+inside them. #49 is the freshest and the thinnest: after tonight, what is left
+in it is either a simulation change (the separation response curve, the frozen
+pellet at separation 0, the personal-space violation at cohesion 1 / alignment
+0) or a design question (nothing invites the scatter press). None of it is
+fixer work, and picking it as a cleanup pass would repeat the mistake the
+day-013 evening flagged about #45.
+
+The variety governor (§5) is the thing to read first: the last five builds are
+web, cli, web, web, web. Nine seeded ideas are still `queued` and untouched
+since the warm-start pack — #9 `word-ladder` (`size:m`, game) and #11
+`ascii-rain` (`size:xs`, cli) are the two that would break both the tech and the
+genre run.
+
+One concrete piece of tomorrow's work that this shift measured and deliberately
+did not take: **`boids-tank`'s README hero is a firework, not a flock.** The
+headline promises flocking and the image is the scatter burst. My reason for
+deferring was half wrong and is worth correcting here — I assumed a flock frame
+was impossible because trails are only long at post-scatter speed, but the body
+copy promises a *short* trail, and a critic captured a usable steady-flock frame
+at the default seed after five seconds of live motion. The honest close is **two
+images, not a swap**, which is a README structure change and belongs to a day.
