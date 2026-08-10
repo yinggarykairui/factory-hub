@@ -17,8 +17,9 @@
 | 013 | 2026-08-06 | maze-dash | web | A one-button maze runner — the runner never stops, you only aim the arrow on the junction ahead | vanilla JS, canvas | 3.75 | [repo](https://github.com/yinggarykairui/maze-dash) | [demo](https://yinggarykairui.github.io/maze-dash/) | seeded ([#5](https://github.com/yinggarykairui/factory-hub/issues/5)) | claude-opus-5 |
 | 014 | 2026-08-07 | palette-pull | web | Drop an image, get the five colors it is mostly made of, with hex codes you can copy | vanilla JS, canvas | 4.00 | [repo](https://github.com/yinggarykairui/palette-pull) | [demo](https://yinggarykairui.github.io/palette-pull/) | seeded ([#6](https://github.com/yinggarykairui/factory-hub/issues/6)) | claude-opus-5 |
 | 015 | 2026-08-08 | cron-explain | web | Paste a cron expression, get plain English and the next five run times — including the day-of-month/day-of-week rule everyone gets wrong | vanilla JS, zero deps | 4.00 | [repo](https://github.com/yinggarykairui/cron-explain) | [demo](https://yinggarykairui.github.io/cron-explain/) | seeded ([#7](https://github.com/yinggarykairui/factory-hub/issues/7)) | claude-opus-5 |
+| 016 | 2026-08-09 | boids-tank | web | Three sliders for the three rules that make a flock, and a button that blows it apart | vanilla JS, canvas | 4.25 | [repo](https://github.com/yinggarykairui/boids-tank) | [demo](https://yinggarykairui.github.io/boids-tank/) | seeded ([#8](https://github.com/yinggarykairui/factory-hub/issues/8)) | claude-opus-5 |
 
-**KPI:** streak: 11 · verified rate: 8/15 (day 015 `verified` by tonight's evening shift; days 011-014 by theirs; evidence complete for 004-010, relabelling still owed there) · avg rubric score: 4.32 · demos alive: 7/7 (all seven re-probed this run through the Pages builds API: `cron-explain` `built` at `2a55ea3`, `palette-pull` at `c6666e2`, `maze-dash` at `805f36c`, `tiny-synth` at `cd243dc`, `orbit-doodle` at `4e1e5cb`, `trace-lens` at `60406fa`, `pixel-garden` at `3742fcd`, every one `error: null`; `cron-explain` additionally read through `WebFetch` at its new HEAD, returning the `What you typed` column header and the reworded footer, neither of which exists before tonight) · clean evenings: **5 consecutive by count, contested on two** (days 011–015 each closed with an evening verification, which is what the counter was reading — but day 011's evening left `#41` open, eight commits authored as Claude rather than the owner, and day 012's evening logged a correction it made *after* setting `verified`, which is both an ordering mistake and a touch of an immutable ship. Whether either disqualifies its evening is a judgement §16 does not make for us; the dossier is filed as [#48](https://github.com/yinggarykairui/factory-hub/issues/48) and the phase gate does not move without one)
+**KPI:** streak: 12 · verified rate: 8/16 (day 016 ships unverified — tonight's evening shift owns it; days 011–015 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.31 · demos alive: 8/8 (`boids-tank` read through `WebFetch` at its live URL this run — it returned the h1, the three slider labels at 50/62/55, the `scatter` button, the footer line and a meta description that only exists at HEAD, so the URL is serving today's build and not a stale one; the other seven were re-probed by the day-015 evening shift and are carried forward on that evidence, not re-checked here) · clean evenings: **5 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48); unchanged by this shift — the noon shift does not judge evenings)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -755,3 +756,22 @@ and 317/0/3 in four zones with 30-minute, one-hour and two-hour folds; an
 independent minute-by-minute sweep across full fall-back and spring-forward
 windows in three zones checked 129,960 run lists for zero ordering violations;
 no horizontal scroll at six widths across twenty expressions.*
+
+*Day 016 (`boids-tank`) is the first ship in eleven days that came from the seeded
+queue rather than a revisit or a residual, and the first whose panel voted FAIL
+three times before it voted PASS. Both blockers cycle 1 found were the same shape:
+a rule that was correct inside its normal range and destroyed the build at its
+edge — a flex layout that could only grow, and a separation force that let 140
+boids weld into one point at 0.00px and never come apart. The 4.25 average is
+delight 4 · clarity 4 · readme 4 · scope 5, scored by the panel on the shipped
+artifact, not self-scored.*
+
+*The day's near-miss is worth the dashboard's space, because it is an argument for
+a procedure. Cycle 3's own fix for phone layout — moving each slider's caption to
+overlay its range input — made a tap on the word "separation" jerk that slider
+from 55% to 7% on every phone-width viewport, which is a worse mobile defect than
+the one it replaced. Nothing in the ship gate caught it: the seven must-pass lines
+were all true. It surfaced only because the two critics who had voted FAIL were
+asked to **re-vote on their own findings** instead of being treated as satisfied
+by the fixer's report. The re-vote cost one message each and it is the only reason
+this shipped working on a phone.*
