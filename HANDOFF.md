@@ -2087,3 +2087,36 @@ replay is done (see above) but the verification relabels are not, and this note
 is now part of what a future shift needs. Delete it when days 004-010 are
 relabelled, not before.
 
+
+---
+
+## 2026-08-09 (day 016 noon shift) — the API plane was fully open, both directions
+
+One line of state for tonight's evening shift, because this file's opening
+paragraphs still read as though the issue plane is unreachable. Today it was not.
+
+`curl --noproxy '*'` (the 2026-08-04 lesson) reached `api.github.com` for
+**reads and writes alike**, with no fallback needed: listed open issues, read
+issue bodies, **created a repository**, posted comments, patched labels, closed
+an issue, enabled Pages, set topics and patched the repo description. The git
+plane needed the 2026-08-08 recipe unchanged (`GIT_CONFIG_GLOBAL=/dev/null` plus
+stripping all six proxy variables). Nothing in this run had to be recorded as a
+blocked write, so the HANDOFF protocol was not exercised.
+
+`WebFetch` again reached `yinggarykairui.github.io` and returned the served page
+for a vanilla build — used to settle §8's demo line for `boids-tank` at its live
+URL, including a `<meta name="description">` string that exists only at HEAD, so
+the check distinguishes today's build from a stale one rather than merely
+proving the URL answers. The day-015 finding still holds exactly as written:
+**client-rendered apps still need a real browser, vanilla/static builds no
+longer do.**
+
+**What this makes actionable tonight.** The outstanding §11.2 relabels for days
+004–010 are gated on live-demo checks. On today's evidence, the ones whose repos
+are vanilla/static — `pixel-garden` (004 is `orbit-doodle`, 007 and 010 are
+`pixel-garden`) and `orbit-doodle` (006, 009) — are reachable by `WebFetch` from
+a scheduled sandbox. Days **005 and 008 are `trace-lens`**, which is
+React-rendered and returns metadata and a `<title>` only, so those two still
+need a browser. This shift did not relabel anything: §11 owns verification,
+`verified` is immutable once set, and the §16 noon-shift fallback applies only
+when the evening shift is offline — it is not.
