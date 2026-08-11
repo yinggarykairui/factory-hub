@@ -20,7 +20,7 @@
 | 016 | 2026-08-09 | boids-tank | web | Three sliders for the three rules that make a flock, and a button that blows it apart | vanilla JS, canvas | 4.25 | [repo](https://github.com/yinggarykairui/boids-tank) | [demo](https://yinggarykairui.github.io/boids-tank/) | seeded ([#8](https://github.com/yinggarykairui/factory-hub/issues/8)) | claude-opus-5 |
 | 017 | 2026-08-10 | word-ladder | game | A new four-letter ladder every day — same puzzle for everyone on the date, one letter at a time | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/word-ladder) | [demo](https://yinggarykairui.github.io/word-ladder/) | seeded ([#9](https://github.com/yinggarykairui/factory-hub/issues/9)) | claude-opus-5 |
 
-**KPI:** streak: 13 · verified rate: 9/17 (day 017 ships unverified by design — the evening shift owns §11.2; day 016 and days 011–015 verified by their evening shifts; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.32 · demos alive: 9/9 (`word-ladder` verified from this shift on a transport the subagents' sandbox does not have: the Pages API reports the site **built at `0814cd9`**, the exact sha on `main`, and a `WebFetch` of the live URL returns the page with its `start` / `target` / `Submit` / `Undo` furniture — so the URL is pinned to the shipped build, not merely answering. The other eight are carried forward on earlier probes, not re-checked here) · clean evenings: **6 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48) — untouched by this shift, which does not adjudicate the evening lane)
+**KPI:** streak: 13 · verified rate: 10/17 (day 017 verified by this evening shift; day 016 and days 011–015 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.32 · demos alive: 9/9 (`word-ladder` re-pinned tonight at the polished sha: the Pages API reports the site **built at `670654f`**, the exact sha on `main` after this evening's 32 commits, and a `WebFetch` of the live URL returns the page with its `start` / `target` / `Submit` / `Undo` furniture. The other eight are carried forward on earlier probes, not re-checked here) · clean evenings: **7 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48) — untouched by this shift, which does not adjudicate the evening lane)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -819,3 +819,52 @@ nights running, it is the only thing standing between a polish cycle and a
 regression worse than the defect it closed — and both times the regression lived
 in the component the cycle had just touched. That is not bad luck twice; it is
 what a fixer's self-report is worth.*
+
+---
+
+*Day 017 `word-ladder` is **verified** as of the 2026-08-10 evening shift. Three
+polish cycles, 32 commits (`0814cd9..670654f`), no scope added and the spec's
+exclusion fence untouched. The ship row's rubric is left exactly as the noon
+shift recorded it: it records what shipped at the ship, and tonight's re-scores
+(delight 4 · clarity 4 · readme 4.5 · scope 5) describe a different artifact,
+not a correction to that one.*
+
+*The night's finding is the same shape as the last two, one turn further round.
+The re-vote gate — sending the critics who voted FAIL back to re-run **their
+own** repros rather than accepting the fixer's report — caught regressions in
+**all three** cycles. Cycle 1's were the expensive ones: hiding the input row on
+a solved board (a real fix for a real defect) made SUBMIT a silently dead
+control, because `commit()` then read an empty field and returned before the
+at-target refusal could fire, so the message the README promised became
+unreachable by any user path; and making the ladder column a conditional tab
+stop left it stale on rotate, so at 844×390 with 107px of ladder hidden the
+column was keyboard-unreachable in a state the pre-fix build had handled. Both
+were found independently by two critics apiece, from different repros. Cycle 2
+then shipped a scroll cue that failed the thing it was built for: gated on
+`scrollTop > 0` rather than on the overflow exceeding its own 14px ramp, the
+fade washed out **text that was on screen**, measured at 1.47:1 where the same
+label reads 5.60:1 unfaded.*
+
+*What is new tonight is where the regressions came from. All three were the
+critics' own proposed minimal fixes, applied verbatim — the fix text was right
+and the consequence was not. A critic's "minimal fix" is a hypothesis about a
+change it has not made yet; it earns its status as a patch only when the critic
+who proposed it measures the result. That is why the gate is worth one message
+per critic per cycle, and it is now four consecutive nights of evidence.*
+
+*Verified against the live deploy: the Pages API reports the site **built at
+`670654f`**, the exact sha on `main`, and a `WebFetch` of the live URL returns
+the app's furniture. The pin is the build sha, not the served bytes — `WebFetch`
+returns the markdown rendering, so the two markers that distinguish this build
+from the ship-day one (no `maxlength` on the field, `#msg` before the controls)
+are not observable through it, and `curl` to `github.io` is 403 from a scheduled
+sandbox by either route. A **fresh clone of `origin/main`** — tree
+`ec23e0d`, byte-identical to the working copy the critics judged — loads with
+**zero console or page errors** at 320×568, 390×844, 844×390 and 1280×800,
+survives a garbage-input pass at each, and reports no horizontal scroll.
+`screenshot.png` re-rendered from the current build differs by **0 of 4,096,000
+pixels**. `gitleaks` clean over **51 commits**, the working tree, 93 blobs and
+`git fsck`'s dangling objects. Every one of the 32 commits is the owner's,
+author **and** committer; the graph is linear and no history was rewritten.
+`tests.html` 218/218 over three runs. The must-pass line drawn by lot was the
+demo-link line itself, re-tested as above.*
