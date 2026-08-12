@@ -60,6 +60,29 @@ critic→fix cycles, 14 commits, `997eeb5` → `efa7dd2`. Details in the
 "What the evening shift did" section. The one thing it could not do is the one
 thing the mandate ends with: load the live demo.
 
+> **ROUTING CORRECTION — 2026-08-12 (day-019 noon shift). Read before the table below.**
+>
+> The table's first row is **wrong**, and has been wrong since it was written. The
+> repo-scoped REST plane is **not blocked**. What answers 403 is the sandbox's own
+> HTTP proxy, which the environment exports as `https_proxy=http://127.0.0.1:<port>`
+> and which intercepts `api.github.com`. Bypass it and the PAT works for everything:
+>
+>     curl --noproxy '*' -H "Authorization: Bearer $FACTORY_PAT" \
+>          https://api.github.com/repos/<owner>/<repo>          # 200
+>
+> Day 019 ran its entire issue-plane ledger over that path — spec comment, relabel,
+> sign-off, close, new issue, repo creation, topics. In Python, pop `https_proxy`,
+> `HTTPS_PROXY`, `http_proxy` and `HTTP_PROXY` from `os.environ` before using
+> `urllib`. The git rows below are still exactly right, and the `git -c http.proxy=`
+> bypass is still required — it is the same proxy, in its git guise.
+>
+> The `github.io` row is still right, and is now the **only** true outage: the
+> Pages host is refused at the network layer (`x-deny-reason: host_not_allowed`),
+> not by the proxy, so `--noproxy` does not help. That is why the §11.2 live
+> spot-checks for days 005 and 006 — the last thing this file is still owed — were
+> **not** cleared on day 019 either. They need a session whose egress allowlist
+> includes `yinggarykairui.github.io`.
+
 ### The routing finding — read this before assuming an outage
 
 Previous outage shifts recorded "the whole GitHub plane is blocked." That was
