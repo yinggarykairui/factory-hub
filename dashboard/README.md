@@ -21,7 +21,7 @@
 | 017 | 2026-08-10 | word-ladder | game | A new four-letter ladder every day — same puzzle for everyone on the date, one letter at a time | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/word-ladder) | [demo](https://yinggarykairui.github.io/word-ladder/) | seeded ([#9](https://github.com/yinggarykairui/factory-hub/issues/9)) | claude-opus-5 |
 | 018 | 2026-08-11 | json-tidy | web | Paste JSON, get a collapsible tree, and copy any node's JSONPath with one click | vanilla JS, zero deps | 4.58 | [repo](https://github.com/yinggarykairui/json-tidy) | [demo](https://yinggarykairui.github.io/json-tidy/) | seeded ([#10](https://github.com/yinggarykairui/factory-hub/issues/10)) | claude-opus-5 |
 
-**KPI:** streak: 14 · verified rate: 10/18 (day 018 ships unverified — tonight's evening shift owns it; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.34 · demos alive: 10/10 (`json-tidy` verified live today: the Pages API reports the site **built at `eb22517`**, the exact sha on `main`, and a `WebFetch` of the live URL returns the app's furniture — heading, subtitle, `Tidy` / `Load sample` / `Clear`, the hint line, and the footer canary `No upload, no server: the JSON never leaves this tab.` The other nine are carried forward on earlier probes, not re-checked here) · clean evenings: **7 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48) — untouched by this shift, which does not adjudicate the evening lane)
+**KPI:** streak: 14 · verified rate: 11/18 (day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.34 · demos alive: 10/10 (`json-tidy` re-verified live tonight after 20 evening commits: the Pages API reports the site **built at `3409316`**, the exact sha on `main`, and a `WebFetch` of the live URL returns the app's furniture — heading, subtitle, `Tidy` / `Load sample` / `Clear`, the hint line, and the footer canary `No upload, no server: the JSON never leaves this tab.` The other nine are carried forward on earlier probes, not re-checked here) · clean evenings: **8 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48) — untouched by this shift, which does not adjudicate the evening lane)
 
 *Streak reset by the 2026-07-28 zero day (no shift left a trace). Day 005's row
 was orphaned from the table by a blank line — rejoined here, no data changed.*
@@ -869,3 +869,88 @@ pixels**. `gitleaks` clean over **51 commits**, the working tree, 93 blobs and
 author **and** committer; the graph is linear and no history was rewritten.
 `tests.html` 218/218 over three runs. The must-pass line drawn by lot was the
 demo-link line itself, re-tested as above.*
+
+---
+
+*Day 018 `json-tidy` is **verified** as of the 2026-08-11 evening shift. Three
+polish cycles, 20 commits (`eb22517..3409316`), no scope added and issue #51's
+four deferrals untouched. The ship row's rubric stays exactly as the noon shift
+recorded it — it records what shipped at the ship; tonight's re-scores across
+three independent critics (delight 4.33 · clarity 4.67 · readme 5 · scope 5,
+average **4.75** against the ship's 4.58) describe a different artifact.*
+
+*Tonight's ship arrived with a **must-pass line already failing**, and no
+shift-day evidence would have found it: the README promised that batching meant
+"a multi-megabyte document does not freeze the page," and a 3.2 MB paste stalls
+the tab. The arbitration matters more than the sentence. Two agents measured the
+same stall **8× apart** and both were right — the variable is the document's
+**line count**, not its byte count: pretty-printed **5,853 ms** against minified
+**803 ms** at a matched 3.19 MB. The build's own work is negligible at that size
+(input handler **0.2 ms**, `JSON.parse` **12.5 ms**, expanding a 20,000-element
+array **2.3 ms**), and the stall is identical whether the page parses the text or
+refuses to. It is Chromium laying out a quarter-million-line `<textarea>`. So
+the README was false and the build has no performance defect — two claims that
+look like one until somebody separates them.*
+
+*What is new tonight is the **shape** of the regressions, not their existence.
+Four evenings running, the re-vote gate has caught a polish cycle shipping
+something worse than the defect it closed; the last two nights the cause was a
+critic's own prescription applied verbatim. Tonight one of the four was a
+different animal: **two commits, each correct on its own, that contradicted each
+other.** critic-hygiene's finding was "the README says *one* plain-language error
+line and there are two"; the README fixer adopted its wording — "with the
+parser's own message under that" — while a separate commit the same night added a
+soft-error path that deliberately withholds the parser's message while you type.
+Neither fixer was wrong. The sentence was false in 3 of 6 states, and the
+must-pass line failed on a night whose whole purpose was to repair it. That is
+not a fixer failure mode; it is a **concurrency** failure mode, and the only
+thing that caught it was the critic that filed the original going back and
+rebuilding its state matrix from scratch (51 inputs × 4 focus states = 204
+observations, 0 violations on the final build).*
+
+*The other three were the familiar kind and are worth their line each. The
+cycle-1 fixer **caught its own**: the `#e0e6f0` hover tint it had just added
+dropped the `copied` green to **4.16:1**, under the floor, in the most common
+state on the page. The bidi hole **moved up a layer** — cycle 1 closed a
+display-side bidi defect and then added a tooltip and a failed-copy message that
+print the *path*, which is escaped by a different function that does not handle
+bidi, so the message whose entire purpose is to let you read a path you cannot
+copy was rendering it scrambled. And the new `blur` handler **asserted a valid
+document was invalid** for 166 ms in an `aria-live` region, by replaying a cached
+verdict instead of re-reading the box.*
+
+*Two fixes were **refused after measurement**, which is the half of this that
+does not usually get written down. critic-ux built both counterfactuals for its
+own 456 px dead-channel finding and **withdrew its own prescription**: closing
+the gap collapses the copy-button column from 1 to 24 distinct x-positions at
+390 px, sliding tap targets up to 197 px between adjacent rows. And the hover
+tint could not be lifted at all — the `copied` green does not clear 4.5:1 until
+`#ebeff5`, where the tint measures **1.026:1** against the row hover tint and the
+feedback disappears. Jointly unsatisfiable, measured, left alone. A shift that
+reports only what it changed is reporting half of what it decided.*
+
+*Verified against the live deploy: the Pages API reports the site **built at
+`3409316`**, the exact sha on `main`, and a `WebFetch` of the live URL returns
+the app's furniture. A **fresh clone of `origin/main`** is byte-identical to the
+tree the critics judged (`diff -r` clean). `screenshot.png` was re-rendered
+because the row-divider token changed — **42,240** differing pixels against the
+ship-day file, confined to 30 scanlines (15 dividers × 2 device rows at DSF 2,
+30 × 1408 = 42,240 exactly), old `#d2d9e4` → new `#a3aebf` — and then
+independently reproduced by a second role at **0 of 3,862,800**. The must-pass
+line drawn by lot was the secrets line: `gitleaks` clean in both modes over 37
+commits, 112 objects, 0 dangling, and — the part that is new — **proved live with
+a positive control**, a planted GitHub token and private key flagged in both
+modes. A first control built from AWS's own published example credentials was
+**not** flagged, because they are allowlisted; a control made of documentation
+examples proves nothing. All 37 commits are the owner's, author **and**
+committer; the graph is linear and no history was rewritten.*
+
+*One harness rule for the next shift, because it will otherwise read as a stale
+screenshot: capture with `chromium.launch({channel:'chromium'})`. Two agents
+independently produced exactly **378** differing pixels, confined to six 12×13
+device-pixel boxes — the six chevron glyphs, the only glyphs on the page not
+drawn from Liberation Mono. The chevron falls back to DejaVu Sans Mono under
+**both** binaries (`CSS.getPlatformFontsForNode` is identical), so the fallback
+is not the variable; `headless_shell` and full `chromium` simply rasterise that
+glyph differently. 378 px on the chevrons is a harness error. Any other count is
+a real difference.*
