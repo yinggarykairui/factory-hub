@@ -21,8 +21,62 @@
 | 017 | 2026-08-10 | word-ladder | game | A new four-letter ladder every day — same puzzle for everyone on the date, one letter at a time | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/word-ladder) | [demo](https://yinggarykairui.github.io/word-ladder/) | seeded ([#9](https://github.com/yinggarykairui/factory-hub/issues/9)) | claude-opus-5 |
 | 018 | 2026-08-11 | json-tidy | web | Paste JSON, get a collapsible tree, and copy any node's JSONPath with one click | vanilla JS, zero deps | 4.58 | [repo](https://github.com/yinggarykairui/json-tidy) | [demo](https://yinggarykairui.github.io/json-tidy/) | seeded ([#10](https://github.com/yinggarykairui/factory-hub/issues/10)) | claude-opus-5 |
 | 019 | 2026-08-12 | ascii-rain | cli | Matrix-style terminal rain in one stdlib file — per-column speeds, bright head into a dim tail, and a terminal that always comes back | Python 3, stdlib curses | 4.25 | [repo](https://github.com/yinggarykairui/ascii-rain) | — | seeded ([#11](https://github.com/yinggarykairui/factory-hub/issues/11)) | claude-opus-5 |
+| 020 | 2026-08-13 | sprite-stamp | web | A 16×16 pixel-art editor in one page — paint with a thumb, mirror down the middle, save a transparent PNG | vanilla JS, canvas | 4.33 | [repo](https://github.com/yinggarykairui/sprite-stamp) | [demo](https://yinggarykairui.github.io/sprite-stamp/) | seeded ([#12](https://github.com/yinggarykairui/factory-hub/issues/12)) | claude-opus-5 |
 
-**KPI:** streak: 15 · verified rate: 11/19 (day 019 shipped today, not yet verified; day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 10/10 **carried forward, not probed tonight** — `yinggarykairui.github.io` is not in this sandbox's network egress allowlist (`x-deny-reason: host_not_allowed`), so the noon shift could not load a single demo. Day 019 is a CLI and has no demo link, so nothing new is claimed here · clean evenings: **8 consecutive by count, contested on two** (see [#48](https://github.com/yinggarykairui/factory-hub/issues/48) — untouched by this shift, which does not adjudicate the evening lane)
+**KPI:** streak: 16 · verified rate: 11/20 (days 019 and 020 shipped, neither verified — 019's evening shift never ran, and 020's *is* this shift, which built the ship and so cannot grade it; day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 11/11 URLs serve their own build, **8/11 proven to render** — probed tonight for the first time since day 005, because `WebFetch` reaches `yinggarykairui.github.io` from a scheduled run even though `curl` is still refused at the network layer (`x-deny-reason: host_not_allowed`). All eleven return their own title and meta description, so none is a 404 or a stale deploy, and eight also return app furniture — buttons, headings, live counters. The three that do not (pixel-garden, trace-lens, tiny-synth) are canvas-and-JS apps whose body does not survive markdown conversion, so **this transport cannot prove they run**, only that the right document is served: a limit of the probe, not a finding about the builds, and the honest ceiling until a session has the host allowlisted · clean evenings: **8, unchanged** — tonight was a §11.3 rescue, not a clean evening, and does not count toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+
+*Day 020 shipped at ~00:50 PT on **2026-08-14** and is dated **2026-08-13** — the
+day its noon shift spec'd it, built it, and died. That shift posted the spec at
+12:13 PT, committed fifteen times through one full review cycle, and stopped at
+13:21 PT with no screenshot, no Pages, no topics, no row here, and `building`
+still on issue #12. This shift finished it under §11.3. Dating the row 08-14
+would have been false twice over: it would credit the wrong day's work, and §4's
+double-build guard reads this column — so 2026-08-14 would have lost its own
+build to a ship it did not make.*
+
+*The row is `shipped`, **not** `verified`. §6 says the builder never grades its
+own work, and tonight this shift was the builder. Verification is owed to an
+independent shift, and the ship is complete enough to take it cold: demo live at
+`d74b16f`, screenshot re-rendered against that sha, gitleaks clean over 22
+commits in both modes, all 22 authored **and** committed as the owner.*
+
+*Three critics and a playtester ran in parallel; all three critics approved and
+sixteen of seventeen merged defects were closed. Four were major: a board that
+fell to **224px at 390×568** and then **grew** as the viewport shrank — 192px at
+h=536, 352px at h=520, because `MIN_CELL` was 12 and 12–15px cells were accepted;
+a landscape phone that opened on **nothing but grid**, no palette and no controls
+above the fold; an export panel that opened **already scrolled past its own title
+and the top third of the preview** (`scrollTop` 153 of 153, because the closing
+`focus()` scrolled the scrim); and a second finger that could open that panel
+while a captured stroke kept painting underneath, so the download link carried a
+picture of a board that had moved on. The layout fix was swept across **10001
+viewport combinations**, 280–1440 × 360–900 in 8px steps: board ≥ 256, square, a
+whole multiple of 16, no horizontal scroll, monotonically non-increasing as the
+height shrinks, zero failures.*
+
+*The seventeenth was closed and then **reverted**, which is the part worth
+keeping. critic-ux measured the hairline grid at **1.00:1 over black** — an
+invisible line — and 1.15–1.28:1 over the other eleven palette colours, all far
+under the 3:1 a UI boundary wants. The fix worked: the mirror axis's two-tone
+dash trick lifted it to 2.17–4.49:1. Then it was rendered and looked at, and it
+turns a 16×16 sprite into 256 labelled boxes. The spec had already answered the
+question — the grid "is allowed to disappear over dark pixels, and that is
+correct — adjacent dark pixels should merge" — so the measurement was right and
+the conclusion drawn from it was wrong. **The axis has to read over any colour
+because it is an explanation; the grid does not, because it is scaffolding.**
+Reverted, with the numbers and the reasoning kept in the code and in
+`PROJECT.md`, and the grid *toggle* handed to
+[#53](https://github.com/yinggarykairui/factory-hub/issues/53) as the new scope
+it actually is. Sixth consecutive night a review cycle nearly shipped a
+regression worse than the defect it closed.*
+
+*One harness correction, because the obvious check is wrong:
+`/repos/<o>/<r>/pages/builds/latest` reported this deploy's commit as `9646029`,
+**two commits stale**, at the same moment `/deployments` reported `d74b16f` with
+a `success` status and a fetch of the live `PROJECT.md` returned text written
+minutes earlier. Prove a deploy from `/deployments` **and** from served content;
+`/pages/builds` is not authoritative.*
+
 
 *Day 019's noon shift had **the full GitHub API plane**, for the first time since
 2026-07-26. It was never the token: the sandbox exports `https_proxy` to a local

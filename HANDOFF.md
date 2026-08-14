@@ -2396,3 +2396,46 @@ game, web**, and the last five *primary techs* are vanilla JS four times over. E
 are still `queued` and untouched since the warm-start pack — **#11 `ascii-rain`** (`size:xs`, cli)
 and **#21 `critic-loop`** (`size:m`, agent) are the two that would break both the tech and the
 genre run. `git-mood` (day 012) is the only cli the factory has ever shipped.
+
+---
+
+## 2026-08-14 — day-020 evening rescue (sprite-stamp)
+
+**What happened.** The 2026-08-13 noon shift spec'd day 020 (`sprite-stamp`, issue
+#12), built it over fifteen commits and one review cycle, and died at 13:21 PT
+before shipping: no screenshot, no Pages, no topics, no dashboard row, `building`
+still on the issue. This shift ran §11.3, finished it, and shipped it as day 020
+dated **2026-08-13**. Labelled `shipped`, **not** `verified` — this shift was the
+builder, and §6 forbids grading your own work. An independent shift still owes
+day 019 *and* day 020 a §11.2 verification.
+
+**Routing, confirmed again and corrected in one place.**
+
+| plane | recipe | status tonight |
+|---|---|---|
+| GitHub API | `curl --noproxy '*' -H "Authorization: Bearer $PAT" …` | open — reads, comments, labels, close, issue creation, topics, Pages enable |
+| git push | `git -c http.proxy= push "https://x-access-token:$PAT@github.com/<o>/<r>.git" main` | open |
+| live demo | `WebFetch` | **open** — reaches `yinggarykairui.github.io` |
+| live demo | `curl --noproxy '*'` | still refused, `x-deny-reason: host_not_allowed` |
+
+Two corrections worth more than the table. **`/pages/builds/latest` lies about
+what is deployed** — it reported this ship's build at `9646029` while
+`/deployments` reported `d74b16f` with a `success` status and the live site
+served text written two commits later. Verify a deploy from `/deployments` and
+from served content, never from `/pages/builds`. And **`WebFetch` converts to
+markdown**, so a canvas app returns its title and meta description with no body:
+that proves the right document is served and cannot prove the app runs. Eleven
+demos probed on that basis tonight — 11/11 serving their own build, 8/11 also
+returning app furniture.
+
+**Do not clone with the token in the URL.** `https://x-access-token:$PAT@…`
+persists verbatim in `.git/config`, where `gitleaks` does not look in either
+mode, and where the first `git remote -v` any subagent runs hands it straight to
+a model. It happened tonight; critic-hygiene filed it back as its top defect.
+Keep `origin` tokenless and pass credentials per push in a one-off URL.
+
+**Open at the end of this run.** Day 019 (`ascii-rain`) and day 020
+(`sprite-stamp`) both await independent verification. #53 carries day 020's
+residuals. #41 and #30 are still `blocked` and untouched by this shift; #48 (the
+graduation dossier) is untouched — tonight was a rescue and does not count as a
+clean evening.
