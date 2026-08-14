@@ -2439,3 +2439,23 @@ Keep `origin` tokenless and pass credentials per push in a one-off URL.
 residuals. #41 and #30 are still `blocked` and untouched by this shift; #48 (the
 graduation dossier) is untouched — tonight was a rescue and does not count as a
 clean evening.
+
+**Addendum, same run — the hub's own gitleaks scan was red, and had been since
+2026-08-12.** `gitleaks 8.18.4` flags `AKIAIOSFODNN7EXAMPLE` in `HANDOFF.md:2318`
+— the AWS documentation placeholder the day-018 evening shift quoted while
+writing up its secrets negative control, in the very sentence explaining that
+scanners allowlist that literal. They do, on some builds; **8.18.4 does not**, in
+either git mode or `--no-git` mode. So the write-up's claim is true of whichever
+gitleaks ran on 08-12 and false here, and §9.1's must-pass line had been failing
+on unchanged prose ever since.
+
+Not scrubbed, because there is nothing secret to scrub: rewriting 122 commits of
+history over AWS's own public example string would dangle every SHA cited in the
+dashboard, HANDOFF and three `PROJECT.md` files, for no security gain. Instead
+`.gitleaks.toml` now extends the default rules with a **single** allowlist entry
+scoped to that exact literal in that exact path, with the reasoning in the file.
+Verified both ways, which is the point: the hub scans clean in git and dir mode,
+**and** a planted generated `ghp_` token is still flagged — so the allowlist
+narrowed the scanner rather than blinding it. A permanently-red must-pass check
+is worse than none, because it teaches every shift to skim past the one gate
+meant to stop a ship.

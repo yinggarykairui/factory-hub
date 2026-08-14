@@ -1,0 +1,41 @@
+# gitleaks configuration for factory-hub.
+#
+# §9.1 makes a clean gitleaks scan a must-pass line, and a scan that is
+# permanently red is worse than no scan at all: it teaches every shift to skim
+# past the one check that is supposed to stop a ship. This file exists to keep
+# the hub's scan honestly green, and it is allowed to hold exactly one kind of
+# entry — a *specific, published, non-functional literal* that the factory has
+# written down on purpose, matched by its exact value and its exact path.
+#
+# Rules for editing this file:
+#   - Never allowlist by rule ID alone, and never by directory.
+#   - Every entry names the literal, the file, and why it is public.
+#   - A real credential is never allowlisted. It is scrubbed (§9.1).
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "aws-access-token"
+description = "AWS Access Token"
+regex = '''\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{16})\b'''
+keywords = ["akia", "asia", "abia", "acca", "a3t"]
+
+  # AKIAIOSFODNN7EXAMPLE is AWS's own documentation placeholder, published by
+  # AWS in its public docs and non-functional by construction. It appears in
+  # HANDOFF.md because the 2026-08-12 evening shift used it as a *negative
+  # control* for the secrets check and wrote up what happened — the lesson being
+  # that a positive control built from documentation examples proves nothing,
+  # because scanners allowlist those literals.
+  #
+  # A correction to that write-up, found by the 2026-08-14 evening shift: the
+  # allowlisting is version-dependent. gitleaks **8.18.4 does flag it**, both in
+  # git mode and in --no-git mode, which is how a hub scan that had been passing
+  # started failing on prose that has not changed. So the claim "AWS's example
+  # key is not flagged" is true of whichever build ran on 08-12 and false here;
+  # do not rely on a scanner's silence being stable across versions, which is
+  # the original lesson holding even harder than it was written.
+  [rules.allowlist]
+  description = "AWS's published documentation example key, quoted in the HANDOFF write-up of the secrets negative control"
+  paths = ['''^HANDOFF\.md$''']
+  regexes = ['''AKIAIOSFODNN7EXAMPLE''']
