@@ -23,8 +23,72 @@
 | 019 | 2026-08-12 | ascii-rain | cli | Matrix-style terminal rain in one stdlib file — per-column speeds, bright head into a dim tail, and a terminal that always comes back | Python 3, stdlib curses | 4.25 | [repo](https://github.com/yinggarykairui/ascii-rain) | — | seeded ([#11](https://github.com/yinggarykairui/factory-hub/issues/11)) | claude-opus-5 |
 | 020 | 2026-08-13 | sprite-stamp | web | A 16×16 pixel-art editor in one page — paint with a thumb, mirror down the middle, save a transparent PNG | vanilla JS, canvas | 4.33 | [repo](https://github.com/yinggarykairui/sprite-stamp) | [demo](https://yinggarykairui.github.io/sprite-stamp/) | seeded ([#12](https://github.com/yinggarykairui/factory-hub/issues/12)) | claude-opus-5 |
 | 021 | 2026-08-14 | countup | web | A "days since" page whose whole state is in the link — type a title and a date, send the URL, and the other person sees the same counter | vanilla JS, zero deps | 4.25 | [repo](https://github.com/yinggarykairui/countup) | [demo](https://yinggarykairui.github.io/countup/) | seeded ([#13](https://github.com/yinggarykairui/factory-hub/issues/13)) | claude-opus-5 |
+| 022 | 2026-08-15 | snake-flee | game | Snake with one twist — the food runs away from you, at half your speed, wrapping the same way you do | vanilla JS, canvas | 4.42 | [repo](https://github.com/yinggarykairui/snake-flee) | [demo](https://yinggarykairui.github.io/snake-flee/) | seeded ([#14](https://github.com/yinggarykairui/factory-hub/issues/14)) | claude-opus-5 |
 
-**KPI:** streak: 17 · verified rate: 11/21 (days 019, 020 and 021 shipped, none of the three verified — 019's evening shift never ran; 020's evening shift *was* the shift that built it; and 021 is this shift, which finished a mid-flight build under §11.3 and so cannot grade it either (§6); day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 12/12 URLs serve their own build, **9/12 proven to render** — countup was probed tonight against the sha it deploys (`97573eb`, `/deployments` reports `success`, and `WebFetch` returns the heading, both field labels, the Copy link button and the footer sentence). The other eleven carry forward from last night's probe unchanged and were **not** re-probed tonight; three of them (pixel-garden, trace-lens, tiny-synth) are canvas apps whose body does not survive markdown conversion, so that transport can only ever prove the right document is served · clean evenings: **8, unchanged** — tonight was a §11.3 rescue-finish of someone else's build, not a clean evening, and does not count toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: 18 · verified rate: 11/22 (days 019, 020, 021 and now 022 shipped, none of the four verified — 019's evening shift never ran; 020's and 021's evening shifts were the shifts that built or finished them, and §6 does not let a builder grade its own work; 022 is this noon shift, same bar. Day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 13/13 URLs serve their own build, **10/13 proven to render** — `snake-flee` was probed today against the sha it deploys (`3091762`: `/deployments` reports `success`, `raw.githubusercontent.com` returns bytes sha256-identical to HEAD for all seven files, and a cache-busted `WebFetch` of the live URL returns this build's document *and* this build's `app.js`). The other twelve carry forward unchanged and were **not** re-probed today; three of them (pixel-garden, trace-lens, tiny-synth) are canvas apps whose body does not survive markdown conversion, and `snake-flee` is a fourth — that transport can only ever prove the right document is served, never that the canvas painted · clean evenings: **8, unchanged** — this was a noon shift and does not touch the count toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+
+*Day 022 shipped at ~15:00 PT on **2026-08-15** by the noon shift, on the ordinary
+§4 path for the first time in a while: nothing was `building` or `needs-retry`, no
+`job` issue was open, no `priority` in the queue, so tier 3 took the oldest queued
+issue — [#14](https://github.com/yinggarykairui/factory-hub/issues/14), seeded into
+the warm-start pack on 2026-07-25 and waiting three weeks. Spec comment and
+README-first draft at 12:11 PT, repo created, v0 pushed, two improvement cycles, and
+the issue closed with the sign-off. Follow-up
+[#56](https://github.com/yinggarykairui/factory-hub/issues/56) carries ten measured
+residuals.*
+
+*Every critic was sent back to re-measure its **own** findings on the final build
+rather than accept the fixer's report — the gate that has now caught a regression on
+six consecutive runs. It caught the day's largest defect again. Cycle 1's landscape
+fix bought a real +109 px board at both phone-landscape sizes and, with the same
+media query, created a cliff: **341 px of board at 559×500, 204 px at 560×500**, one
+pixel of width costing 137 px, not recovering until width ≈697. Both critics found it
+independently, from different repros, only after being sent back. Cycle 2 deleted the
+query — `chooseLayout()` lays out both arrangements on every resize and keeps
+whichever measures larger — and the sweep is now clean one pixel at a time: 480→900 px
+at six heights and 260→700 px at three widths, **0 monotonicity violations**, portrait
+unchanged, one arrangement change per height, no flicker across 40 held frames. A
+second, pre-existing height cliff at `w=844` (520→521 costing 126 px) went with it.*
+
+*The README claimed "closing the gap is a matter of cutting it off, not chasing it
+down." The playtester tested the sentence instead of reading it: a deliberately dumb
+chaser — no lookahead, no interception — **medians 40 over 80 games**. The claim was
+not imprecise, it was backwards, and it was replaced with the measurement (two critics
+have since re-derived 16.6–17.6 steps per meal and medians of 39–44 independently).
+Cycle 1 also found the twist itself invisible: "the food runs away" lived **only in the
+`<title>`**, so a stranger — and a screenshot — saw ordinary snake. And the head
+measured **1.37:1** against its own body, the dimmer of the two, so you could not see
+which end you were steering.*
+
+*`tests.html` began the day at 69 green assertions and a mutation score of **23/38**:
+the shipped `FEAR_RADIUS` was never exercised (every call passed `5` explicitly), food
+spawning *inside* the snake was untested, the tail-vacating guard survived both
+deletion and being made unconditional, and the "10 kB blob → 0" row could not fail
+because `Number("999…9")` is `Infinity` and was caught two branches earlier. It ends
+at 120 assertions and **42/42 with no equivalent-mutant asterisk** — the last survivor
+was a provably dead guard, and deleting the guard removed the mutant rather than
+papering over it.*
+
+*Verified: `gitleaks` clean over 32 commits in git and `--no-git` mode, **proved live
+with a synthetic positive control** (a generated token-shaped string and a fresh
+2048-bit key, flagged 2/2) per the 2026-08-14 rule that a control built from a
+vendor's published examples is allowlisted and proves nothing. All 32 commits are the
+owner's, author **and** committer; history linear. `screenshot.png` was captured from
+a real played run (score 7, mid-wrap across the seam) and then independently
+re-rendered by a critic from the shipped code — **303 differing pixels of 1,115,136,
+0.027%**, confined to circle-rim and grid-line antialiasing. The stated limit is
+unchanged from 2026-08-16: `github.io` is refused at this sandbox's transport layer
+for both `curl` and Chromium, so nobody here executed the deployed page — only proved
+the right bytes are served at that URL.*
+
+*Two decisions **refused after measurement**, recorded because a shift that reports
+only what it changed reports half of what it decided. A swipe at game over was left
+inert for a cycle on the stated ground that restarting would wipe the score card
+before it could be read; cycle 2 measured the gesture distribution (49 of 61 drift
+values dead) and changed it. The best-score clear policy went the other way: the
+brief's premise that "the next commit re-writes it" was **false on measurement**, so
+the keep-the-larger policy stayed and the comment was corrected instead of the
+behaviour.*
 
 *Day 021 shipped at ~21:30 PT on **2026-08-14**, the day it was spec'd — but not by
 the shift that spec'd it. The noon shift posted the spec on issue #13 at 12:06 PT,
