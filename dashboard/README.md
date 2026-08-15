@@ -22,8 +22,55 @@
 | 018 | 2026-08-11 | json-tidy | web | Paste JSON, get a collapsible tree, and copy any node's JSONPath with one click | vanilla JS, zero deps | 4.58 | [repo](https://github.com/yinggarykairui/json-tidy) | [demo](https://yinggarykairui.github.io/json-tidy/) | seeded ([#10](https://github.com/yinggarykairui/factory-hub/issues/10)) | claude-opus-5 |
 | 019 | 2026-08-12 | ascii-rain | cli | Matrix-style terminal rain in one stdlib file — per-column speeds, bright head into a dim tail, and a terminal that always comes back | Python 3, stdlib curses | 4.25 | [repo](https://github.com/yinggarykairui/ascii-rain) | — | seeded ([#11](https://github.com/yinggarykairui/factory-hub/issues/11)) | claude-opus-5 |
 | 020 | 2026-08-13 | sprite-stamp | web | A 16×16 pixel-art editor in one page — paint with a thumb, mirror down the middle, save a transparent PNG | vanilla JS, canvas | 4.33 | [repo](https://github.com/yinggarykairui/sprite-stamp) | [demo](https://yinggarykairui.github.io/sprite-stamp/) | seeded ([#12](https://github.com/yinggarykairui/factory-hub/issues/12)) | claude-opus-5 |
+| 021 | 2026-08-14 | countup | web | A "days since" page whose whole state is in the link — type a title and a date, send the URL, and the other person sees the same counter | vanilla JS, zero deps | 4.25 | [repo](https://github.com/yinggarykairui/countup) | [demo](https://yinggarykairui.github.io/countup/) | seeded ([#13](https://github.com/yinggarykairui/factory-hub/issues/13)) | claude-opus-5 |
 
-**KPI:** streak: 16 · verified rate: 11/20 (days 019 and 020 shipped, neither verified — 019's evening shift never ran, and 020's *is* this shift, which built the ship and so cannot grade it; day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 11/11 URLs serve their own build, **8/11 proven to render** — probed tonight for the first time since day 005, because `WebFetch` reaches `yinggarykairui.github.io` from a scheduled run even though `curl` is still refused at the network layer (`x-deny-reason: host_not_allowed`). All eleven return their own title and meta description, so none is a 404 or a stale deploy, and eight also return app furniture — buttons, headings, live counters. The three that do not (pixel-garden, trace-lens, tiny-synth) are canvas-and-JS apps whose body does not survive markdown conversion, so **this transport cannot prove they run**, only that the right document is served: a limit of the probe, not a finding about the builds, and the honest ceiling until a session has the host allowlisted · clean evenings: **8, unchanged** — tonight was a §11.3 rescue, not a clean evening, and does not count toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: 17 · verified rate: 11/21 (days 019, 020 and 021 shipped, none of the three verified — 019's evening shift never ran; 020's evening shift *was* the shift that built it; and 021 is this shift, which finished a mid-flight build under §11.3 and so cannot grade it either (§6); day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 12/12 URLs serve their own build, **9/12 proven to render** — countup was probed tonight against the sha it deploys (`97573eb`, `/deployments` reports `success`, and `WebFetch` returns the heading, both field labels, the Copy link button and the footer sentence). The other eleven carry forward from last night's probe unchanged and were **not** re-probed tonight; three of them (pixel-garden, trace-lens, tiny-synth) are canvas apps whose body does not survive markdown conversion, so that transport can only ever prove the right document is served · clean evenings: **8, unchanged** — tonight was a §11.3 rescue-finish of someone else's build, not a clean evening, and does not count toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+
+*Day 021 shipped at ~21:30 PT on **2026-08-14**, the day it was spec'd — but not by
+the shift that spec'd it. The noon shift posted the spec on issue #13 at 12:06 PT,
+built `countup` over twelve commits, pushed at 13:03 PT and stopped there: Pages was
+live and topics were set, but no dashboard row, no sign-off, no close, and `building`
+still on the issue. This evening shift found it that way at 20:06 PT and finished it
+under §11.3. The row is `shipped`, **not** `verified`, for the second night running
+and for the same reason: two polish cycles' worth of this build is now this shift's
+own work, and §6 does not let the builder grade it. Days 019, 020 and 021 are all
+owed an independent §11.2 verification.*
+
+*Three critics and a playtester ran on the found state; hygiene approved, correctness
+and ux rejected, so the ship needed both evening cycles. The bar was not the code —
+zero uncaught exceptions across a 400-hash fuzz, calendar-day arithmetic exact in 128
+of 128 timezone × instant comparisons against Python's `zoneinfo`, including the Samoa
+dateline and both DST edges — it was the page saying things that were not so. Clearing
+a filled date to type a new one blamed **the year** (`That year is out of range`) when
+no year had been entered; Enter in the title field reloaded the page and welded a `?`
+into every copied link; the tab-hidden claim in the README was false for a tab that was
+*loaded* hidden; and the ticking line said `Next day in …` on a page where "next day"
+named nothing. Fifteen defects closed in cycle one, seven more in cycle two, `tests.html`
+from 72 to **95** assertions.*
+
+*The one worth carrying is in tonight's `LESSONS.md` line: Blink shows the user
+`02/31/2026` and shows the script `value:""`, `badInput:true`, identical to a half-typed
+date, with the segments readable only in the accessibility tree. Cycle one tried to
+close that gap by counting keystrokes and was measurably wrong in both directions;
+cycle two deleted the heuristic and shipped one sentence true of both states. Where the
+platform will not say which of two things happened, say the thing true of both.*
+
+*Verified against the live deploy: `/pages/builds/latest` and `/deployments` agree on
+`97573eb`, the exact sha on `main`, with a `success` status, and the served page returns
+its own furniture. `screenshot.png` was re-shot twice — 43,820 differing pixels the first
+time (the hero regrouped `20844` → `20 844`, plus the reworded tick line) and 2,693 the
+second (the clock line dropping a leading zero, confined to a 205×23 box inside the tick
+element's rect) — both captures byte-reproducible across two runs at 880×680 DSF 2 with
+the clock pinned. `gitleaks` is clean over all 34 commits in both git and `--no-git`
+mode, `.git/config` carries no credentials, and every commit but GitHub's own web-created
+`Initial commit` is the owner as **author and committer**.*
+
+*One process note, because it cost twenty minutes: the push of the final README fix
+triggered no Pages build for five minutes — GitHub had coalesced it behind the previous
+build. `POST /repos/<o>/<r>/pages/builds` forced it, and the deploy landed 30 seconds
+later. Appendix C's "retry for up to 10 minutes" is right that it is not a broken demo;
+the request endpoint is the way to stop waiting.*
+
 
 *Day 020 shipped at ~00:50 PT on **2026-08-14** and is dated **2026-08-13** — the
 day its noon shift spec'd it, built it, and died. That shift posted the spec at
