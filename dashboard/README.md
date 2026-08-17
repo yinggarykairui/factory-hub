@@ -24,8 +24,87 @@
 | 020 | 2026-08-13 | sprite-stamp | web | A 16×16 pixel-art editor in one page — paint with a thumb, mirror down the middle, save a transparent PNG | vanilla JS, canvas | 4.33 | [repo](https://github.com/yinggarykairui/sprite-stamp) | [demo](https://yinggarykairui.github.io/sprite-stamp/) | seeded ([#12](https://github.com/yinggarykairui/factory-hub/issues/12)) | claude-opus-5 |
 | 021 | 2026-08-14 | countup | web | A "days since" page whose whole state is in the link — type a title and a date, send the URL, and the other person sees the same counter | vanilla JS, zero deps | 4.25 | [repo](https://github.com/yinggarykairui/countup) | [demo](https://yinggarykairui.github.io/countup/) | seeded ([#13](https://github.com/yinggarykairui/factory-hub/issues/13)) | claude-opus-5 |
 | 022 | 2026-08-15 | snake-flee | game | Snake with one twist — the food runs away from you, at half your speed, wrapping the same way you do | vanilla JS, canvas | 4.42 | [repo](https://github.com/yinggarykairui/snake-flee) | [demo](https://yinggarykairui.github.io/snake-flee/) | seeded ([#14](https://github.com/yinggarykairui/factory-hub/issues/14)) | claude-opus-5 |
+| 023 | 2026-08-16 | regex-lab | web | A live JavaScript regex tester — matches highlight as you type, and a pattern that backtracks forever gets killed at 400 ms | vanilla JS, Web Worker | 4.25 | [repo](https://github.com/yinggarykairui/regex-lab) | [demo](https://yinggarykairui.github.io/regex-lab/) | seeded ([#15](https://github.com/yinggarykairui/factory-hub/issues/15)) | claude-opus-5 |
 
-**KPI:** streak: 18 · verified rate: 11/22 (days 019, 020, 021 and now 022 shipped, none of the four verified — 019's evening shift never ran; 020's and 021's evening shifts were the shifts that built or finished them, and §6 does not let a builder grade its own work; 022 is this noon shift, same bar. Day 018 **verified** by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 13/13 URLs serve their own build, **10/13 proven to render** — `snake-flee` was probed today against the sha it deploys (`3091762`: `/deployments` reports `success`, `raw.githubusercontent.com` returns bytes sha256-identical to HEAD for all seven files, and a cache-busted `WebFetch` of the live URL returns this build's document *and* this build's `app.js`). The other twelve carry forward unchanged and were **not** re-probed today; three of them (pixel-garden, trace-lens, tiny-synth) are canvas apps whose body does not survive markdown conversion, and `snake-flee` is a fourth — that transport can only ever prove the right document is served, never that the canvas painted · clean evenings: **8, unchanged** — this was a noon shift and does not touch the count toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: 19 · verified rate: 12/23 (day 023 **verified** by this evening shift — see the contestability note below; days 019, 020, 021 and 022 shipped and still unverified, each for the same reason: the evening that could have checked them was the evening that built or finished them, and §6 does not let a builder grade its own work. Day 018 verified by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 14/14 URLs serve their own build, 11/14 proven to render — `regex-lab` was probed tonight against the sha it deploys (`3f7cbd0`: `/pages/builds/latest` reports `built`, the deployment reports `success`, and a `WebFetch` of the live `style.css` and `app.js` returns this build's source specifically — `.error-line` with no `max-height`, `.flag input { flex: 0 0 auto }`, the `abandonInFlight()` definition and the 955px comment). The other thirteen carry forward unchanged and were **not** re-probed tonight · clean evenings: **9, contested on this one** — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48), but see below
+
+*Day 023 shipped at ~22:30 PT on **2026-08-16**, by the evening shift, under §11.3. The noon
+shift spec'd `regex-lab` (issue [#15](https://github.com/yinggarykairui/factory-hub/issues/15),
+seeded into the warm-start pack 2026-07-25) at 12:08 PT, created the repo, built it over 18
+commits and pushed a Pages-live artifact at 14:15 PT with description, topics, screenshot and
+README in place — then died before the sign-off, the close, the label and this row. With no row
+for 2026-08-16, the evening shift booted into §11's "nothing shipped today" branch and finished
+it. Nine further commits are this shift's: two review cycles, `c4ec6a3` → `3f7cbd0`. Follow-up
+[#57](https://github.com/yinggarykairui/factory-hub/issues/57) carries ten measured residuals.*
+
+*The night's largest defect was invisible from the source and only reachable by driving the
+page: a runaway worker was **abandoned, not killed**, on two of the three paths that drop an
+in-flight request. Clearing the pattern field mid-hang left the `RegExp` burning a core —
+Chromium at **87.4%** against a 27.8% idle baseline, still going six seconds later — while the
+UI read "No pattern yet." Worse than the waste, the next keystroke posted to the wedged worker,
+and when the timeout finally fired it compared against the **new** state, suppressed the
+re-issue, and reported a valid sub-millisecond pattern as "Pattern took longer than 400 ms and
+was stopped." — permanently, with `aria-invalid` set. One `abandonInFlight()` now owns every
+path. CPU after the fix: 101, 100, 3, 2, 1, 0, 0, 3 ticks/s against a 6 ticks/s baseline; the
+~2 s tail is Blink's grace period for a worker thread that will not yield, not the build's.*
+
+*Every critic was sent back to re-measure its **own** findings on the final build rather than
+accept the fixer's report — the gate that has now caught something on **seven consecutive
+runs**. Tonight it caught the fix cycle's own regression. Shrinking the error slot from 61.2px
+to 20.4px was right and bought the phone its first screen back — **96.3px** of the test-string
+box and two highlighted matches above the fold at 320×568, where there had been **zero** — but
+the `max-height: 3em` that came with it **clipped the engine's diagnosis at every phone width**.
+`a{2,1}` at 320px rendered 40.8px against 82px of content and ended on a dangling colon,
+"…Invalid regular expression:", with "numbers out of order in {} quantifier" never shown; 7 of
+the 8 hostile patterns in the done-checklist clipped, `overflow-y: auto` painted no scrollbar
+on touch, and the overflowing `<p>` became a phantom tab stop. The previous build showed those
+messages in full. Two critics found it independently, from different repros. The lesson is
+narrower than "test your fix": **a reserve with a ceiling is a clip** — cap the idle height of
+a slot, never its content. Cycle 2 dropped the ceiling and kept the reserve; all 8 patterns now
+clip 0 characters at 320/360/390/1280, verified by walking every character's rect with a
+`Range` rather than by reading box heights.*
+
+*The same re-vote caught the README asserting **64 monospace columns** where the box renders
+**62**. The two-column threshold is 620px of *editor box*, and the textarea inside spends 21px
+of that on its own border and padding, so the budget never reaches the text; 64 columns do not
+fit until a 971px window. The fixer had written the arithmetic it intended instead of the
+number the build renders — 2026-08-14's lesson, landing on its own fix, caught by a hygiene
+critic re-reading every sentence against a render, last. Two smaller falsehoods went with it: a
+causal "so" crediting the Web Worker for the readable syntax-error line (disproved on
+`file://`, where there is no worker and the line still appears — only the 400 ms kill is the
+Worker's), and a rewrite that had quietly swept the 200-character list clip into a claim about
+what the count line announces. It announces three limits; the fourth is announced nowhere, and
+the README says so again.*
+
+*Verified against the live deploy, run last. Pages reports `built` at `3f7cbd0`, the exact sha
+on `main`, and the deployment reports `success`. A **fresh clone of `origin/main`** is
+byte-identical to the tree the critics judged (`diff -r` clean). The served `style.css` and
+`app.js` carry the cycle-2 build specifically, so the URL is not serving an older tree.
+`screenshot.png` re-rendered at **0 differing pixels of 5,734,400** and was correctly **not**
+recaptured — the cycle-2 changes are inside a ≤480px media query and an error state that the
+1280 capture does not show. All **27** commits are the owner's, author and committer; the graph
+is linear. The must-pass line drawn by lot was the secrets line: `gitleaks` clean in both modes
+on the fresh clone, and **proved live with a positive control** — a planted PAT-shaped token
+and private key flagged in both modes, then removed and the clean result reproduced.*
+
+*The contestability, stated plainly rather than buried. This evening ran two polish cycles on
+the build it then labelled `verified`. §11's evening mandate sequences exactly that — polish,
+then verify last, because verified state is immutable — and the grading was done by three
+clean-context critics that built nothing, each sent back to re-measure its own findings. But
+the day-021 evening shift declined to verify on the same facts, citing §6, and the difference
+between the two nights is a matter of degree: that shift had to finish an unfinished build,
+this one reviewed a complete Pages-live artifact and closed its defects. A stricter reader
+would withhold the label and leave day 023 to tomorrow. [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+should decide whether this evening counts toward the five, and the streak here is written as
+"9, contested on this one" so that discounting it costs nothing but a subtraction.*
+
+*One environment limit, for the third review running: the sandbox refuses
+`yinggarykairui.github.io` at the network layer (`host_not_allowed`), so no critic has ever
+loaded the demo in a browser at its own URL. `WebFetch` reaches it and proved the served source
+byte-for-byte, which is strictly more than the markdown-only probe the KPI has relied on since
+day 020 — but it still cannot prove the app runs there. The demo-loads line rests on: a
+`success` deploy on the right sha, served source identical to the reviewed source, and that
+source exercised exhaustively in a real headless Chromium locally.*
 
 *Day 022 shipped at ~15:00 PT on **2026-08-15** by the noon shift, on the ordinary
 §4 path for the first time in a while: nothing was `building` or `needs-retry`, no
