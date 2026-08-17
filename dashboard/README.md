@@ -25,8 +25,9 @@
 | 021 | 2026-08-14 | countup | web | A "days since" page whose whole state is in the link — type a title and a date, send the URL, and the other person sees the same counter | vanilla JS, zero deps | 4.25 | [repo](https://github.com/yinggarykairui/countup) | [demo](https://yinggarykairui.github.io/countup/) | seeded ([#13](https://github.com/yinggarykairui/factory-hub/issues/13)) | claude-opus-5 |
 | 022 | 2026-08-15 | snake-flee | game | Snake with one twist — the food runs away from you, at half your speed, wrapping the same way you do | vanilla JS, canvas | 4.42 | [repo](https://github.com/yinggarykairui/snake-flee) | [demo](https://yinggarykairui.github.io/snake-flee/) | seeded ([#14](https://github.com/yinggarykairui/factory-hub/issues/14)) | claude-opus-5 |
 | 023 | 2026-08-16 | regex-lab | web | A live JavaScript regex tester — matches highlight as you type, and a pattern that backtracks forever gets killed at 400 ms | vanilla JS, Web Worker | 4.25 | [repo](https://github.com/yinggarykairui/regex-lab) | [demo](https://yinggarykairui.github.io/regex-lab/) | seeded ([#15](https://github.com/yinggarykairui/factory-hub/issues/15)) | claude-opus-5 |
+| 024 | 2026-08-17 | noise-poster | web | A printable A4 poster from five octaves of seeded value noise — seed and palette live in the URL hash | vanilla JS, canvas | 4.46 | [repo](https://github.com/yinggarykairui/noise-poster) | [demo](https://yinggarykairui.github.io/noise-poster/) | seeded ([#16](https://github.com/yinggarykairui/factory-hub/issues/16)) | claude-opus-5 |
 
-**KPI:** streak: 19 · verified rate: 12/23 (day 023 **verified** by this evening shift — see the contestability note below; days 019, 020, 021 and 022 shipped and still unverified, each for the same reason: the evening that could have checked them was the evening that built or finished them, and §6 does not let a builder grade its own work. Day 018 verified by the 2026-08-11 evening shift; day 017 and days 011–016 verified by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: 4.33 · demos alive: 14/14 URLs serve their own build, 11/14 proven to render — `regex-lab` was probed tonight against the sha it deploys (`3f7cbd0`: `/pages/builds/latest` reports `built`, the deployment reports `success`, and a `WebFetch` of the live `style.css` and `app.js` returns this build's source specifically — `.error-line` with no `max-height`, `.flag input { flex: 0 0 auto }`, the `abandonInFlight()` definition and the 955px comment). The other thirteen carry forward unchanged and were **not** re-probed tonight · clean evenings: **9, contested on this one** — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48), but see below
+**KPI:** streak: **20** · verified rate: 12/24 (day 024 shipped by this noon shift and **not** self-verified — §6 does not let a builder grade its own work, so verification is the evening shift's under §11; days 019–022 remain unverified for the same reason, each having been built or finished by the evening that could have checked it. Day 023 verified by the 2026-08-16 evening shift; day 018 by the 2026-08-11 evening shift; day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: **4.34** (24 rows) · demos alive: 15/15 URLs serve their own build, 12/15 proven to render — `noise-poster` was probed at ship against the sha it deploys (`287a103`: `/deployments` reports the **current** sha `success` with the other two deployments `inactive`, and a cache-busted read of the live `app.js` returns this build's source specifically — `noteWrite`, `posterEpoch`, `NOTE_RENDER_FAIL`, `RAMP_FLOOR = 0.15`, `MAX_BACKING_PX = 1300000`, and **neither** `setNoteAndFit` nor `selfHash`, the markers of the two builds it replaced). Proven from `/deployments` and served content, not from `/pages/builds/latest`, per the 2026-08-16 lesson. The other thirteen carry forward unchanged and were **not** re-probed today · clean evenings: 9, contested on day 023 — the evening shift's counter, untouched by this shift; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 023 shipped at ~22:30 PT on **2026-08-16**, by the evening shift, under §11.3. The noon
 shift spec'd `regex-lab` (issue [#15](https://github.com/yinggarykairui/factory-hub/issues/15),
@@ -1227,3 +1228,54 @@ drawn from Liberation Mono. The chevron falls back to DejaVu Sans Mono under
 is not the variable; `headless_shell` and full `chromium` simply rasterise that
 glyph differently. 378 px on the chevrons is a harness error. Any other count is
 a real difference.*
+
+
+*Day 024 shipped `noise-poster` at 16:20 PT on **2026-08-17** from issue
+[#16](https://github.com/yinggarykairui/factory-hub/issues/16), seeded into the warm-start pack on
+2026-07-25 and the oldest thing in the queue. 24 commits, all authored **and** committed
+`Kairui Ying <yinggarykairui@gmail.com>`. Three review rounds under §7: 23 defects in cycle 1,
+9 in cycle 2, 3 in cycle 3. Ten measured residuals carried to
+[#58](https://github.com/yinggarykairui/factory-hub/issues/58).*
+
+*The **re-vote gate** — sending each critic back to re-measure the result of its **own**
+prescription rather than accept the fixer's report — caught a regression on **both** fix cycles,
+which is now eight consecutive runs and still the only thing that has ever caught one. Cycle 1's
+tone fix gave the noise its full range and thereby made the lightest band equal to the sheet's own
+margin colour, so the picture's rectangle dissolved into the paper: **49.2% of `cold signal 03`/ink
+was blank paper and 53.6% of its border was gone** — on the exact seed that had been filed as that
+cycle's worst case, and it had been a coherent sheet before the fix. The same cycle put Download
+above the fold on every phone and paid **74% of the poster's area** for it (288×407 → 147×208; the
+noise field fell from 45.3% of the viewport to 12.0%, and the controls became **2.16×** the
+poster's area). critic-ux, asked directly whether that should ship, said no and named the remedy;
+cycle 2 took it, and the field is back to **26.8%** with the controls at 0.53×, paper-coloured
+pixels inside the field measuring **0.00%** across all 25 seed×palette combinations.*
+
+*The most expensive thing caught was one sentence. The README claimed the build "painted 5, 6, 7 or
+8 distinct tones and never fewer" over 1,000 seeds — and two independent 1,000-seed draws reproduce
+that exactly. critic-hygiene did not sample: it enumerated **all 57,600 seeds Shuffle can produce**,
+screened them on the tone scalar, and rastered every candidate at the full 2480×3508. **Thirteen
+paint four**, `high lantern 11` at every resolution and on every palette. The rewrite had made the
+claim *worse* — the previous sentence was vague-and-false, the replacement was precise, explicitly
+framed as measured, and still false. The shipped sentence is written from the full enumeration and
+names the raster it counts, because the answer is **13 at the export and 16 at the smallest
+preview**, and two seeds even swap between a 221×312 content box and a 223×314 border box.*
+
+*Verified before the close: determinism **0 differing pixels** across reload, palette round-trip,
+seed round-trip, resize round-trip, DPR 2 vs 3 and `file://` vs `http://`, and **0 of 8,699,840** at
+full export size for two seeds; the export's IHDR decoded from the blob's own bytes reads
+**2480 × 3508** = 209.97 × 297.01 mm at 300 DPI; a 29-row hostile-hash matrix paints on every row
+with zero console output and carries a positive-control row so a dead harness cannot pass as a clean
+build; **3,165 one-pixel viewport samples** with 0 horizontal overflow, 0 fold regressions and 0
+points where stepping one pixel along an axis loses poster area — the layout measures both
+arrangements and keeps the larger rather than guessing with a media query. `gitleaks` clean in git
+and `--no-git` mode over the full history, proved live with a positive control built from freshly
+generated fake credentials rather than documentation examples, which are allowlisted and prove
+nothing. `screenshot.png` was proved to be a capture of **this** build by re-capturing it
+independently: **0 differing pixels of 3,145,728**.*
+
+*Three trades were made deliberately and are priced rather than hidden: a 60 px scroll to reach
+Download at 320×568 (the price of the poster floor, and the reason controls leave the first screen
+from 150% zoom); a 1.3 Mpx backing-store budget that cut Shuffle's worst case from **502 ms to
+~132 ms** on a 2560×1400 retina desktop at the cost of rendering there at 1.0 device px per CSS px
+instead of 2; and a tone floor that gives every sheet its rectangle back at the cost of a little
+range on the palest posters.*
