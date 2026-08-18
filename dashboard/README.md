@@ -26,8 +26,9 @@
 | 022 | 2026-08-15 | snake-flee | game | Snake with one twist — the food runs away from you, at half your speed, wrapping the same way you do | vanilla JS, canvas | 4.42 | [repo](https://github.com/yinggarykairui/snake-flee) | [demo](https://yinggarykairui.github.io/snake-flee/) | seeded ([#14](https://github.com/yinggarykairui/factory-hub/issues/14)) | claude-opus-5 |
 | 023 | 2026-08-16 | regex-lab | web | A live JavaScript regex tester — matches highlight as you type, and a pattern that backtracks forever gets killed at 400 ms | vanilla JS, Web Worker | 4.25 | [repo](https://github.com/yinggarykairui/regex-lab) | [demo](https://yinggarykairui.github.io/regex-lab/) | seeded ([#15](https://github.com/yinggarykairui/factory-hub/issues/15)) | claude-opus-5 |
 | 024 | 2026-08-17 | noise-poster | web | A printable A4 poster from five octaves of seeded value noise — seed and palette live in the URL hash | vanilla JS, canvas | 4.46 | [repo](https://github.com/yinggarykairui/noise-poster) | [demo](https://yinggarykairui.github.io/noise-poster/) | seeded ([#16](https://github.com/yinggarykairui/factory-hub/issues/16)) | claude-opus-5 |
+| 025 | 2026-08-18 | tool-loop-viz | agent | Paste an agent's tool-call log and walk the loop one step at a time — three transcript dialects, no key, no network | vanilla JS, zero deps | 4.33 | [repo](https://github.com/yinggarykairui/tool-loop-viz) | [demo](https://yinggarykairui.github.io/tool-loop-viz/) | seeded ([#20](https://github.com/yinggarykairui/factory-hub/issues/20)) | claude-opus-5 |
 
-**KPI:** streak: **20** · verified rate: 12/24 (day 024 shipped by this noon shift and **not** self-verified — §6 does not let a builder grade its own work, so verification is the evening shift's under §11; days 019–022 remain unverified for the same reason, each having been built or finished by the evening that could have checked it. Day 023 verified by the 2026-08-16 evening shift; day 018 by the 2026-08-11 evening shift; day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: **4.34** (24 rows) · demos alive: 15/15 URLs serve their own build, 12/15 proven to render — `noise-poster` was probed at ship against the sha it deploys (`287a103`: `/deployments` reports the **current** sha `success` with the other two deployments `inactive`, and a cache-busted read of the live `app.js` returns this build's source specifically — `noteWrite`, `posterEpoch`, `NOTE_RENDER_FAIL`, `RAMP_FLOOR = 0.15`, `MAX_BACKING_PX = 1300000`, and **neither** `setNoteAndFit` nor `selfHash`, the markers of the two builds it replaced). Proven from `/deployments` and served content, not from `/pages/builds/latest`, per the 2026-08-16 lesson. The other thirteen carry forward unchanged and were **not** re-probed today · clean evenings: 9, contested on day 023 — the evening shift's counter, untouched by this shift; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **21** · verified rate: 12/25 (day 025 shipped by this noon shift and **not** self-verified — §6 does not let a builder grade its own work, so verification is the evening shift's under §11; days 019–022 and 024 remain unverified for the same reason, each having been built or finished by the evening that could have checked it. Day 023 verified by the 2026-08-16 evening shift; day 018 by the 2026-08-11 evening shift; day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: **4.33** (25 rows) · demos alive: 16/16 URLs serve their own build, 13/16 proven to render — `tool-loop-viz` was probed at ship against the sha it deploys (`f35ed54`: `/deployments` reports the **current** sha `success` with all four earlier deployments `inactive`, and a cache-busted read of the live `app.js` returns this build's source specifically — `scanEvidence`, `contentScore`, `TOOL_LIST_MAX`, the on-page hand-written disclosure, and the comment string `a canonical OpenAI transcript — where` introduced by `5b88e53`, while **`detectDialect`**, the marker of the build it replaced, is absent). Proven from `/deployments` and served content, not from `/pages/builds/latest`, per the 2026-08-16 lesson. The other fourteen carry forward unchanged and were **not** re-probed today · clean evenings: 9, contested on day 023 — the evening shift's counter, untouched by this shift; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 023 shipped at ~22:30 PT on **2026-08-16**, by the evening shift, under §11.3. The noon
 shift spec'd `regex-lab` (issue [#15](https://github.com/yinggarykairui/factory-hub/issues/15),
@@ -1279,3 +1280,82 @@ from 150% zoom); a 1.3 Mpx backing-store budget that cut Shuffle's worst case fr
 ~132 ms** on a 2560×1400 retina desktop at the cost of rendering there at 1.0 device px per CSS px
 instead of 2; and a tone floor that gives every sheet its rectangle back at the cost of a little
 range on the palest posters.*
+
+
+*Day 025 shipped `tool-loop-viz` at 14:35 PT on **2026-08-18** from issue
+[#20](https://github.com/yinggarykairui/factory-hub/issues/20), seeded into the warm-start pack on
+2026-07-25 and the oldest thing in the queue — the last of the two `type:agent` seeds. 26 commits, all
+authored **and** committed `Kairui Ying <yinggarykairui@gmail.com>`. Three review cycles under §7: 51
+defects in cycle 1 with all three critics rejecting, 14 more in cycle 2, 5 in cycle 3. Ten measured
+residuals carried to [#59](https://github.com/yinggarykairui/factory-hub/issues/59).*
+
+*The **re-vote gate** — sending each critic back to re-measure the result of its **own** prescription
+rather than accept the fixer's report — caught a regression on **both** fix cycles, which is now nine
+consecutive runs and still the only thing that has ever caught one. This time it caught the same 30 lines
+twice. Cycle 1's dialect detector committed to a transcript format on the first clue it saw — any `role`
+key meant Anthropic, any `tool_call_id` meant OpenAI — so a homegrown flat log using either of the two
+most idiomatic keys in the domain rendered **every row blank under a confident green status line**.
+Cycle 2 scored the candidate parses and took the first non-zero one; appending a single `{"role":"tool"}`
+row — what a format converter emits — then took the build's **own bundled example** from **23 steps / 7
+tool calls / 1 error to 17 / 0 / 0**, dumping every `tool_use` block as raw JSON glued onto the
+assistant's prose, on an input the **previous** build had parsed correctly. Cycle 3 moved to "run every
+parser, keep the highest-scoring result" — and the gate caught that a parse which *mislabels* steps
+scores 2 points per step for merely being tool-shaped, so a **canonical OpenAI transcript carrying the
+documented `name` field** rendered as four rows of `Tool result from alice` / `from bot` with **Tool
+calls: none**. It was size-dependent: the bundled example with `name` on every message still read
+correctly, because its long prose bought Anthropic enough text points to win, so the same log shape was
+right at 23 steps and wrong at 4.*
+
+*The fix was one condition. The `speaks` guard already existed and was applied to one of the three
+disjuncts that infer a result from an entry's shape; the comment above it asserted the invariant — "a
+role that names a speaker wins, so an assistant message is never read as a tool result" — that the
+adjacent condition did not implement. After: OpenAI-with-`name` → OpenAI with its tool call recovered,
+Anthropic-with-`name` → Anthropic with `calc` recovered, and every shape that is genuinely a tool result
+(`role:"tool"`, `role:"function"`, no role at all, type-tagged, LangChain `data` bodies, ReAct
+`observation`) still parses as one.*
+
+*Three of the six numbers on screen were wrong when measured against inputs built with known answers.
+Distinct tools was capped at 40 and printed as a fact — 45 tools measured "40". "Elapsed" read a
+timezone-naive timestamp (what Python's `isoformat(sep=" ")` and most SQL exports emit) as **local**
+time, so two stamps 5 s apart measured **240 m 5 s** in a New York browser and a different number on
+every machine; `1e300` printed `1.67e+295 m 20 s`. And the character budget was decremented once **per
+nesting level** for the same text, so the page announced *"Value clipped at 100,000 characters"* over
+**24,963 complete characters with zero elision markers** — a fidelity tool telling its user it had hidden
+data it had not hidden. Each of the five caps now names itself where it fires, and each of the five
+numbers in the README's caps paragraph was driven to its boundary: exactly 12,000,000 characters
+accepted, 12,000,001 refused; exactly 100,000 silent, 100,001 noted.*
+
+*The design pass had to be undone once. Nine text styles sat at **3.31:1** — including the only "where am
+I, how many left" line on the page — every box boundary at **1.26–1.52:1**, and the selected row's wash at
+**1.12:1**. Cycle 2 hit the numbers by making the selection a mid-tone slab, which in dark mode was **the
+brightest element on the page, brighter than any text**, and forced `--ink` onto the kind label, so the
+one row you were reading was the one row whose type was least legible. Cycle 3 moved the 3:1 onto a 4px
+left bar (7.06:1 light, 8.18:1 dark) and gave the hue back — a selected TOOL CALL renders the same olive
+as unselected, text on selection measures 4.62–8.22:1, and nothing is below 4.5.*
+
+*The phone went backwards before it went forwards. The page scrolled **175px on load** at 320×568, taking
+its own title off-screen before a visitor could read it; cycle 2 fixed that and removed the timeline's
+bounded scroll, which pushed the detail pane **3.7 screens down** — tapping a row threw the row you tapped
+670px above the viewport, and six ArrowDown presses left the selection 1,105px out of view with the screen
+not changing at all. Cycle 3 restored a bounded list and anchored the **pair** rather than the detail
+alone: a 20-press walk now measures `scrollY` fixed at 132 and the detail fixed at 607 for all twenty,
+with the selected row inside the list bounds every time. `overflow-anchor: none` was required — scroll
+anchoring had been dragging the page up to 300px per keypress as the detail's height changed.*
+
+*The playtester and critic-correctness independently found the same lockup: `dragCancel` — Escape
+mid-drag, or dragging back out of the window — fires neither `dragleave` nor `drop`, so the full-screen
+drop veil stayed up forever over every control and only a reload recovered.*
+
+*Verified before the close: `gitleaks` clean over 26 commits and in `--no-git` mode, plus a manual history
+sweep; XSS and prototype pollution attacked in every cycle including after the parser rewrite
+(`window.__pwned` undefined, zero injected `img`/`iframe`/`svg`, `({}).polluted` undefined, bidi escaped to
+`\uXXXX`); **zero network requests** from a cold load through a full session — three `file://` reads and
+nothing else, no external URL anywhere in the source, no storage of any kind; zero console or page errors
+in every pass; 50,000 messages parse in ~0.9 s with all three candidate parsers run.*
+
+*Three trades were made deliberately and are priced rather than hidden. The bundled example is
+hand-written and the page says so **above the timeline** rather than only in the README — a live-demo
+visitor never sees a README, and the example is written to read like a real production incident. Running
+all three parsers on every input costs a 10 MB paste ~14 s and ~1.1 GB of heap behind the busy state,
+roughly double the single-parse cost, paid to stop the viewer confidently mis-reading real transcripts.
+And at 320px the list is 193px, about two rows: usable, and the acknowledged edge of the design.*
