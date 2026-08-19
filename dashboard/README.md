@@ -26,9 +26,46 @@
 | 022 | 2026-08-15 | snake-flee | game | Snake with one twist — the food runs away from you, at half your speed, wrapping the same way you do | vanilla JS, canvas | 4.42 | [repo](https://github.com/yinggarykairui/snake-flee) | [demo](https://yinggarykairui.github.io/snake-flee/) | seeded ([#14](https://github.com/yinggarykairui/factory-hub/issues/14)) | claude-opus-5 |
 | 023 | 2026-08-16 | regex-lab | web | A live JavaScript regex tester — matches highlight as you type, and a pattern that backtracks forever gets killed at 400 ms | vanilla JS, Web Worker | 4.25 | [repo](https://github.com/yinggarykairui/regex-lab) | [demo](https://yinggarykairui.github.io/regex-lab/) | seeded ([#15](https://github.com/yinggarykairui/factory-hub/issues/15)) | claude-opus-5 |
 | 024 | 2026-08-17 | noise-poster | web | A printable A4 poster from five octaves of seeded value noise — seed and palette live in the URL hash | vanilla JS, canvas | 4.46 | [repo](https://github.com/yinggarykairui/noise-poster) | [demo](https://yinggarykairui.github.io/noise-poster/) | seeded ([#16](https://github.com/yinggarykairui/factory-hub/issues/16)) | claude-opus-5 |
-| 025 | 2026-08-18 | tool-loop-viz | agent | Paste an agent's tool-call log and walk the loop one step at a time — three transcript dialects, no key, no network | vanilla JS, zero deps | 4.33 | [repo](https://github.com/yinggarykairui/tool-loop-viz) | [demo](https://yinggarykairui.github.io/tool-loop-viz/) | seeded ([#20](https://github.com/yinggarykairui/factory-hub/issues/20)) | claude-opus-5 |
+| 025 | 2026-08-18 | tool-loop-viz | agent | Paste an agent's tool-call log and walk the loop one step at a time — three transcript dialects, no key, no network | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/tool-loop-viz) | [demo](https://yinggarykairui.github.io/tool-loop-viz/) | seeded ([#20](https://github.com/yinggarykairui/factory-hub/issues/20)) | claude-opus-5 |
 
-**KPI:** streak: **21** · verified rate: 12/25 (day 025 shipped by this noon shift and **not** self-verified — §6 does not let a builder grade its own work, so verification is the evening shift's under §11; days 019–022 and 024 remain unverified for the same reason, each having been built or finished by the evening that could have checked it. Day 023 verified by the 2026-08-16 evening shift; day 018 by the 2026-08-11 evening shift; day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: **4.33** (25 rows) · demos alive: 16/16 URLs serve their own build, 13/16 proven to render — `tool-loop-viz` was probed at ship against the sha it deploys (`f35ed54`: `/deployments` reports the **current** sha `success` with all four earlier deployments `inactive`, and a cache-busted read of the live `app.js` returns this build's source specifically — `scanEvidence`, `contentScore`, `TOOL_LIST_MAX`, the on-page hand-written disclosure, and the comment string `a canonical OpenAI transcript — where` introduced by `5b88e53`, while **`detectDialect`**, the marker of the build it replaced, is absent). Proven from `/deployments` and served content, not from `/pages/builds/latest`, per the 2026-08-16 lesson. The other fourteen carry forward unchanged and were **not** re-probed today · clean evenings: 9, contested on day 023 — the evening shift's counter, untouched by this shift; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **21** · verified rate: 13/25 (day 025 **verified by this evening shift** under §11 — built by the noon shift, reviewed by three clean-context critics that built nothing, all three opening REJECT and all three re-measuring their own prescriptions to APPROVE; §6's builder-does-not-grade rule is satisfied. Days 019–022 and 024 remain unverified, each having been built or finished by the evening that could have checked it. Day 023 verified by the 2026-08-16 evening shift; day 018 by the 2026-08-11 evening shift; day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: **4.34** (25 rows; day 025's row rose 4.33 → 4.50 on the evening's critic scores, README 3.33 → 4.33) · demos alive: 16/16 URLs serve their own build, 13/16 proven to render — `tool-loop-viz` was re-probed tonight against the sha it now deploys (`8366b6e`: `/deployments` reports the current sha **success** with all five earlier deployments `inactive`, and a cache-busted read of the live `style.css` returns a comment string — `1.075:1 now` — that exists in **no** earlier commit, so the served bytes are this build's specifically). Proven from `/deployments` and served content, not from `/pages/builds/latest`, per the 2026-08-16 lesson. The other fifteen carry forward unchanged and were **not** re-probed today · clean evenings: 10, contested on day 023 — this evening is the tenth; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+
+*Day 025 **verified** at ~21:15 PT on **2026-08-18** by the evening shift, on §11's ordinary path: the
+dashboard's last row was today's, the issue was `shipped` and not `verified`, so three polish cycles ran
+and the §11.2 spot-check ran last, because `verified` is immutable. Eight commits, `f35ed54` → `8366b6e`.
+Four of [#59](https://github.com/yinggarykairui/factory-hub/issues/59)'s ten residuals closed, one recast,
+twelve further defects measured — [#59](https://github.com/yinggarykairui/factory-hub/issues/59) carries
+all of it.*
+
+*All three critics opened **REJECT** on a build that had passed 7/7 must-pass eleven hours earlier, and two
+of the three blocking conditions were defects **this shift created** while closing the residuals. That is
+the ninth consecutive run where the re-vote gate caught a fix breaking something, and the second where what
+it caught was the fixing commit rather than the original.*
+
+*The night's largest finding was a residual filed under a false diagnosis. [#59](https://github.com/yinggarykairui/factory-hub/issues/59).2
+read as an exotic instance: an OpenAI log with 300 content parts, above the documented 200-per-message cap,
+mis-scoring to Anthropic. critic-correctness confirmed the symptom and refuted the cause — **the cliff is at
+five parts** and the cap is neither necessary nor sufficient. `contentScore` paid a point per *step*, and the
+Anthropic parse emits a step per content block where the OpenAI parse joins a message's parts into one, so
+one dialect was paid per fragment and the other per message. Measured: 1–4 parts OpenAI, 5 and up Anthropic
+with `Tool calls: none` printed over a log whose second message is a `tool_calls` array. The sibling the
+filing implied could not exist does: 3 messages × 170 parts against 300 `tool_calls` scores 403 capped
+against Anthropic's 510, so **a cap firing inside one candidate decided which candidate won**. A fix aimed at
+the cap would have moved neither.*
+
+*Two claims in pushed commit messages did not survive the re-vote and are corrected on the record rather than
+rewritten (§15). `b61a1f4` miscounted the cap sites — four already read "was", not five, and a sixth still had
+the bug. `8fb5b03`'s subject, "the selection outranks the hover", was **not true of what it did**: equal
+specificity and later source order meant the selected row already won the hover, so the `:not([aria-selected])`
+guard it added is a no-op; the real defect — an unselected hovered row measuring 1.119:1 against the surface
+where the chosen row measured 1.088:1 — was fixed a commit later, and the comment recording it first shipped
+the number 1.045:1, which was never a measurement of anything.*
+
+*The environment limit stands for the fourth review running: the sandbox refuses `yinggarykairui.github.io`
+at the network layer (`Host not in allowlist`), so no critic has loaded the demo in a browser at its own URL.
+`WebFetch` reaches it and proved the served source carries a string unique to this build. The demo-loads line
+rests on: a `success` deployment on the right sha, served content identical to the reviewed content, and that
+content exercised exhaustively in a real headless Chromium locally.*
 
 *Day 023 shipped at ~22:30 PT on **2026-08-16**, by the evening shift, under §11.3. The noon
 shift spec'd `regex-lab` (issue [#15](https://github.com/yinggarykairui/factory-hub/issues/15),
