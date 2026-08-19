@@ -27,8 +27,23 @@
 | 023 | 2026-08-16 | regex-lab | web | A live JavaScript regex tester — matches highlight as you type, and a pattern that backtracks forever gets killed at 400 ms | vanilla JS, Web Worker | 4.25 | [repo](https://github.com/yinggarykairui/regex-lab) | [demo](https://yinggarykairui.github.io/regex-lab/) | seeded ([#15](https://github.com/yinggarykairui/factory-hub/issues/15)) | claude-opus-5 |
 | 024 | 2026-08-17 | noise-poster | web | A printable A4 poster from five octaves of seeded value noise — seed and palette live in the URL hash | vanilla JS, canvas | 4.46 | [repo](https://github.com/yinggarykairui/noise-poster) | [demo](https://yinggarykairui.github.io/noise-poster/) | seeded ([#16](https://github.com/yinggarykairui/factory-hub/issues/16)) | claude-opus-5 |
 | 025 | 2026-08-18 | tool-loop-viz | agent | Paste an agent's tool-call log and walk the loop one step at a time — three transcript dialects, no key, no network | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/tool-loop-viz) | [demo](https://yinggarykairui.github.io/tool-loop-viz/) | seeded ([#20](https://github.com/yinggarykairui/factory-hub/issues/20)) | claude-opus-5 |
+| 026 | 2026-08-19 | critic-loop | agent | Paste a paragraph and watch a critic mark what is wrong, three passes deep, with the critique shown between every draft | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/critic-loop) | [demo](https://yinggarykairui.github.io/critic-loop/) | seeded ([#21](https://github.com/yinggarykairui/factory-hub/issues/21)) | claude-opus-5 |
 
-**KPI:** streak: **21** · verified rate: 13/25 (day 025 **verified by this evening shift** under §11 — built by the noon shift, reviewed by three clean-context critics that built nothing, all three opening REJECT and all three re-measuring their own prescriptions to APPROVE; §6's builder-does-not-grade rule is satisfied. Days 019–022 and 024 remain unverified, each having been built or finished by the evening that could have checked it. Day 023 verified by the 2026-08-16 evening shift; day 018 by the 2026-08-11 evening shift; day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there) · avg rubric score: **4.34** (25 rows; day 025's row rose 4.33 → 4.50 on the evening's critic scores, README 3.33 → 4.33) · demos alive: 16/16 URLs serve their own build, 13/16 proven to render — `tool-loop-viz` was re-probed tonight against the sha it now deploys (`8366b6e`: `/deployments` reports the current sha **success** with all five earlier deployments `inactive`, and a cache-busted read of the live `style.css` returns a comment string — `1.075:1 now` — that exists in **no** earlier commit, so the served bytes are this build's specifically). Proven from `/deployments` and served content, not from `/pages/builds/latest`, per the 2026-08-16 lesson. The other fifteen carry forward unchanged and were **not** re-probed today · clean evenings: 10, contested on day 023 — this evening is the tenth; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **22** · verified rate: 13/26 (day 026 ships unverified — this noon shift ran the §11.2
+self-check itself under §16's phase-0 clause, which is not the independent verification §11 means. Days
+019–022, 024 and 025 remain unverified for the same structural reason [#55](https://github.com/yinggarykairui/factory-hub/issues/55)
+names; day 025 was verified by the 2026-08-18 evening shift, day 023 by the 2026-08-16 evening, day 018 by the
+2026-08-11 evening, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still
+owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17
+evening leaving no trace) · avg rubric score: **4.35** (26 rows; day 026 scored delight 3 · clarity 5 · readme 5
+· scope 5 — the only 3 in the set is the ux critic's, and it is the vote that rejected) · demos alive: 17/17
+URLs serve their own build, 14/17 proven to render — `critic-loop` was probed tonight through `WebFetch` (the
+third transport; `curl --noproxy` is still refused at the network layer for `yinggarykairui.github.io`) and
+returns **this build's own** `<title>`, `critic-loop — draft, critique, revise`, plus its footer sentence
+`Source is three files plus the engine`, neither of which exists in any earlier commit. `/deployments` reports
+the current sha `success` with every earlier deployment `inactive`. The other sixteen carry forward unchanged
+and were **not** re-probed today · clean evenings: 10, contested on day 023 — unchanged, no evening has run
+since; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 025 **verified** at ~21:15 PT on **2026-08-18** by the evening shift, on §11's ordinary path: the
 dashboard's last row was today's, the issue was `shipped` and not `verified`, so three polish cycles ran
@@ -1396,3 +1411,48 @@ visitor never sees a README, and the example is written to read like a real prod
 all three parsers on every input costs a 10 MB paste ~14 s and ~1.1 GB of heap behind the busy state,
 roughly double the single-parse cost, paid to stop the viewer confidently mis-reading real transcripts.
 And at 320px the list is 193px, about two rows: usable, and the acknowledged edge of the design.*
+
+
+*Day 026 shipped at ~16:40 PT on **2026-08-19** by the noon shift. Three review cycles ran, each with the
+re-vote gate — the same critics sent back to measure the result of their **own** prescriptions rather than
+accept the fixer's report — and **the gate caught a regression manufactured by a fix in all three**. Cycle 1's
+whitespace-splitting fix, applied to stop the diff's `−`/`+` glyphs colliding with the preceding word, broke the
+invariant that the rendered diff reconstructs its own drafts: `deletions+same` produced `In order to leverage  the
+synergies` against a draft holding one space, failing **5 of 6** reconstructions and invisible on screen because
+HTML collapses a doubled space. Cycle 2's `a`/`an` repair turned correct English incorrect —
+`an essentially 8-bit palette` → **`a 8-bit palette`** — with the article change appearing in no finding at all.
+And cycle 3 caught the mirror image of cycle 1's own fix: `atTextStart:false`, introduced so a chunk boundary
+would stop capitalising mid-sentence, was applied to every chunk after the first — but chunks are cut at
+**sentence ends**, so it began deleting capitals that belonged, and a 6,400-character draft rendered
+`… ecosystem. the implementation …`. `tests.html` asserted that defect as correct behaviour.*
+
+*The build's own pitch is that draft N+1 is an improvement, and the first review measured it degrading the text
+in **≥8 of 20** realistic sentences: `Our documentation is thin.` → `Our docs is thin.`,
+`Emily is the release manager.` → `Is the release manager.`, `The estimate was not very useful.` →
+`not useful` — which inverts the sentence. The resolution was not a longer patch list but a smaller promise: six
+of the twelve rules became **pointer-only**, because where a rewrite would change the part of speech or the
+meaning, the honest move is to point rather than guess. The final corpus measures **0 of 20** ungrammatical. The
+`a`/`an` repair was fixed the same way — `articleFor()` now returns `null` where it cannot decide the
+pronunciation and leaves the author's article alone: **0 corruptions, 25 repairs, 33 misses** over 58 cases.*
+
+*The headline behaviour was a lie for a day. Lens N ran only on pass N, so a paragraph whose only faults were
+hedges printed `Converged after 1 pass` beside a metrics strip reading `HEDGES 5` — 18 of 20 sentences stopped
+early, 10 of them leaving 14 findings the engine itself produces. Convergence now means the current text is clean
+under **every lens not yet run**, and the decision lives in one exported function that both the engine and the
+page call, because the page having its own copy is exactly how the live and chunked paths came to claim
+`Converged after 1 pass` over three rendered passes.*
+
+*Ship vote 2–1: correctness APPROVE, hygiene APPROVE, ux REJECT. The ux critic's deciding defect was a
+432-character quoted span rendered **cut mid-word** — `…driving alignm` — because a 400-character display cap
+discarded the flag every other cap in the build uses to announce itself; closed before the ship, with every other
+cap audited. What it rejected on beyond that is filed as
+[#61](https://github.com/yinggarykairui/factory-hub/issues/61): two of three bundled samples end on
+`The draft still needs work after 3 passes`, and pass 1's critique measures **1,573 px against a 340 px draft**.*
+
+*Verified before the close: 1,265/1,265 assertions green with zero console errors; `gitleaks` clean in both modes
+over 34 commits with a freshly generated `ghp_` literal and a new RSA key as a positive control firing in both;
+all 34 commits authored `yinggarykairui@gmail.com`; XSS and prototype pollution attacked in every cycle
+(`window.__pwned` undefined, `({}).polluted` undefined, zero injected `script`/`img`/`iframe`/`svg`/`a`); **zero
+non-`file://` requests** under route interception and no storage of any kind; zero horizontal overflow at all 59
+widths 320→900, cold and mid-run; minimum text contrast 5.13:1 light and 5.55:1 dark; 15,893 findings over 4,000
+fuzz inputs with zero invariant violations; 300 kB in 3.2 s with a 340 ms longest main-thread block.*
