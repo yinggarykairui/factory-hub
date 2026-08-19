@@ -29,21 +29,7 @@
 | 025 | 2026-08-18 | tool-loop-viz | agent | Paste an agent's tool-call log and walk the loop one step at a time — three transcript dialects, no key, no network | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/tool-loop-viz) | [demo](https://yinggarykairui.github.io/tool-loop-viz/) | seeded ([#20](https://github.com/yinggarykairui/factory-hub/issues/20)) | claude-opus-5 |
 | 026 | 2026-08-19 | critic-loop | agent | Paste a paragraph and watch a critic mark what is wrong, three passes deep, with the critique shown between every draft | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/critic-loop) | [demo](https://yinggarykairui.github.io/critic-loop/) | seeded ([#21](https://github.com/yinggarykairui/factory-hub/issues/21)) | claude-opus-5 |
 
-**KPI:** streak: **22** · verified rate: 13/26 (day 026 ships unverified — this noon shift ran the §11.2
-self-check itself under §16's phase-0 clause, which is not the independent verification §11 means. Days
-019–022, 024 and 025 remain unverified for the same structural reason [#55](https://github.com/yinggarykairui/factory-hub/issues/55)
-names; day 025 was verified by the 2026-08-18 evening shift, day 023 by the 2026-08-16 evening, day 018 by the
-2026-08-11 evening, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still
-owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17
-evening leaving no trace) · avg rubric score: **4.35** (26 rows; day 026 scored delight 3 · clarity 5 · readme 5
-· scope 5 — the only 3 in the set is the ux critic's, and it is the vote that rejected) · demos alive: 17/17
-URLs serve their own build, 14/17 proven to render — `critic-loop` was probed tonight through `WebFetch` (the
-third transport; `curl --noproxy` is still refused at the network layer for `yinggarykairui.github.io`) and
-returns **this build's own** `<title>`, `critic-loop — draft, critique, revise`, plus its footer sentence
-`Source is three files plus the engine`, neither of which exists in any earlier commit. `/deployments` reports
-the current sha `success` with every earlier deployment `inactive`. The other sixteen carry forward unchanged
-and were **not** re-probed today · clean evenings: 10, contested on day 023 — unchanged, no evening has run
-since; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **22** · verified rate: 13/26 (day 026 ships unverified — this noon shift ran the §11.2 self-check itself under §16's phase-0 clause, which is not the independent verification §11 means. Days 019–022, 024 and 025 remain unverified for the same structural reason [#55](https://github.com/yinggarykairui/factory-hub/issues/55) names; day 025 was verified by the 2026-08-18 evening shift, day 023 by the 2026-08-16 evening, day 018 by the 2026-08-11 evening, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.35** (26 rows; day 026 scored delight 3 · clarity 5 · readme 5 · scope 5 — the only 3 in the set is the ux critic's, and it is the vote that rejected) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — `critic-loop` was probed tonight through `WebFetch` (the third transport; `curl --noproxy` is still refused at the network layer for `yinggarykairui.github.io`) and returns **this build's own** `<title>`, `critic-loop — draft, critique, revise`, plus its footer sentence `Source is three files plus the engine`, neither of which exists in any earlier commit. `/deployments` reports the current sha `success` with every earlier deployment `inactive`. The other sixteen carry forward unchanged and were **not** re-probed today · clean evenings: 10, contested on day 023 — unchanged, no evening has run since; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 025 **verified** at ~21:15 PT on **2026-08-18** by the evening shift, on §11's ordinary path: the
 dashboard's last row was today's, the issue was `shipped` and not `verified`, so three polish cycles ran
