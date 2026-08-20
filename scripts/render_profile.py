@@ -6,6 +6,13 @@ Ranking for "Best builds": owner reactions on the closed ship issue
 (👍 total), rubric average as fallback, date as tiebreak. Reads the token
 from $FACTORY_PAT or ~/.factory.env; degrades to rubric-only if the API is
 unreachable (the page must render offline — §13 spirit).
+
+The corpus is deduplicated by slug before ranking: a repo that shipped
+five increments is one portfolio entry — its best row picks the ranking,
+its latest row picks the sentence, because the sentence should describe
+what the visitor will find in the repo today, not what it was on the day
+that scored highest. The `Latest ship` hero card skips `type:meta` rows
+so a factory-hub self-fix doesn't cover the last real project.
 """
 import json, os, re, sys, urllib.request
 
@@ -42,18 +49,30 @@ def parse_dashboard():
                 })
     return kpi, rows
 
+def slug_from_title(title):
+    """Ship issue titles are either `<slug>` or `improve <slug>: …`.
+    Both keys should credit reactions to the same slug."""
+    m = re.match(r"^improve\s+([\w-]+):", title)
+    return m.group(1) if m else title.strip()
+
 def reactions_by_slug():
-    """+1 counts on closed shipped issues, keyed by issue title (= slug)."""
+    """+1 counts on closed shipped issues, keyed by slug (parsed from
+    title). Uses an explicit `ProxyHandler({})` so scheduled runs cannot
+    fall through to the sandbox's `HTTPS_PROXY` and silently return {}."""
     out = {}
     t = token()
     if not t:
         return out
     url = f"https://api.github.com/repos/{HUB}/issues?state=closed&labels=shipped&per_page=100"
     req = urllib.request.Request(url, headers={"Authorization": f"token {t}"})
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     try:
-        with urllib.request.urlopen(req, timeout=15) as r:
+        with opener.open(req, timeout=15) as r:
             for issue in json.load(r):
-                out[issue["title"]] = issue.get("reactions", {}).get("+1", 0)
+                slug = slug_from_title(issue["title"])
+                # A repo with multiple ship issues (revisits) sums to
+                # its total; one thumb per issue, not per revisit.
+                out[slug] = out.get(slug, 0) + issue.get("reactions", {}).get("+1", 0)
     except Exception:
         pass  # rubric fallback carries the ranking
     return out
@@ -64,15 +83,52 @@ def kpi_bits(kpi):
     return (get(r"streak: (\S+)"), get(r"avg rubric score: (\S+)"),
             get(r"demos alive: (\S+)"))
 
+def dedupe_by_slug(rows, reacts):
+    """One entry per slug: best row picks the ranking (highest reactions,
+    then highest rubric, then most recent date), latest row picks the
+    sentence — otherwise `orbit-doodle` reads on the storefront as
+    something it stopped being three revisits ago."""
+    best_by, latest_by = {}, {}
+    def rank(r):
+        # More reactions, then higher rubric, then more recent date.
+        return (-reacts.get(r["slug"], 0), -r["rubric"], r["date"])
+    for r in rows:
+        s = r["slug"]
+        if s not in best_by or rank(r) < rank(best_by[s]):
+            best_by[s] = r
+        if s not in latest_by or r["date"] > latest_by[s]["date"]:
+            latest_by[s] = r
+    merged = []
+    for s, r in best_by.items():
+        m = dict(r)
+        # Sentence and metadata come from the latest increment: type,
+        # tech, repo, demo can all shift across a repo's lifetime, and
+        # the storefront should describe what the visitor will find.
+        latest = latest_by[s]
+        for k in ("liner", "type", "tech", "repo", "demo"):
+            m[k] = latest[k]
+        merged.append(m)
+    return merged
+
 def render():
     kpi, rows = parse_dashboard()
     if not rows:
         sys.exit("no ships in dashboard table; refusing to render an empty storefront")
     reacts = reactions_by_slug()
-    latest = max(rows, key=lambda r: r["day"])
-    best = sorted(rows, key=lambda r: (-reacts.get(r["slug"], 0), -r["rubric"], r["date"]))[:BEST_N]
+
+    # Latest ship for the hero card: skip meta rows so a factory-hub
+    # self-fix doesn't cover the last real project.
+    project_rows = [r for r in rows if r["type"] != "meta"] or rows
+    latest = max(project_rows, key=lambda r: r["day"])
+
+    deduped = dedupe_by_slug(rows, reacts)
+    best = sorted(deduped, key=lambda r: (-reacts.get(r["slug"], 0), -r["rubric"], r["date"]))[:BEST_N]
     streak, rubric, alive = kpi_bits(kpi)
     shot = latest["repo"].replace("github.com", "raw.githubusercontent.com") + "/main/screenshot.png"
+
+    # Latest for the footer date/day is the last actual row, meta or not —
+    # the storefront was updated on that day even if the hero skipped it.
+    last = max(rows, key=lambda r: r["day"])
 
     L = []
     L.append("## Kairui Ying\n")
@@ -93,7 +149,7 @@ def render():
         d = f"[demo]({r['demo']}) · " if r["demo"] else ""
         why = f"{reacts[r['slug']]}× 👍" if reacts.get(r["slug"], 0) else f"rubric {r['rubric']:.2f}"
         L.append(f"| [{r['slug']}]({r['repo']}) | {r['liner']} | {r['tech']} | {d}{why} |")
-    L.append("\n*Ranked by reactions on ship issues, rubric score until the votes arrive.*\n")
+    L.append("\n*One row per repo; ranked by reactions on ship issues, rubric score until the votes arrive.*\n")
     L.append("### How it works\n")
     L.append("Every project starts as an issue. It gets a spec and a README before any code")
     L.append("exists, is built by one agent, then torn apart by adversarial critics — a build")
@@ -101,7 +157,7 @@ def render():
     L.append("input, works at phone width, truthful README, licensed, secret-scanned, demo")
     L.append("live). The doctrine, rubric, and every daily sign-off are public in")
     L.append(f"[factory-hub](https://github.com/{HUB}).\n")
-    L.append(f"<sub>Maintained by the factory · [dashboard](https://yinggarykairui.github.io/factory-hub/) · last updated day {latest['day']} ({latest['date']})</sub>")
+    L.append(f"<sub>Maintained by the factory · [dashboard](https://yinggarykairui.github.io/factory-hub/) · last updated day {last['day']} ({last['date']})</sub>")
     return "\n".join(L) + "\n"
 
 if __name__ == "__main__":
