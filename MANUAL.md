@@ -242,9 +242,8 @@ rises on purpose, not by drift.
 2. Commits are incremental and honest (scaffold → feature → fix → docs). Never
    one giant commit; never staged fakery.
    **Authorship — a property of every working copy, not of the run. Set both
-   values in every working copy before its first commit: the hub clone you are
-   reading this in, now; and any clone created for a subagent, before it is
-   handed over.**
+   values in every working copy before its first commit: this hub clone now;
+   any clone created for a subagent, before it is handed over.**
 
    ```
    git config user.name  "Kairui Ying"
@@ -272,24 +271,24 @@ rises on purpose, not by drift.
    inherits a stranger — and a fresh clone has no local config, so each new
    copy inherits it again.
 
-   Verify **before every push**, over this working copy's whole range:
+   Verify **before every push**, over the run's whole range — `<base>` is the
+   sha the repo was at when the run first took it (`git rev-parse HEAD` then),
+   one per repo, carried into every copy the run makes of it, never re-taken
+   per copy; a repo this run created has no base, so drop `<base>..`:
 
    ```
    git log --format='%an <%ae>' <base>..HEAD | sort -u
    ```
 
-   `<base>` is the sha *this working copy* was at before **its own** first
-   commit; record it with `git rev-parse HEAD` the moment you take the copy. In
-   a repo this run created, drop `<base>..` here and use `--root` below. Assert
-   exactly one line, and whose: `Kairui Ying <yinggarykairui@gmail.com>`.
-   **Zero lines is a failure, not a pass** — an unset `<base>` prints zero.
-
-   Repair before the push, in this order: set the two `git config` lines above
-   — `--reset-author` resets to *this copy's current* config, so a rebase run
-   before the config is fixed rewrites nothing and exits 0 — then re-author:
-   `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`,
-   starting at `<base>` or your last pushed commit, whichever is later; §15
-   forbids the force-push that rewriting pushed history would need.
+   Exactly one line prints, and it is `Kairui Ying
+   <yinggarykairui@gmail.com>`; **zero lines is a failure, not a pass** — an
+   unsubstituted `<base>` prints zero, exit 0. Repair: set the two `git
+   config` lines above first — `--reset-author` reads *this copy's* config, so
+   a rebase before that rewrites nothing and exits 0 — then re-author from
+   `<base>` or your last push, whichever is later (`--root` if none): `git
+   rebase <base> --exec 'git commit --amend --reset-author --no-edit'`. A
+   wrong author already pushed is past repair: §15 forbids the force-push, so
+   label `needs-retry`, say so in the sign-off, and leave it to the owner.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
