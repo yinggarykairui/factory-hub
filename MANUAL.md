@@ -289,8 +289,20 @@ rises on purpose, not by drift.
    made). In a repo this run created, drop `<base>..` and check the whole
    history. It must print exactly one line, and that line must be
    `Kairui Ying <yinggarykairui@gmail.com>` — in every working copy that has
-   commits to push, a subagent's included. Before the push a wrong author costs
-   an amend or a rebase; after it, a force-push, which §15 forbids.
+   commits to push, a subagent's included.
+
+   Caught before the push, a wrong author is repaired by re-authoring those
+   commits in place:
+
+   ```
+   git rebase <base> --exec 'git commit --amend --reset-author --no-edit'
+   ```
+
+   (`--root` in place of `<base>` in a repo this run created.) `--reset-author`
+   is the load-bearing flag: a plain `git commit --amend` keeps the original
+   author and repairs nothing. Start the rebase at `<base>` or at your last
+   pushed commit, whichever is later — what is already pushed can only be
+   fixed by a force-push, which §15 forbids.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
@@ -648,9 +660,11 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   subagent's included, before it is handed over. Verification moves from
   `git log -1 --format=%ae` after the first commit — a post-mortem that reads
   clean whenever only `HEAD` is right — to
-  `git log --format='%an <%ae>' <base>..HEAD | sort -u` over the run's whole
-  range, run **before every push**, where an amend or a rebase can still fix it
-  and §15's force-push prohibition has not yet been engaged. The `builder`,
+  `git log --format='%an <%ae>' <base>..HEAD | sort -u` over each working
+  copy's whole range, run **before every push**, where re-authoring the range
+  with `git rebase --exec 'git commit --amend --reset-author'` can still fix
+  it and §15's force-push prohibition has not yet been engaged — a plain
+  `--amend` cannot, it keeps the original author. The `builder`,
   `fixer` and `shipper` briefs carry the obligation by reference to §9.2, not a
   second copy of the address. Canary: §9 is on §14's list, and this edit's own
   commits are the dry run — 1.6.0's shape. The eight `tiny-synth` commits are
