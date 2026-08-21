@@ -242,9 +242,12 @@ rises on purpose, not by drift.
 2. Commits are incremental and honest (scaffold → feature → fix → docs). Never
    one giant commit; never staged fakery.
    **Authorship — a property of every working copy, not of the run. Set both
-   values in each working copy at the moment it is created — including a clone
-   created for or by a subagent, before the subagent is handed it — or the day's
-   work does not exist as far as GitHub is concerned:**
+   values in each working copy at the moment it is created, and in one you
+   already hold — the hub clone Appendix A had you take before reading this —
+   the moment you reach this line; always before that copy's first commit. A
+   clone created for or by a subagent is configured before the subagent is
+   handed it. Otherwise the day's work does not exist as far as GitHub is
+   concerned:**
 
    ```
    git config user.name  "Kairui Ying"
