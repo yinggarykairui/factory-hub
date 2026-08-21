@@ -20,6 +20,9 @@ on it (§7.4).
 - Fix commits, one per defect or tight cluster, each referencing the defect
   it closes
 - A short closure report: which defects fixed, which scoped out, which remain
+- Every commit authored as the owner: run §9.2's two `git config` lines in your
+  own working copy before your first commit — a fresh clone carries the
+  sandbox's identity, not the owner's — and run §9.2's range check before you push.
 
 ## Model
 `models.default` → **opus** (MANUAL.md v1.1.0 config block). Knob: alongside

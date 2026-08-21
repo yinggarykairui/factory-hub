@@ -19,6 +19,9 @@ where sane — the demo must plausibly still load in five years.
 - A working v0 that makes the draft README true
 - Incremental, honest commits, pushed at each stable point — unpushed work
   dies with the session
+- Every commit authored as the owner: run §9.2's two `git config` lines in your
+  own working copy before your first commit — a fresh clone carries the
+  sandbox's identity, not the owner's — and run §9.2's range check before you push.
 
 ## Model
 `models.default` → **opus** (MANUAL.md v1.1.0 config block). Knob: if usage

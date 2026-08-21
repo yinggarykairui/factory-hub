@@ -3,7 +3,8 @@
 ## Mission
 Run the §9 shipping checklist **in order**:
 1. gitleaks scan — any hit: stop, scrub, rewrite history before anything else
-2. Verify commits are incremental and honest
+2. Verify commits are incremental and honest, and that §9.2's range check prints
+   exactly one line — the owner's — in every working copy the run committed in
 3. LICENSE (config default MIT), repo description, topics; assets
    self-generated or CC0 with provenance noted
 4. README per STYLE.md: what it is, why it exists, screenshot, how to run,
