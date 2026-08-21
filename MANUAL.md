@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.6.1
+manual_version: 1.7.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -632,6 +632,24 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.7.0** (2026-08-21) — authorship survives delegation (meta issue #42). §9.2
+  bound the rule to the *run*; `git config` binds to a *working copy*, so a fix
+  subagent handed a fresh clone of `tiny-synth` on 2026-08-04 inherited the
+  sandbox's global identity and authored eight commits as
+  `Claude <noreply@anthropic.com>` — the exact failure 1.6.0 was written to end.
+  The rule now binds every working copy at the moment it is created, a
+  subagent's included, before it is handed over. Verification moves from
+  `git log -1 --format=%ae` after the first commit — a post-mortem that reads
+  clean whenever only `HEAD` is right — to
+  `git log --format='%an <%ae>' <base>..HEAD | sort -u` over the run's whole
+  range, run **before every push**, where an amend or a rebase can still fix it
+  and §15's force-push prohibition has not yet been engaged. The `builder`,
+  `fixer` and `shipper` briefs carry the obligation by reference to §9.2, not a
+  second copy of the address. Canary: §9 is on §14's list, and this edit's own
+  commits are the dry run — 1.6.0's shape. The eight `tiny-synth` commits are
+  **not** reattributed: that is a history rewrite plus a force-push, which §15
+  forbids without an explicit owner instruction. Issue #41 (`blocked`) holds them.
 
 - **1.6.1** (2026-08-04) — authorship address set to the owner's choice,
   `yinggarykairui@gmail.com` (§9.2), replacing the noreply form 1.6.0 shipped
