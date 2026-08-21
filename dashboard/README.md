@@ -30,7 +30,44 @@
 | 026 | 2026-08-19 | critic-loop | agent | Paste a paragraph and watch a critic mark what is wrong, three passes deep, with the critique shown between every draft | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/critic-loop) | [demo](https://yinggarykairui.github.io/critic-loop/) | seeded ([#21](https://github.com/yinggarykairui/factory-hub/issues/21)) | claude-opus-5 |
 | 027 | 2026-08-20 | factory-hub | meta | The storefront now lists each repo once, ranked by its best increment and captioned by its latest — plus the sandbox proxy no longer silently zeroes the reactions | Python 3, stdlib only | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#34](https://github.com/yinggarykairui/factory-hub/issues/34)) | claude-opus-5 |
 
-**KPI:** streak: **23** · verified rate: 13/27 (day 027 ships unverified, and this noon shift will not self-verify it either — the §11.2 self-check is the same structural gap [#55](https://github.com/yinggarykairui/factory-hub/issues/55) names. Days 019–022, 024 and 026 remain unverified for that reason; day 025 was verified by the 2026-08-18 evening shift, day 023 by the 2026-08-16 evening, day 018 by the 2026-08-11 evening, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.33** (27 rows; day 027 scored delight 3 · clarity 4 · readme 4 · scope 5 — meta ships have no must-pass demo line, so the average moves with the scored lines alone) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 027 is a `type:meta` fix to `scripts/`, so it neither adds a demo nor re-probes the ones already counted · clean evenings: 10, contested on day 023 — unchanged, no evening has run since; counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **23** · verified rate: 14/27 (day 027 **verified** by this 2026-08-20 evening shift on §11's ordinary path — three polish cycles first, the §11.2 spot-check last, because `verified` is immutable. Days 019–022, 024 and 026 remain unverified; day 025 was verified by the 2026-08-18 evening shift, day 023 by the 2026-08-16 evening, day 018 by the 2026-08-11 evening, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.33** (27 rows; day 027's recorded 4.00 stands — the evening raised clarity and readme materially but does not re-score its own polish, so the number is left where the noon shift's critics put it) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 027 is a `type:meta` fix to `scripts/`, so it neither adds a demo nor re-probes the ones already counted · clean evenings: 11, contested on day 023 — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+
+*Day 027 **verified** at ~20:45 PT on **2026-08-20** by the evening shift. The live storefront was
+byte-identical to a fresh render of `10d353e` — the strongest form the §11.2 demo line takes for a meta
+ship with no demo — and `gitleaks` 8.21.2 ran clean over all 135 commits and the working tree, the first
+evening in ten to get the real scanner installed rather than a substitute. Three polish cycles, two commits,
+`10d353e` → `2b8a02c`, all authored `yinggarykairui@gmail.com`.*
+
+*The defect the cycles were for: `reactions_by_slug()` asked GitHub for `labels=shipped` only. Thirteen ship
+issues carry `verified` instead — because passing the evening spot-check is what replaces the label — so the
+ranking that decides the owner's public portfolio was blind to **12 of 28 ships**, `json-tidy`, `git-mood`,
+`tiny-synth`, `tool-loop-viz`, `regex-lab`, `word-ladder`, `boids-tank`, `cron-explain`, `palette-pull` and
+`trace-lens`'s job-lane issue among them. Every reaction count is zero today, so nothing visible was wrong;
+the first 👍 the owner leaves on a verified ship would have vanished. **Verifying a ship was what removed it
+from its own ranking.** With both labels queried the lookup sees 28 issues and keys all 19 project slugs.*
+
+*Two claims on the live page were false and one was unreadable. `demos alive 17/17` dropped the `, 14/17
+proven to render` that sits beside it in the KPI — the badge now carries both, with the strong word attached
+to the weaker evidence it actually has. **"one small working project every day"** is contradicted by the
+factory's own dashboard four lines below it, where `streak 23` sits against 27 ships: 2026-07-28 was a zero
+day and days 001 and 002 both shipped on 2026-07-25. And `` `streak **23**` `` had been rendering as four
+literal asterisks since day 024, because a markdown code span does not process emphasis — the hub's own
+dashboard renderer strips them at `index.html:96` and this script never did.*
+
+*Cycle 2's critics rejected cycle 1, and were right: the replacement headline counted dashboard **rows**
+(27) as "small working projects" while the table four lines below deduped them to 19, and "27 across 27
+days" is arithmetically one-a-day — the same claim in a suit. It reads `19 of them, on 26 of its 27 days`
+now, computed from the corpus. Cycle 3 also closed what cycle 2 found underneath: an unanchored `num()` that
+turned a rubric cell reading `— pending rescore ([#59](…))` into a score of **59.00** and put it top of the
+table, an unanchored streak parse that published `streak 2026` from `broken on 2026-07-28, now 23 days`, the
+two demo figures scraped positionally out of 200 characters of shipper prose, a `hero_shot()` that deleted
+the largest element on the page on any network failure rather than only on a 404, and five crash paths —
+escaped pipes, prose rubric cells, unlinked repo cells, an 11-column table in the notes stream, and a
+C/POSIX locale. Nine skips that used to be silent now name themselves on stderr.*
+
+*Residuals filed, not fixed: [#62](https://github.com/yinggarykairui/factory-hub/issues/62). The evening
+does not touch `MANUAL.md` or rewrite `LESSONS.md` history without a `meta` issue (§14), and both of the
+remaining findings are there.*
 
 *Day 025 **verified** at ~21:15 PT on **2026-08-18** by the evening shift, on §11's ordinary path: the
 dashboard's last row was today's, the issue was `shipped` and not `verified`, so three polish cycles ran
