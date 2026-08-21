@@ -284,11 +284,11 @@ rises on purpose, not by drift.
    lines is a failure, not a pass** — an unsubstituted `<base>` prints zero,
    exit 0. Repair: set the two `git config` lines above first —
    `--reset-author` reads *this copy's* config, so a rebase before that
-   rewrites nothing and exits 0 — then re-author from `<base>` or your last
-   push, whichever is later (`--root` if none): `git rebase <base> --exec 'git
-   commit --amend --reset-author --no-edit'`. A wrong author already pushed is
-   past repair: §15 forbids the force-push, so label `needs-retry`, say so in
-   the sign-off, and leave it to the owner.
+   rewrites the commits and still leaves the wrong author — then re-author
+   from `<base>` or your last push, whichever is later (`--root` if none):
+   `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`.
+   A wrong author already pushed is past repair: §15 forbids the force-push, so
+   label `needs-retry`, say so in the sign-off, and leave it to the owner.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
@@ -637,29 +637,29 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
-- **1.7.0** (2026-08-21) — authorship survives delegation (meta issue #42). §9.2
-  bound the rule to the *run*; `git config` binds to a *working copy*, so a fix
-  subagent handed a fresh clone of `tiny-synth` on 2026-08-04 inherited the
-  sandbox's global identity and authored eight commits as
-  `Claude <noreply@anthropic.com>` — the exact failure 1.6.0 was written to end.
-  The rule now binds every working copy before its first commit, a subagent's
-  included, before it is handed over. Verification moves from
-  `git log -1 --format=%ae` after the first commit — a post-mortem that reads
-  clean whenever only `HEAD` is right — to
-  `git log --format='%an <%ae>' <base>..HEAD | sort -u` over the run's whole
-  range — one `<base>` per repo, carried into every working copy of it, so a
-  clone taken after a subagent pushed still covers that subagent's commits — run
-  **before every push**, because only unpushed commits can be re-authored: set
-  the two `git config` lines first — `--reset-author` resets to the current
-  config, so the rebase is a no-op while the wrong identity is still set — then
-  `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`.
-  A wrong author already pushed is past repair — §15 forbids the force-push — so
-  the run labels the issue `needs-retry` and says so in the sign-off. The
-  `builder`, `fixer` and `shipper` briefs carry the obligation by reference to
-  §9.2, not a second copy of the address. Canary: §9 is on §14's list, and this edit's own
-  commits are the dry run — 1.6.0's shape. The eight `tiny-synth` commits are
-  **not** reattributed: that is a history rewrite plus a force-push, which §15
-  forbids without an explicit owner instruction. Issue #41 (`blocked`) holds them.
+- **1.7.0** (2026-08-21) — authorship survives delegation (meta issue #42).
+  §9.2 bound the rule to the *run*; `git config` binds to a *working copy*, so
+  a fix subagent handed a fresh clone of `tiny-synth` on 2026-08-04 inherited
+  the sandbox's global identity and authored eight commits as `Claude
+  <noreply@anthropic.com>` — the exact failure 1.6.0 was written to end. The
+  rule now binds every working copy before its first commit, a subagent's
+  included, before it is handed over. Verification moves from `git log -1
+  --format=%ae` after the first commit — a post-mortem that reads clean
+  whenever only `HEAD` is right — to `git log --format='%an <%ae>' <base>..HEAD
+  | sort -u` over the run's whole range — one `<base>` per repo, carried into
+  every working copy of it, so a clone taken after a subagent pushed still
+  covers that subagent's commits — run **before every push**, because §15
+  leaves only unpushed commits re-authorable: set the two `git config` lines
+  first — `--reset-author` resets to the current config, so a rebase run before
+  that leaves the wrong author in place — then `git rebase <base> --exec 'git
+  commit --amend --reset-author --no-edit'`. A wrong author already pushed is
+  past repair — §15 forbids the force-push — so the run labels the issue
+  `needs-retry` and says so in the sign-off. The `builder`, `fixer` and
+  `shipper` briefs carry the obligation by reference to §9.2, not a second copy
+  of the address. Canary: §9 is on §14's list, and this edit's own commits are
+  the dry run — 1.6.0's shape. The eight `tiny-synth` commits are **not**
+  reattributed: that is a history rewrite plus a force-push, which §15 forbids
+  without an explicit owner instruction. Issue #41 (`blocked`) holds them.
 
 - **1.6.1** (2026-08-04) — authorship address set to the owner's choice,
   `yinggarykairui@gmail.com` (§9.2), replacing the noreply form 1.6.0 shipped
