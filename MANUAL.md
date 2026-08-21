@@ -272,8 +272,11 @@ rises on purpose, not by drift.
    inherits a stranger — and a fresh clone has no local config, so every new
    working copy inherits that stranger again.
 
-   Verify **before every push**, over the whole range the run created — not just
-   `HEAD`, which reads clean when only the last commit is right:
+   Verify **before every push**, over the whole range this working copy
+   created — not just `HEAD`, which reads clean when only the last commit is
+   right. §9 is the shipper's checklist, but this obligation is every
+   committing actor's, in its own working copy, at each of its own pushes; the
+   shipper's single pass at ship time does not discharge it:
 
    ```
    git log --format='%an <%ae>' <base>..HEAD | sort -u
