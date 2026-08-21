@@ -280,15 +280,15 @@ rises on purpose, not by drift.
    git log --format='%an <%ae>' <base>..HEAD | sort -u
    ```
 
-   Exactly one line prints, and it is `Kairui Ying
-   <yinggarykairui@gmail.com>`; **zero lines is a failure, not a pass** — an
-   unsubstituted `<base>` prints zero, exit 0. Repair: set the two `git
-   config` lines above first — `--reset-author` reads *this copy's* config, so
-   a rebase before that rewrites nothing and exits 0 — then re-author from
-   `<base>` or your last push, whichever is later (`--root` if none): `git
-   rebase <base> --exec 'git commit --amend --reset-author --no-edit'`. A
-   wrong author already pushed is past repair: §15 forbids the force-push, so
-   label `needs-retry`, say so in the sign-off, and leave it to the owner.
+   Assert exactly one line: `Kairui Ying <yinggarykairui@gmail.com>`; **zero
+   lines is a failure, not a pass** — an unsubstituted `<base>` prints zero,
+   exit 0. Repair: set the two `git config` lines above first —
+   `--reset-author` reads *this copy's* config, so a rebase before that
+   rewrites nothing and exits 0 — then re-author from `<base>` or your last
+   push, whichever is later (`--root` if none): `git rebase <base> --exec 'git
+   commit --amend --reset-author --no-edit'`. A wrong author already pushed is
+   past repair: §15 forbids the force-push, so label `needs-retry`, say so in
+   the sign-off, and leave it to the owner.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
