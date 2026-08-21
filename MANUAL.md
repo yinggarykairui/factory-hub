@@ -279,10 +279,16 @@ rises on purpose, not by drift.
    git log --format='%an <%ae>' <base>..HEAD | sort -u
    ```
 
-   `<base>` is the sha the working copy was at before the run's first commit
-   (record it at clone time; in a repo this run created, drop `<base>..` and
-   check the whole history). It must print exactly one line, and that line must
-   be `Kairui Ying <yinggarykairui@gmail.com>` — in every working copy that has
+   `<base>` is the sha *this working copy* was at before **its own** first
+   commit — not the run's: a second clone, handed out mid-run, starts later.
+   Whoever creates a working copy records `<base>` and hands it over with the
+   copy; a receiver given none takes `git rev-parse @{upstream}` — its
+   branch's remote-tracking tip, which is the sha a fresh clone was handed and
+   after a push the last verified point (not `origin/HEAD`, which tracks the
+   remote's *default* branch and elsewhere sweeps in commits this copy never
+   made). In a repo this run created, drop `<base>..` and check the whole
+   history. It must print exactly one line, and that line must be
+   `Kairui Ying <yinggarykairui@gmail.com>` — in every working copy that has
    commits to push, a subagent's included. Before the push a wrong author costs
    an amend or a rebase; after it, a force-push, which §15 forbids.
 3. LICENSE (config default), repo description, topics. All visual and audio
