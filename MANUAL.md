@@ -242,12 +242,9 @@ rises on purpose, not by drift.
 2. Commits are incremental and honest (scaffold → feature → fix → docs). Never
    one giant commit; never staged fakery.
    **Authorship — a property of every working copy, not of the run. Set both
-   values in each working copy at the moment it is created, and in one you
-   already hold — the hub clone Appendix A had you take before reading this —
-   the moment you reach this line; always before that copy's first commit. A
-   clone created for or by a subagent is configured before the subagent is
-   handed it. Otherwise the day's work does not exist as far as GitHub is
-   concerned:**
+   values in every working copy before its first commit: the hub clone you are
+   reading this in, now; and any clone created for a subagent, before it is
+   handed over.**
 
    ```
    git config user.name  "Kairui Ying"
@@ -272,43 +269,27 @@ rises on purpose, not by drift.
    all of them grey. `@users.noreply.github.com` looks official and is not: the
    address only counts in the `<id>+<login>@` form above. The sandbox's global
    git config is not the owner's, so a run that does not set this explicitly
-   inherits a stranger — and a fresh clone has no local config, so every new
-   working copy inherits that stranger again.
+   inherits a stranger — and a fresh clone has no local config, so each new
+   copy inherits it again.
 
-   Verify **before every push**, over the whole range this working copy
-   created — not just `HEAD`, which reads clean when only the last commit is
-   right. §9 is the shipper's checklist, but this obligation is every
-   committing actor's, in its own working copy, at each of its own pushes; the
-   shipper's single pass at ship time does not discharge it:
+   Verify **before every push**, over this working copy's whole range:
 
    ```
    git log --format='%an <%ae>' <base>..HEAD | sort -u
    ```
 
    `<base>` is the sha *this working copy* was at before **its own** first
-   commit — not the run's: a second clone, handed out mid-run, starts later.
-   Whoever creates a working copy records `<base>` and hands it over with the
-   copy; a receiver given none takes `git rev-parse @{upstream}` — its
-   branch's remote-tracking tip, which is the sha a fresh clone was handed and
-   after a push the last verified point (not `origin/HEAD`, which tracks the
-   remote's *default* branch and elsewhere sweeps in commits this copy never
-   made). In a repo this run created, drop `<base>..` and check the whole
-   history. It must print exactly one line, and that line must be
-   `Kairui Ying <yinggarykairui@gmail.com>` — in every working copy that has
-   commits to push, a subagent's included.
+   commit; record it with `git rev-parse HEAD` the moment you take the copy. In
+   a repo this run created, drop `<base>..` here and use `--root` below. Assert
+   exactly one line, and whose: `Kairui Ying <yinggarykairui@gmail.com>`.
+   **Zero lines is a failure, not a pass** — an unset `<base>` prints zero.
 
-   Caught before the push, a wrong author is repaired by re-authoring those
-   commits in place:
-
-   ```
-   git rebase <base> --exec 'git commit --amend --reset-author --no-edit'
-   ```
-
-   (`--root` in place of `<base>` in a repo this run created.) `--reset-author`
-   is the load-bearing flag: a plain `git commit --amend` keeps the original
-   author and repairs nothing. Start the rebase at `<base>` or at your last
-   pushed commit, whichever is later — what is already pushed can only be
-   fixed by a force-push, which §15 forbids.
+   Repair before the push, in this order: set the two `git config` lines above
+   — `--reset-author` resets to *this copy's current* config, so a rebase run
+   before the config is fixed rewrites nothing and exits 0 — then re-author:
+   `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`,
+   starting at `<base>` or your last pushed commit, whichever is later; §15
+   forbids the force-push that rewriting pushed history would need.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
