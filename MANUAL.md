@@ -241,9 +241,10 @@ rises on purpose, not by drift.
 1. **gitleaks scan.** Any hit: stop, scrub, rewrite history before anything else.
 2. Commits are incremental and honest (scaffold → feature → fix → docs). Never
    one giant commit; never staged fakery.
-   **Authorship — set this before the first commit of every run, in every repo
-   the run touches, or the day's work does not exist as far as GitHub is
-   concerned:**
+   **Authorship — a property of every working copy, not of the run. Set both
+   values in each working copy at the moment it is created — including a clone
+   created for or by a subagent, before the subagent is handed it — or the day's
+   work does not exist as far as GitHub is concerned:**
 
    ```
    git config user.name  "Kairui Ying"
@@ -268,8 +269,22 @@ rises on purpose, not by drift.
    all of them grey. `@users.noreply.github.com` looks official and is not: the
    address only counts in the `<id>+<login>@` form above. The sandbox's global
    git config is not the owner's, so a run that does not set this explicitly
-   inherits a stranger. Verify after the first commit: `git log -1 --format=%ae`
-   must print the address above, exactly.
+   inherits a stranger — and a fresh clone has no local config, so every new
+   working copy inherits that stranger again.
+
+   Verify **before every push**, over the whole range the run created — not just
+   `HEAD`, which reads clean when only the last commit is right:
+
+   ```
+   git log --format='%an <%ae>' <base>..HEAD | sort -u
+   ```
+
+   `<base>` is the sha the working copy was at before the run's first commit
+   (record it at clone time; in a repo this run created, drop `<base>..` and
+   check the whole history). It must print exactly one line, and that line must
+   be `Kairui Ying <yinggarykairui@gmail.com>` — in every working copy that has
+   commits to push, a subagent's included. Before the push a wrong author costs
+   an amend or a rebase; after it, a force-push, which §15 forbids.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
