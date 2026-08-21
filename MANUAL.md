@@ -643,17 +643,18 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   subagent handed a fresh clone of `tiny-synth` on 2026-08-04 inherited the
   sandbox's global identity and authored eight commits as
   `Claude <noreply@anthropic.com>` — the exact failure 1.6.0 was written to end.
-  The rule now binds every working copy at the moment it is created, a
-  subagent's included, before it is handed over. Verification moves from
+  The rule now binds every working copy before its first commit, a subagent's
+  included, before it is handed over. Verification moves from
   `git log -1 --format=%ae` after the first commit — a post-mortem that reads
   clean whenever only `HEAD` is right — to
   `git log --format='%an <%ae>' <base>..HEAD | sort -u` over each working
   copy's whole range, run **before every push**, where re-authoring the range
-  with `git rebase --exec 'git commit --amend --reset-author'` can still fix
-  it and §15's force-push prohibition has not yet been engaged — a plain
-  `--amend` cannot, it keeps the original author. The `builder`,
-  `fixer` and `shipper` briefs carry the obligation by reference to §9.2, not a
-  second copy of the address. Canary: §9 is on §14's list, and this edit's own
+  can still fix it and §15's force-push prohibition has not yet been engaged:
+  set the two `git config` lines first — `--reset-author` resets to the current
+  config, so the rebase is a no-op while the wrong identity is still set — then
+  `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`. The
+  `builder`, `fixer` and `shipper` briefs carry the obligation by reference to
+  §9.2, not a second copy of the address. Canary: §9 is on §14's list, and this edit's own
   commits are the dry run — 1.6.0's shape. The eight `tiny-synth` commits are
   **not** reattributed: that is a history rewrite plus a force-push, which §15
   forbids without an explicit owner instruction. Issue #41 (`blocked`) holds them.
