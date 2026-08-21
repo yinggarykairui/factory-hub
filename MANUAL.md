@@ -646,12 +646,15 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   included, before it is handed over. Verification moves from
   `git log -1 --format=%ae` after the first commit — a post-mortem that reads
   clean whenever only `HEAD` is right — to
-  `git log --format='%an <%ae>' <base>..HEAD | sort -u` over each working
-  copy's whole range, run **before every push**, where re-authoring the range
-  can still fix it and §15's force-push prohibition has not yet been engaged:
-  set the two `git config` lines first — `--reset-author` resets to the current
+  `git log --format='%an <%ae>' <base>..HEAD | sort -u` over the run's whole
+  range — one `<base>` per repo, carried into every working copy of it, so a
+  clone taken after a subagent pushed still covers that subagent's commits — run
+  **before every push**, because only unpushed commits can be re-authored: set
+  the two `git config` lines first — `--reset-author` resets to the current
   config, so the rebase is a no-op while the wrong identity is still set — then
-  `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`. The
+  `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`.
+  A wrong author already pushed is past repair — §15 forbids the force-push — so
+  the run labels the issue `needs-retry` and says so in the sign-off. The
   `builder`, `fixer` and `shipper` briefs carry the obligation by reference to
   §9.2, not a second copy of the address. Canary: §9 is on §14's list, and this edit's own
   commits are the dry run — 1.6.0's shape. The eight `tiny-synth` commits are
