@@ -25,7 +25,8 @@ excluded from both the hero card and the table.
 Every claim this file renders must be true of the corpus it renders from —
 §1 directive 4. Numbers in the opening sentence are computed, not written.
 """
-import json, os, re, sys, urllib.request
+import json, os, re, sys, urllib.error, urllib.request
+from datetime import date
 
 HUB = "yinggarykairui/factory-hub"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,12 +48,29 @@ def token():
         pass
     return None
 
+def _isdate(cell):
+    """A real calendar date, not just the shape of one: `2026-02-30`
+    matches `\\d{4}-\\d{2}-\\d{2}` and then raises in `corpus_line`."""
+    try:
+        date.fromisoformat((cell or "").strip())
+        return True
+    except ValueError:
+        return False
+
 def num(cell):
-    """First number in a cell, or None. The dashboard bolds and annotates
-    its figures (`**4.50**`, `4.50 (corrected)`) — `float()` on the raw
-    cell either crashes the render or silently scores the repo 0.0."""
-    m = re.search(r"\d+(?:\.\d+)?", cell or "")
-    return float(m.group()) if m else None
+    """The rubric average a cell opens with, or None. The dashboard bolds
+    and annotates its figures (`**4.50**`, `4.50 (corrected)`) — `float()`
+    on the raw cell either crashes the render or silently scores 0.0. The
+    match is anchored and range-checked: an unanchored search turns
+    `— pending rescore (#59)` into a rubric of 59."""
+    m = re.match(r"[\s*`]*(\d+(?:\.\d+)?)", cell or "")
+    if not m:
+        return None
+    v = float(m.group(1))
+    if not 0.0 <= v <= 5.0:
+        warn(f"rubric {v} is outside 0–5; treating the cell as unscored")
+        return None
+    return v
 
 def link(cell):
     """The URL of a markdown link, anchored to the end of the cell. An
@@ -77,9 +95,19 @@ def parse_dashboard():
             # and a linked repo. Anything else in this file — the header,
             # the rule, a table in the notes stream below — is not a ship,
             # and admitting one crashes the render on `int(day)`.
-            if len(c) != 11 or not c[0].isdigit():
+            if not (c[0].isascii() and c[0].isdigit()):
+                # The header, the rule and any prose table in the notes
+                # stream land here and are not worth a word. A cell that
+                # holds a day number wrapped in markup is a real ship row
+                # about to go missing, and is.
+                if any(ch.isdigit() for ch in c[0]):
+                    warn(f"dashboard row {c[0]!r} has a day number that is not a bare "
+                         f"number; skipped")
                 continue
-            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", c[1]) or not link(c[7]):
+            if len(c) != 11:
+                warn(f"dashboard row {c[0]!r} has {len(c)} columns, not 11; skipped")
+                continue
+            if not link(c[7]) or not _isdate(c[1]):
                 warn(f"dashboard row {c[0]!r} has no usable date or repo link; skipped")
                 continue
             rows.append({
@@ -97,18 +125,18 @@ def slug_from_title(title):
     t = (title or "").strip()
     m = re.match(r"^improve\s+([a-z0-9][\w-]*)\s*:", t, re.I)
     if m:
-        return m.group(1)
+        return m.group(1).lower()
     # A bare slug, or a job-lane `<slug> — <description>`. The dash must be
     # spaced: `word-ladder` is one slug, not `word` and a description. A
     # `meta:`/`blocked:` title is not a ship and has no slug.
-    m = re.match(r"^([a-z0-9][\w-]*?)(?:\s*[—–]\s|\s-\s|\s*$)", t)
-    return m.group(1) if m else None
+    m = re.match(r"^([a-z0-9][\w-]*?)(?:\s*[—–]\s|\s-\s|\s*$)", t, re.I)
+    return m.group(1).lower() if m else None
 
 def _issues(label, tok):
     """All closed issues carrying `label`, following pagination. `/issues`
     also returns pull requests; they are not ships."""
     out, page = [], 1
-    while True:
+    while page <= 20:     # 2,000 ship issues is not a corpus, it is a loop
         url = (f"https://api.github.com/repos/{HUB}/issues?state=closed"
                f"&labels={label}&per_page=100&page={page}")
         req = urllib.request.Request(url, headers={"Authorization": f"token {tok}"})
@@ -118,6 +146,8 @@ def _issues(label, tok):
         if len(batch) < 100:
             return out
         page += 1
+    warn("reaction lookup stopped at 20 pages; counts may be partial")
+    return out
 
 def reactions_by_slug():
     """(counts keyed by slug, lookup_succeeded). Uses an explicit
@@ -134,14 +164,19 @@ def reactions_by_slug():
         for label in ("shipped", "verified"):
             for i in _issues(label, t):
                 seen[i["number"]] = i
+        unkeyed = []
         for i in seen.values():
             slug = slug_from_title(i["title"])
             if not slug:
+                unkeyed.append(f"#{i['number']}")
                 continue
             # A repo with several ship issues (revisits) sums to its
             # total across them: the portfolio entry is the repo, so the
             # votes it earned across its increments are the repo's.
             out[slug] = out.get(slug, 0) + i.get("reactions", {}).get("+1", 0)
+        if unkeyed:
+            warn("ship issues with no parseable slug (votes not counted): "
+                 + ", ".join(sorted(unkeyed)))
         return out, True
     except Exception as e:
         warn(f"reaction lookup failed ({e}); ranking by rubric only")
@@ -155,21 +190,29 @@ def kpi_bits(kpi):
     def seg(label):
         m = re.search(rf"{label}:\s*([^·]+)", kpi)
         return re.sub(r"[*`]", "", m.group(1)).strip() if m else None
-    def one(label):
+    def one(label, pat=r"\d+(?:\.\d+)?"):
+        # Anchored to the head of the clause: `streak: broken on 2026-07-28,
+        # now 23 days` must not publish a streak of 2026.
         s = seg(label)
-        m = re.search(r"\d+(?:\.\d+)?(?:/\d+)?", s) if s else None
-        return m.group() if m else None
-    demos = seg("demos alive")
-    figs = re.findall(r"\d+/\d+", demos) if demos else []
+        m = re.match(rf"[\W_]*({pat})", s) if s else None
+        return m.group(1) if m else None
+    demos = seg("demos alive") or ""
+    # Anchored to the KPI's own words rather than to position: `figs[1]`
+    # publishes whatever the second `x/y` in 200 characters of shipper
+    # commentary happens to be.
+    serving = re.search(r"(\d+/\d+)\s+URLs serve", demos)
+    proven = re.search(r"(\d+/\d+)\s+proven to render", demos)
+    figs = re.findall(r"\d+/\d+", demos)
     return {
         "streak": one("streak"),
         "rubric": one("avg rubric score"),
-        "verified": one("verified rate"),
+        "verified": one("verified rate", r"\d+/\d+"),
         # The KPI reports two demo figures — how many URLs serve their own
-        # build, and how many of those were proven to render. Publishing
-        # only the first overstates by exactly the difference.
-        "serving": figs[0] if figs else None,
-        "proven": figs[1] if len(figs) > 1 else None,
+        # build, and how many of those were *proven to render*. Publishing
+        # only the first overstates by exactly the difference, so both are
+        # rendered and the badge says which is which.
+        "serving": serving.group(1) if serving else (figs[0] if figs else None),
+        "proven": proven.group(1) if proven else None,
     }
 
 def dedupe_by_slug(rows, reacts):
@@ -197,8 +240,11 @@ def dedupe_by_slug(rows, reacts):
 
 def hero_shot(repo):
     """The screenshot the hero card hot-links is the largest element on the
-    page; a 404 there is a broken image on the owner's front door. Checked
-    when the network allows, assumed when it does not."""
+    page. Only a repo that answers 404/410 for it loses the image; a
+    timeout, a blocked host or an expired token means *we* could not look,
+    which is no reason to strip the owner's front door."""
+    if not repo.startswith("https://github.com/"):
+        return None       # never send the token to a host the dashboard named
     url = repo.replace("github.com", "raw.githubusercontent.com") + "/main/screenshot.png"
     t = token()
     if not t:
@@ -208,20 +254,30 @@ def hero_shot(repo):
                                      headers={"Authorization": f"token {t}"})
         with urllib.request.build_opener(NO_PROXY).open(req, timeout=15):
             return url
+    except urllib.error.HTTPError as e:
+        if e.code in (404, 410):
+            warn(f"hero screenshot is {e.code} at {url}; rendering without it")
+            return None
+        warn(f"hero screenshot check got HTTP {e.code}; keeping the image")
+        return url
     except Exception as e:
-        warn(f"hero screenshot unreachable ({e}); rendering without it")
-        return None
+        warn(f"hero screenshot could not be checked ({e}); keeping the image")
+        return url
 
-def corpus_line(rows):
-    """The opening claim, computed rather than written. The factory has
-    shipped twice in one day and has had a day with no ship at all, so
-    "one project every day" is not a sentence the corpus supports."""
-    from datetime import date
-    ships = len(rows)
+def corpus_line(rows, projects):
+    """The opening claim, computed rather than written.
+
+    Two counts the storefront kept getting wrong. A *project* is a repo,
+    not a dashboard row: eight of the rows are revisits of three repos,
+    and the table four lines below already says "one row per repo". And
+    the factory has shipped twice in one day and has had a day with no
+    ship at all, so ships-over-span reads as one-a-day and isn't."""
+    repos = len({r["slug"] for r in projects})
     days = sorted({r["date"] for r in rows})
-    d0, d1 = (date(*map(int, d.split("-"))) for d in (days[0], days[-1]))
+    d0, d1 = (date.fromisoformat(d) for d in (days[0], days[-1]))
     span = (d1 - d0).days + 1
-    return f"**{ships} small working projects across {span} days**"
+    return (f"**{repos} of them, on {len(days)} of its {span} days**"
+            if span > 1 else f"**{repos} of them, on its first day**")
 
 def render():
     kpi, rows = parse_dashboard()
@@ -245,25 +301,29 @@ def render():
     last = max(rows, key=lambda r: int(r["day"]))   # footer: the storefront's own date
     shot = hero_shot(latest["repo"])
 
-    badges = [f"`streak {k['streak']}`", f"`avg rubric {k['rubric']}/5`"]
+    # "Alive" is what a reader hears as *it works*; the KPI's stronger
+    # figure only means the URL serves its own build. One badge, with the
+    # label attached to the evidence, and the subset inside the same span
+    # so a phone cannot wrap them apart.
+    demos = (f"`demos {k['serving']} serving, {k['proven'].split('/')[0]} render-proven`"
+             if k["proven"] else f"`demos {k['serving']} serving`")
+    badges = [f"`streak {k['streak']}`", f"`avg rubric {k['rubric']}/5`", demos]
     if k["verified"]:
-        badges.append(f"`verified {k['verified']}`")
-    badges.append(f"`demos alive {k['serving']}`" if not k["proven"]
-                  else f"`demos alive {k['serving']}` · `{k['proven']} render-proven`")
+        badges.append(f"`{k['verified']} independently verified`")
 
     L = []
     L.append("## Kairui Ying\n")
     L.append("I design autonomous systems that finish what they start. The proof runs daily:")
-    L.append("a build factory I wrote specs, builds, adversarially reviews, and deploys —")
-    L.append(f"{corpus_line(rows)} so far, most with a live demo — then")
-    L.append("updates this page itself.\n")
+    L.append("a build factory I wrote specs, builds, adversarially reviews, and deploys")
+    L.append(f"small working projects — {corpus_line(rows, projects)}, most with a live")
+    L.append("demo — then updates this page itself.\n")
     L.append(" · ".join(badges) + "\n")
     L.append(f"### Latest project ship — day {latest['day']} · [{latest['slug']}]({latest['repo']})\n")
     target = latest["demo"] or latest["repo"]
     if shot:
         L.append(f"[![{latest['slug']}]({shot})]({target})\n")
     demo = f"[live demo]({latest['demo']}) · " if latest["demo"] else ""
-    score = f" · rubric {latest['rubric']:.2f}" if latest["rubric"] else ""
+    score = f" · rubric {latest['rubric']:.2f}" if latest["rubric"] is not None else ""
     L.append(f"{latest['liner']}. *{latest['type']} · {latest['tech']}{score}* — {demo}[source]({latest['repo']})\n")
     L.append("### Best builds\n")
     L.append("| build | what it does | stack | proof |")
@@ -271,22 +331,26 @@ def render():
     for r in best:
         d = f"[demo]({r['demo']}) · " if r["demo"] else ""
         n = reacts.get(r["slug"], 0)
-        why = f"{n}× 👍" if n else (f"rubric {r['best_rubric']:.2f}" if r["best_rubric"] else "—")
+        why = f"{n}× 👍" if n else (f"rubric {r['best_rubric']:.2f}"
+                                    if r["best_rubric"] is not None else "unscored")
         L.append(f"| [{r['slug']}]({r['repo']}) | {r['liner']} | {r['tech']} | {d}{why} |")
-    rank_by = ("ranked by 👍 on its ship issues, by its best rubric until the votes arrive"
-               if voted else
+    rank_by = ("ranked by 👍 on its ship issues, or by its best rubric until the votes"
+               " arrive" if voted else
                "ranked by best rubric — the reaction lookup did not answer on this run")
-    L.append(f"\n*One row per repo, {rank_by}; the sentence describes its latest increment.*\n")
+    L.append(f"\n*One row per repo — {rank_by}. The sentence describes the repo's latest"
+             " increment.*\n")
     L.append("### How it works\n")
     L.append("Every project starts as an issue. It gets a spec and a README before any code")
     L.append("exists, is built by one agent, then torn apart by adversarial critics. A build")
-    L.append("ships only past a must-pass gate — loads clean, survives garbage input, phone")
-    L.append("width for web and an accurate `--help` for CLIs, a truthful README with a")
-    L.append("screenshot, a licence and repo metadata, a clean secret scan, and a live demo")
-    L.append("where the build has one. A day that cannot clear the gate ships the largest")
+    L.append("ships only past a seven-line must-pass gate — loads clean, survives garbage")
+    L.append("input, phone width for web and an accurate `--help` for CLIs, a README that is")
+    L.append("truthful and says how to run it, a LICENSE with the repo's description and")
+    L.append("topics set, a clean secret scan, and — for web builds — a Pages demo that")
+    L.append("actually loads the build. A day that cannot clear the gate ships the largest")
     L.append("working subset and says so. The doctrine, rubric, and every daily sign-off are")
     L.append(f"public in [factory-hub](https://github.com/{HUB}).\n")
-    L.append(f"<sub>Maintained by the factory · [dashboard](https://yinggarykairui.github.io/factory-hub/) · last updated day {last['day']} ({last['date']})</sub>")
+    upkeep = ", a factory upkeep ship" if last["type"] == "meta" else ""
+    L.append(f"<sub>Maintained by the factory · [dashboard](https://yinggarykairui.github.io/factory-hub/) · last updated day {last['day']} ({last['date']}){upkeep}</sub>")
     return "\n".join(L) + "\n"
 
 if __name__ == "__main__":
