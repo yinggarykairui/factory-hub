@@ -31,16 +31,16 @@
 | 027 | 2026-08-20 | factory-hub | meta | The storefront now lists each repo once, ranked by its best increment and captioned by its latest — plus the sandbox proxy no longer silently zeroes the reactions | Python 3, stdlib only | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#34](https://github.com/yinggarykairui/factory-hub/issues/34)) | claude-opus-5 |
 | 028 | 2026-08-21 | factory-hub | meta | Authorship binds every working copy, and the check that proves it now reads the run's whole range before every push | Markdown, MANUAL.md doctrine | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#42](https://github.com/yinggarykairui/factory-hub/issues/42)) | claude-opus-5 |
 
-**KPI:** streak: **24** · verified rate: 14/28 (day 028 ships unverified — the evening shift owns it; days 019–022, 024, 026 and now 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.32** (28 rows; day 028 scored delight 3 · clarity 5 · readme 4 · scope 4 by the cycle-3 verifier — scope docked for a §9.2 that grew +19 net lines against the spec's own ≤16 cap) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 028 is a `type:meta` doctrine edit with no demo to add and none re-probed · clean evenings: 11, contested on day 023 — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **24** · verified rate: 14/28 (day 028 ships unverified — the evening shift owns it; days 019–022, 024, 026 and now 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.32** (28 rows; day 028 scored delight 3 · clarity 5 · readme 4 · scope 4 by the cycle-3 verifier — scope docked for a §9.2 that grew +19 net lines against the spec's own ≤16 cap, +22 after the evening's corrections) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 028 is a `type:meta` doctrine edit with no demo to add and none re-probed · clean evenings: 11, contested on day 023 — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 028 is its own canary. The rule 1.7.0 writes — set the two `git config` lines in **every working copy**
 before its first commit, a subagent's fresh clone included — was tested by building under it: **18 commits
 across five working copies**, four of them fresh clones handed to subagents, and
-`git log --format='%an <%ae>' f5c89f1..HEAD | sort -u` prints **one line**,
+`git log --format='%an <%ae>' f5c89f1..454746b | sort -u` prints **one line**,
 `Kairui Ying <yinggarykairui@gmail.com>` — and the same range under `--format='%cn <%ce>'`, the command that
 actually shows the committer half, prints that one line too. The branch
 [`meta/42-authorship-per-clone`](https://github.com/yinggarykairui/factory-hub/tree/meta/42-authorship-per-clone)
-carries the §14 canary; `main` fast-forwarded to `454746b`, nothing rewritten.*
+carries the §14 canary; `main` fast-forwarded, nothing rewritten.*
 
 *The new rule was blind in the same place the old one was, for one cycle. 1.6.0 checked `HEAD` and could not
 see an earlier grey commit; the first draft of 1.7.0 checked **one working copy's** range and could not see
@@ -59,8 +59,8 @@ exits 128 on a branch the run just cut; captured into a shell variable it makes 
 **zero lines, exit 0**, a false pass. The guard that survives is blunter: `<base>` is recorded with
 `git rev-parse HEAD` the moment the copy is taken, and **zero lines is a failure, not a pass**.*
 
-*Verified mid-run, at 108 commits — five short of the merge tip `b92828a` and six short of `main` — 
-`gitleaks` 8.28.0 clean in both `detect` and `detect --no-git`, with a positive control — a freshly generated `ghp_` literal and a new 2048-bit RSA key,
+*Verified mid-run, at 108 commits — five short of the merge tip `b92828a`, six short of the day's own
+dashboard commit — `gitleaks` 8.28.0 clean in both `detect` and `detect --no-git`, with a positive control — a freshly generated `ghp_` literal and a new 2048-bit RSA key,
 not documentation examples — firing in **both** modes; the two `git config` lines byte-identical to
 `f5c89f1`; zero address literals under `agents/`; the diff touching exactly four files; `tiny-synth`
 untouched and the eight grey commits of [#41](https://github.com/yinggarykairui/factory-hub/issues/41) **not**

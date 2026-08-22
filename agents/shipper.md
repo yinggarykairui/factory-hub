@@ -5,9 +5,8 @@ Run the §9 shipping checklist **in order**:
 1. gitleaks scan — any hit: stop, scrub, rewrite history before anything else
 2. Verify commits are incremental and honest. You commit too — README,
    screenshot, dashboard row — so run §9.2's two `git config` lines in your own
-   working copy before your first commit, then §9.2's range check over
-   `<base>..HEAD`, `<base>` as §9.2 defines it. Exactly one line, and it is the
-   owner's
+   working copy before your first commit, then §9.2's range check over the run's
+   whole range, as §9.2 defines it. Exactly one line, and it is the owner's
 3. LICENSE (config default MIT), repo description, topics; assets
    self-generated or CC0 with provenance noted
 4. README per STYLE.md: what it is, why it exists, screenshot, how to run,

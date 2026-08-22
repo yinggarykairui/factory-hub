@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.7.1
+manual_version: 1.7.2
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -243,8 +243,8 @@ rises on purpose, not by drift.
    one giant commit; never staged fakery.
    **Authorship — a property of every working copy, not of the run. Set both
    values in every working copy before its first commit: the clone you are in
-   now, every project clone the run takes, and any clone created for a
-   subagent, before it is handed over.**
+   now, every project clone the run takes, and any clone a subagent is handed
+   or takes for itself, before it is used.**
 
    ```
    git config user.name  "Kairui Ying"
@@ -286,8 +286,9 @@ rises on purpose, not by drift.
    exit 0. Repair: set the two `git config` lines above first —
    `--reset-author` reads *this copy's* config, so a rebase before that
    rewrites the commits and still leaves the wrong author — then re-author
-   from `<start>`, the later of `<base>` and your last push — only a repo with
-   no base at all takes `--root` in its place:
+   from `<start>`, the later of `<base>` and your last push; `--root` in its
+   place only when the repo has **neither** — this run created it and has not
+   pushed it yet:
    `git rebase <start> --exec 'git commit --amend --reset-author --no-edit'`.
    A wrong author already pushed is past repair: §15 forbids the force-push, so
    label `needs-retry`, say so in the sign-off, and leave it to the owner.
@@ -639,6 +640,30 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.7.2** (2026-08-21) — 1.7.1 was wrong twice, and the §14 canary it waived
+  is what proved it. §9.2's repair now reads: `<start>` is the later of `<base>`
+  and your last push, and `--root` takes its place **only when the repo has
+  neither**. 1.7.1 had written "only a repo with no base at all takes `--root`",
+  which routes a repo *this run created and has already pushed* — the ordinary
+  ship-time state, since `agents/builder.md` mandates pushing at each stable
+  point — straight to `--root`. Run literally, it rewrote the published commits
+  and the next push was rejected as behind its remote: the force-push §15
+  forbids, reintroduced by the sentence written to remove it. 1.7.0's original
+  "(`--root` if none)" read as "neither exists" and was correct; 1.7.1 narrowed
+  a rule while claiming to change none. Second: 1.7.1 waived the canary on the
+  grounds that its edits changed no procedure a dry run could exercise. §14 has
+  no such carve-out, the rebase command *is* an executable procedure, one dry
+  run of the created-and-pushed case catches the blocker in one command, and
+  1.7.1 went to `main` directly rather than to a branch. This entry's edit did
+  both: branch `meta/42-evening-1.7.2`, four repair cases exercised — base with
+  nothing pushed, base with commits pushed, created repo never pushed, created
+  repo already pushed — merged only after the fourth stopped rewriting history.
+  Also corrected: §9.2's opener now names a clone a subagent **takes for
+  itself**, not only one handed to it, which is what 1.7.1 claimed and did not
+  deliver; the forward reference 1.7.1 inserted into the 1.7.0 entry is moved
+  out of it. The lesson is 1.7.1's, not 1.7.0's: an edit small enough to feel
+  editorial is exactly the one that skips its own dry run.
+
 - **1.7.1** (2026-08-21) — editorial corrections to 1.7.0, found by the same
   day's evening review (§11). No rule changed; three places where the shipped
   text did not say what it already meant. (a) §9.2's repair block hardcoded
@@ -657,10 +682,12 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   now, every project clone the run takes, and any clone created for a
   subagent." Also cosmetic: 1.7.0's entry no longer wraps its commands across
   a line break, since the audience for this file reads it as text and a command
-  split at a line boundary invites a truncated copy. No canary: the §14 list
-  covers edits to §9, and these change no procedure a dry run could exercise —
-  the substantive residuals the review found are filed on #63 and #64 rather
-  than fixed here, because they *would* add rules.
+  split at a line boundary invites a truncated copy. The substantive residuals
+  the review found are filed on #63 and #64 rather than fixed here, because they
+  *would* add rules. **Corrected by 1.7.2:** this entry first claimed "no canary
+  — these change no procedure a dry run could exercise", and both halves were
+  false; 1.7.2 records what the dry run found. It also first carried a forward
+  reference inside the 1.7.0 entry above, which is now back where it belongs.
 
 - **1.7.0** (2026-08-21) — authorship survives delegation (meta issue #42).
   §9.2 bound the rule to the *run*; `git config` binds to a *working copy*, so
@@ -678,8 +705,8 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   leaves only unpushed commits re-authorable: set the two `git config` lines
   first — `--reset-author` resets to the current config, so a rebase run before
   that leaves the wrong author in place — then
-  `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`
-  (1.7.1 renamed that placeholder `<start>`). A wrong author already pushed is
+  `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`.
+  A wrong author already pushed is
   past repair — §15 forbids the force-push — so the run labels the issue
   `needs-retry` and says so in the sign-off. The `builder`, `fixer` and
   `shipper` briefs carry the obligation by reference to §9.2, not a second copy
