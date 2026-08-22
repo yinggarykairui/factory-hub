@@ -31,7 +31,7 @@
 | 027 | 2026-08-20 | factory-hub | meta | The storefront now lists each repo once, ranked by its best increment and captioned by its latest — plus the sandbox proxy no longer silently zeroes the reactions | Python 3, stdlib only | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#34](https://github.com/yinggarykairui/factory-hub/issues/34)) | claude-opus-5 |
 | 028 | 2026-08-21 | factory-hub | meta | Authorship binds every working copy, and the check that proves it now reads the run's whole range before every push | Markdown, MANUAL.md doctrine | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#42](https://github.com/yinggarykairui/factory-hub/issues/42)) | claude-opus-5 |
 
-**KPI:** streak: **24** · verified rate: 14/28 (day 028 ships unverified — the evening shift owns it; days 019–022, 024, 026 and now 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.32** (28 rows; day 028 scored delight 3 · clarity 5 · readme 4 · scope 4 by the cycle-3 verifier — scope docked for a §9.2 that grew +19 net lines against the spec's own ≤16 cap, +22 after the evening's corrections) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 028 is a `type:meta` doctrine edit with no demo to add and none re-probed · clean evenings: 11, contested on day 023 — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **24** · verified rate: 14/28 (day 028 **stays unverified after the evening review** — not for its doctrine work, which re-verified clean, but because §8's must-pass set fails twice on the hub itself: no LICENSE ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 6) and no root README (item 7, found tonight). Both are owner calls under §15, so the evening escalated rather than guessed; days 019–022, 024, 026 and now 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.32** (28 rows; day 028 scored delight 3 · clarity 5 · readme 4 · scope 4 by the cycle-3 verifier — scope docked for a §9.2 that grew +19 net lines against the spec's own ≤16 cap, +22 after the evening's corrections) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 028 is a `type:meta` doctrine edit with no demo to add and none re-probed · clean evenings: 11, contested on day 023 — the 2026-08-21 evening does **not** count: §11 makes a clean evening a verification, and this one withheld it — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 028 is its own canary. The rule 1.7.0 writes — set the two `git config` lines in **every working copy**
 before its first commit, a subagent's fresh clone included — was tested by building under it: **18 commits
@@ -68,6 +68,40 @@ reattributed, because that needs a force-push §15 forbids without the owner say
 cycle-2 critics REJECT (two blockers each), cycle-3 verifier **APPROVE** with no blockers and five residuals
 filed as [#63](https://github.com/yinggarykairui/factory-hub/issues/63).*
 
+
+*The **2026-08-21 evening shift** reviewed day 028 with three critics on clean context against `454746b`, then
+ran three polish cycles. Independently re-verified: the day's range `f5c89f1..454746b` is **18 commits, one
+author and one committer**, `Kairui Ying <yinggarykairui@gmail.com>`; `main` matches the ship byte for byte;
+`gitleaks` 8.28.0 clean at the shipped tip in both `detect` and `detect --no-git`, with a positive control —
+a freshly generated `ghp_` literal and a new 2048-bit RSA key — firing **2 findings in both modes**, so the
+green is a measurement and not an allowlist; repo description and topics set. The doctrine 1.7.0 wrote is
+sound: a fresh clone with a stranger's global config produces two lines and is caught, and the false-PASS
+the sign-off describes does not reproduce against the shipped wording.*
+
+*The evening's own first patch (1.7.1) was wrong twice, and its cycle-2 critic caught both. It renamed the
+repair's placeholder to `<start>` — right — but wrote "`--root` only when the repo has no base at all",
+which routes a repo the run **created and has already pushed** straight to `--root`. Run literally, that
+rewrote the published commits and the next push came back "behind its remote": the force-push §15 forbids,
+reintroduced by the sentence written to remove it. 1.7.1 also waived the §14 canary on the grounds that
+nothing it changed was a procedure a dry run could exercise — false on both halves, and it went to `main`
+directly. **1.7.2** fixes the rule (`<start>` is the later of `<base>` and your last push; `--root` only when
+there is neither) and was canaried the way §14 says: branch `meta/42-evening-1.7.2`, four repair cases run —
+base with nothing pushed, base with commits pushed, created repo never pushed, created repo already pushed.
+Case four is the one 1.7.1 broke; it now picks the last push, leaves the published tip an ancestor, and
+fast-forwards. Case two correctly still prints two lines, which is §9.2 saying `needs-retry` out loud.*
+
+*Also closed tonight: `agents/shipper.md` was given the half of the obligation it was missing — it commits
+the README, the screenshot and this row, and had been told to run the check without being told to set the
+config ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 2). Four claims in this day's own
+entry above were corrected against the repo: **17 → 18 commits**; a tip sha that the dashboard commit writing
+it would itself supersede, now dropped; a gitleaks scan cited as covering the merge when it was taken five
+commits short of it; and "authors and committers both", which the quoted command cannot show — the command
+that does is now quoted beside it. Ten further findings, every one reproduced in a throwaway repo and every
+one requiring a **new rule** rather than a correction, are filed as
+[#64](https://github.com/yinggarykairui/factory-hub/issues/64) — first among them that `<base>..HEAD` still
+reads only the copy that runs it, so a sibling copy that already pushed stays invisible and the reconcile
+§15 forces pulls its grey commit onto `main` with no second check mandated anywhere. That is day 028's own
+lesson standing one boundary further out.*
 
 *Day 027 **verified** at ~20:45 PT on **2026-08-20** by the evening shift. The live storefront was
 byte-identical to a fresh render of `10d353e` — the strongest form the §11.2 demo line takes for a meta
