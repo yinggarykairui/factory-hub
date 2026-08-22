@@ -2610,3 +2610,49 @@ dashboard is already written to make that a subtraction rather than a rewrite.
 `yinggarykairui.github.io` at the socket layer. Tonight's WebFetch-fetches-assets finding
 narrows the gap but does not close it — no critic has ever driven the demo in a browser at
 its own URL.
+
+---
+
+## 2026-08-21 evening — day 028 reviewed, `manual_version` 1.7.0 → 1.7.2, verification **withheld**
+
+**Read this before following anything above about authorship.** Entries earlier in this
+file — including the most recent one — still prescribe 1.6.1's practice as current: "forbid
+every subagent from cloning its own, read `git log -1 --format='%an <%ae>'` back after each
+subagent's first commit." **That is superseded.** §9.2 at 1.7.2 binds authorship to *every
+working copy* — set the two `git config` lines in the clone you are in, in every project
+clone the run takes, and in any clone a subagent is handed or takes for itself, before it
+is used — and the check is `git log --format='%an <%ae>' <base>..HEAD | sort -u` over the
+run's whole range, run **before every push**, asserting exactly one line and treating zero
+lines as a failure. `<base>` is one sha per repo, taken when the run first took the repo,
+carried into every copy, never re-taken. Repair is `git rebase <start> --exec 'git commit
+--amend --reset-author --no-edit'` where `<start>` is the later of `<base>` and your last
+push — `--root` only when there is neither. Ban-the-subagent-from-cloning is still a valid
+tactic; it is no longer the doctrine, and it is no longer sufficient on its own.
+
+**What tonight did.** Three critics on clean context against `454746b`, then three polish
+cycles, spot-check last. Re-verified independently: 18 commits over `f5c89f1..454746b`, one
+author *and* one committer, `Kairui Ying <yinggarykairui@gmail.com>`; `main` byte-identical
+to the ship; `gitleaks` 8.28.0 clean in both modes at the shipped tip with a live positive
+control (fresh `ghp_` literal + new RSA key, 2 findings in both modes); description and
+topics set. 1.7.1 shipped three editorial corrections to §9.2 and was **wrong twice** —
+caught by its own cycle-2 critic; 1.7.2 fixes the `--root` condition it broke and carries
+the §14 canary it waived (branch `meta/42-evening-1.7.2`, four repair cases, the fourth
+being the one 1.7.1 broke). `agents/shipper.md` got the config half it was missing. Four
+factual claims in the day's own dashboard entry were corrected against the repo.
+
+**Why day 028 is not `verified`, and what unblocks it.** §8's must-pass set fails twice on
+the hub itself: no LICENSE (#63 item 6, disclosed by the day-028 shipper) and **no root
+`README.md` at all** (#63 item 7, found tonight — `git ls-tree -r --name-only HEAD | grep -i
+readme` returns only `dashboard/README.md`). Both are owner calls under §15 and both are
+paged on **#65** (`blocked`). The sign-off's `must-pass 6/7` is 5/7 on a literal read. This
+is a deliberate withholding: day 028's doctrine work would verify clean today if the hub met
+its own rubric. **The next shift should not re-derive this** — read #65, and if the owner has
+answered, a small `meta` build closes both and day 028 can then be verified on its facts,
+which are already recorded in the EVENING REVIEW comment on #42.
+
+**Filed tonight:** #64 (ten residuals, every one reproduced in a throwaway repo, every one
+needing a *new rule* rather than a correction — first among them that `<base>..HEAD` still
+reads only the copy that runs it, so a sibling copy that already pushed stays invisible and
+the reconcile §15 forces pulls its grey commit onto `main`); #63 item 7; #65. `LESSONS.md`
+gained one line at the 2026-08-25 slot. No open `job` issues, so §17 had nothing to service.
+Clean-evening count is **not** incremented — §11 makes a clean evening a verification.
