@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.7.0
+manual_version: 1.7.1
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -242,8 +242,9 @@ rises on purpose, not by drift.
 2. Commits are incremental and honest (scaffold → feature → fix → docs). Never
    one giant commit; never staged fakery.
    **Authorship — a property of every working copy, not of the run. Set both
-   values in every working copy before its first commit: this hub clone now;
-   any clone created for a subagent, before it is handed over.**
+   values in every working copy before its first commit: the clone you are in
+   now, every project clone the run takes, and any clone created for a
+   subagent, before it is handed over.**
 
    ```
    git config user.name  "Kairui Ying"
@@ -285,8 +286,9 @@ rises on purpose, not by drift.
    exit 0. Repair: set the two `git config` lines above first —
    `--reset-author` reads *this copy's* config, so a rebase before that
    rewrites the commits and still leaves the wrong author — then re-author
-   from `<base>` or your last push, whichever is later (`--root` if none):
-   `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`.
+   from `<start>`, the later of `<base>` and your last push — only a repo with
+   no base at all takes `--root` in its place:
+   `git rebase <start> --exec 'git commit --amend --reset-author --no-edit'`.
    A wrong author already pushed is past repair: §15 forbids the force-push, so
    label `needs-retry`, say so in the sign-off, and leave it to the owner.
 3. LICENSE (config default), repo description, topics. All visual and audio
@@ -637,22 +639,47 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.7.1** (2026-08-21) — editorial corrections to 1.7.0, found by the same
+  day's evening review (§11). No rule changed; three places where the shipped
+  text did not say what it already meant. (a) §9.2's repair block hardcoded
+  `<base>` while the sentence introducing it said "from `<base>` or your last
+  push, whichever is later" — a reader copying the only pasteable thing on
+  offer replays commits that are already published, which is the force-push
+  §15 forbids and which the next sentence calls past repair. The placeholder is
+  now `<start>`, defined in that sentence as the later of the two. (b) The same
+  sentence's "(`--root` if none)" attached most naturally to *your last push*;
+  a reader with a base and no push yet would rebase a cloned repo's entire
+  inherited history. `--root` now names its own condition: only a repo with no
+  base at all. (c) §9.2's opener enumerated two moments — "this hub clone now;
+  any clone created for a subagent" — narrowing a rule the same sentence states
+  generally, and naming neither the project clone a conductor takes for itself
+  nor a clone a subagent takes on its own; it now reads "the clone you are in
+  now, every project clone the run takes, and any clone created for a
+  subagent." Also cosmetic: 1.7.0's entry no longer wraps its commands across
+  a line break, since the audience for this file reads it as text and a command
+  split at a line boundary invites a truncated copy. No canary: the §14 list
+  covers edits to §9, and these change no procedure a dry run could exercise —
+  the substantive residuals the review found are filed on #63 and #64 rather
+  than fixed here, because they *would* add rules.
+
 - **1.7.0** (2026-08-21) — authorship survives delegation (meta issue #42).
   §9.2 bound the rule to the *run*; `git config` binds to a *working copy*, so
   a fix subagent handed a fresh clone of `tiny-synth` on 2026-08-04 inherited
-  the sandbox's global identity and authored eight commits as `Claude
-  <noreply@anthropic.com>` — the exact failure 1.6.0 was written to end. The
-  rule now binds every working copy before its first commit, a subagent's
-  included, before it is handed over. Verification moves from `git log -1
-  --format=%ae` after the first commit — a post-mortem that reads clean
-  whenever only `HEAD` is right — to `git log --format='%an <%ae>' <base>..HEAD
-  | sort -u` over the run's whole range — one `<base>` per repo, carried into
+  the sandbox's global identity and authored eight commits as
+  `Claude <noreply@anthropic.com>` — the exact failure 1.6.0 was written to
+  end. The rule now binds every working copy before its first commit, a
+  subagent's included, before it is handed over. Verification moves from
+  `git log -1 --format=%ae` after the first commit — a post-mortem that reads
+  clean whenever only `HEAD` is right — to
+  `git log --format='%an <%ae>' <base>..HEAD | sort -u`
+  over the run's whole range — one `<base>` per repo, carried into
   every working copy of it, so a clone taken after a subagent pushed still
   covers that subagent's commits — run **before every push**, because §15
   leaves only unpushed commits re-authorable: set the two `git config` lines
   first — `--reset-author` resets to the current config, so a rebase run before
-  that leaves the wrong author in place — then `git rebase <base> --exec 'git
-  commit --amend --reset-author --no-edit'`. A wrong author already pushed is
+  that leaves the wrong author in place — then
+  `git rebase <base> --exec 'git commit --amend --reset-author --no-edit'`
+  (1.7.1 renamed that placeholder `<start>`). A wrong author already pushed is
   past repair — §15 forbids the force-push — so the run labels the issue
   `needs-retry` and says so in the sign-off. The `builder`, `fixer` and
   `shipper` briefs carry the obligation by reference to §9.2, not a second copy
