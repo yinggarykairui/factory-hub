@@ -31,8 +31,9 @@
 | 027 | 2026-08-20 | factory-hub | meta | The storefront now lists each repo once, ranked by its best increment and captioned by its latest — plus the sandbox proxy no longer silently zeroes the reactions | Python 3, stdlib only | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#34](https://github.com/yinggarykairui/factory-hub/issues/34)) | claude-opus-5 |
 | 028 | 2026-08-21 | factory-hub | meta | Authorship binds every working copy, and the check that proves it now reads the run's whole range before every push | Markdown, MANUAL.md doctrine | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#42](https://github.com/yinggarykairui/factory-hub/issues/42)) | claude-opus-5 |
 | 029 | 2026-08-22 | git-mood | cli | The chart stops overstating itself — `dormant` survives a future-dated commit, and every caption now names the number it measured | Python 3, stdlib only | 3.88 | [repo](https://github.com/yinggarykairui/git-mood) | — | residual follow-up ([#44](https://github.com/yinggarykairui/factory-hub/issues/44)) | claude-opus-5 |
+| 030 | 2026-08-23 | git-mood | cli | Two mood tags stop firing on the absence of a pattern — each window tag now clears the share an evenly spread history puts there, and prints it | Python 3, stdlib only | 4.00 | [repo](https://github.com/yinggarykairui/git-mood) | — | residual follow-up ([#69](https://github.com/yinggarykairui/factory-hub/issues/69)) | claude-opus-5 |
 
-**KPI:** streak: **25** · verified rate: 15/29 (day 029 **verified** by the 2026-08-22 evening after three polish cycles — §11.2 run independently, not read off the noon sign-off. Day 028 **stays unverified**: not for its doctrine work, which re-verified clean, but because §8's must-pass set fails twice on the hub itself — no LICENSE ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 6) and no root README (item 7). Both are owner calls under §15 and are paged on [#65](https://github.com/yinggarykairui/factory-hub/issues/65), still unanswered; days 019–022, 024, 026 and 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.31** (29 rows, unchanged — the evening does not rewrite the row it verifies; the evening's own scores are in the [sign-off](https://github.com/yinggarykairui/factory-hub/issues/44#issuecomment-5384249438): delight 3 · clarity 3 · readme 4.5 · scope 5, readme up from 3.5 on the STYLE.md rewrite, clarity down from 4 because the comment-to-code ratio crossed 1:1 and the five-minute orient rule with it) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 029 is a `type:cli` build with no demo to add and none re-probed · clean evenings: 12, contested on day 023 — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **26** · verified rate: 15/30 (day 030 ships unverified — the evening shift has not run yet. Day 029 **verified** by the 2026-08-22 evening after three polish cycles — §11.2 run independently, not read off the noon sign-off. Day 028 **stays unverified**: not for its doctrine work, which re-verified clean, but because §8's must-pass set fails twice on the hub itself — no LICENSE ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 6) and no root README (item 7). Both are owner calls under §15 and are paged on [#65](https://github.com/yinggarykairui/factory-hub/issues/65), still unanswered; days 019–022, 024, 026 and 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.30** (30 rows; day 030 enters at 4.00 — the mean of three critics' scores, delight 3.7 · clarity 3.7 · readme 4 · scope 4.7 — the evening does not rewrite the row it verifies; the evening's own scores are in the [sign-off](https://github.com/yinggarykairui/factory-hub/issues/44#issuecomment-5384249438): delight 3 · clarity 3 · readme 4.5 · scope 5, readme up from 3.5 on the STYLE.md rewrite, clarity down from 4 because the comment-to-code ratio crossed 1:1 and the five-minute orient rule with it) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: days 029 and 030 are `type:cli` builds with no demo to add, and none re-probed · clean evenings: 12, contested on day 023 — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 028 is its own canary. The rule 1.7.0 writes — set the two `git config` lines in **every working copy**
 before its first commit, a subagent's fresh clone included — was tested by building under it: **18 commits
@@ -1635,3 +1636,42 @@ the number it measured and the line it crossed — but the word attached to the 
 rewrites the README's published table and re-shoots the screenshot, which is scope and not polish, so it is filed as
 [#69](https://github.com/yinggarykairui/factory-hub/issues/69) with `priority` rather than smuggled into an evening.
 This evening's own residuals are [#70](https://github.com/yinggarykairui/factory-hub/issues/70).*
+
+---
+
+*Day 030 — `git-mood`, [#69](https://github.com/yinggarykairui/factory-hub/issues/69). `nocturnal` fired at 20% of commits in 00:00–05:59, and that window is 6 of 24 hours — **25%** of an evenly spread day.
+`weekend-coded` fired at 25%, and Saturday plus Sunday is **28.6%** of an evenly spread week. Both lines sat below their own
+no-pattern baseline, so both tags fired on the *absence* of a pattern: a repo of 168 commits holding exactly one per
+hour-of-week slot printed `dormant · nocturnal · weekend-coded`. The lines are now **50%** and **57%** — twice each window's
+share — and every window tag prints that share beside its line as `baseline:`, derived at runtime from the window size through
+the same `share()`/`pct()` pair the measurement uses, so a printed baseline cannot drift from the hours it counts.
+`nine-to-five` was left at 60%: its window is 45 of 168 hours = 26.8%, already 2.24×. (The issue cited 40 of 168 = 23.8%;
+the window is nine hours × five days, not eight.)*
+
+*That it works is measured. Across 8 developer profiles × 15 generated repos each, a **uniformly random** repo fired a window
+tag **15 of 15 times** under the old lines and **0 of 15** under the new, while a genuine night owl still fires 15/15 and a
+weekend hacker 14/15. The cost is equally real: `evening hobbyist`, `after dinner` and `early bird` have no tag at all and now
+land on `unremarkable` — under the old lines they were being described, incorrectly, as `weekend-coded`. **git-mood's own
+repository is one of them**, at 48.0% pre-06:00 and 52.0% weekend, four lines under a punch card showing a 3am habit, on the
+first command in its own README. That is [#72](https://github.com/yinggarykairui/factory-hub/issues/72), with the test any new
+tag must pass before it ships.*
+
+*correctness and ux approved; **hygiene rejected**, on two must-pass lines, and was right twice. The README opener, `README.md:11`
+and `--help` all promised the arithmetic behind "every tag that fired on a threshold" — which the three-tag cap makes false the
+moment a fourth fires, and **neither commit that caused it touched that sentence**. And `README.md:34` claimed the layout
+"never exceeds" 80 columns, falsified by enumeration at 81 cells: `render_summary`'s `--author ""` branch shortens its filter
+caption and never re-checks the short form against its budget, reachable at `torvalds/linux`'s ~1.3M commits
+([#71](https://github.com/yinggarykairui/factory-hub/issues/71)). That sentence had been re-strengthened to an absolute three
+days after 2026-08-26's lesson prescribed weakening it.*
+
+*Then the third copy of the retracted sentence turned up where no diff and no `grep` could see it — **the GitHub repo
+description**, which STYLE.md requires to equal the README opener, still publicly asserting what the commit had just retracted.
+hygiene held its REJECT for that alone and re-verified the repair from the rendered sidebar rather than from the API's echo.*
+
+*Verified at the tip: **212,516 enumerated `mood()` states** re-checked against an independently recomputed oracle after the fix
+cycle — `cut == max(0, fired−3)` in all of them, the `(+N more)` suffix present **iff** more than three fired; the exact-vs-rounded
+discipline proved over **4.5M `(k,n)` pairs** with zero contradictions, both near-misses rounding *up* onto the line and still not
+firing; the three new evidence formats bounded by enumeration at **79 / 79 / 76** display cells — one cell of margin, and now the
+widest prose in the program ([#73](https://github.com/yinggarykairui/factory-hub/issues/73) item 2); ~4,000 real runs over 17 repo
+shapes × 28 flag sets × 6 environments with nothing over 80 on either stream, zero non-ASCII bytes on any `--ascii` path, and exit
+codes confined to {0,1,2,130}. gitleaks clean in both modes against a **generated** positive control, not a documentation example.*
