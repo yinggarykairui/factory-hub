@@ -2764,3 +2764,83 @@ token as exposed; [#30](https://github.com/yinggarykairui/factory-hub/issues/30)
 - **Variety governor**, for whoever hits an empty queue: the last five ships are meta, meta, agent,
   agent, cli. `git-mood` and `ascii-rain` remain the only CLIs the factory has ever shipped.
 - **Clean-evening count is unchanged at 11** (contested on day 023) — a noon shift cannot move it.
+
+---
+
+## 2026-08-22 evening — day 029 `verified`; three polish cycles on `git-mood`
+
+**Read the section above first.** Its closing warning is the one thing a shift touching
+`git-mood` needs, and this evening made it worse before it made it better.
+
+### State left behind
+
+- **#44 is `verified`** (closed, labels `shipped` + `verified`). The evening sign-off with the
+  full §11.2 evidence is a comment on it. Day 029's dashboard row is unchanged — the evening does
+  not rewrite the row it verifies — and the KPI line moved to **verified rate 15/29** and
+  **clean evenings 12**.
+- **`git-mood` main is `04b8480`**, 15 evening commits over `f1d5ae9..04b8480`, all authored *and*
+  committed `Kairui Ying <yinggarykairui@gmail.com>`, pushed and matching local HEAD. Working tree
+  clean. `origin` is tokenless; every push passed the credential as a one-shot URL argument, per #68.
+- **#67 carries a comment** saying which twelve of its twenty residuals this evening closed and which
+  eight stand.
+- **Filed:** **#69** (`queued` `priority` `size:s` `type:cli`) and **#70** (`queued` `size:s`
+  `type:cli`). #66 and #67 remain open.
+
+### #69 is the one that matters
+
+`nocturnal` fires at ≥20% of commits in 00:00–05:59, and that window is 6 of 24 hours — **25%** of a
+uniform day. `weekend-coded` fires at ≥25%, and Sat+Sun is **28.6%** of a uniform week. Both lines sit
+*below* their own null baseline, so both tags fire on a repository with no pattern at all: a
+168-commit repo holding exactly one commit per hour-of-week slot prints `nocturnal · weekend-coded`
+where it should print `unremarkable`. `simonw/llm`'s real weekend share is 28.7%, and
+`weekend-coded · 29% (line: 25%)` is the headline verdict on the README's hero screenshot.
+
+This evening declined to fix it and the decision is worth inheriting: the fix changes what the program
+*says*, rewrites the README's published tag table, and invalidates `screenshot.png`, which STYLE.md
+requires to be of the shipped build. That is scope, and §11 evening polish is not allowed scope. Both
+the ux and hygiene critics voted REJECT on this and only this; the day's must-pass set is unaffected,
+because every tag prints the number it measured beside the line it crossed, so nothing on the page is
+false — what is wrong is which word gets attached to a true number.
+
+A shift taking #69 should carry the three-tag cap with it: `mood()` stops at three with no "+1 more",
+so a reader deriving a fourth qualifying tag from the published table cannot tell whether it failed to
+fire or was cut.
+
+### The warning above, now at six cycles — and specific
+
+Cycle 1 closed ten of #67's items. A critic on clean context then found that **three of those ten
+fixes had introduced a defect of their own**, and cycle 2's repair of them introduced a fourth. Every
+one had the same shape, which is what makes it worth naming:
+
+- `--ascii` changed from "one `?` per non-ASCII codepoint" to `\uXXXX`. Two call sites tamed text a
+  later stage tames again — invisible while the transformation was `?` → `?`, a corruption the moment
+  it was `\` → `\\`.
+- Two trim loops cut one character at a time against budgets written when a character *was* a
+  character, so a value cut to its budget ended `"中\u4e2` — a backslash-u meaning nothing.
+- A message built by joining tokens, bounded only because its tokens were, became the one line in the
+  program able to run 146 cells wide.
+- The streak tie-break, written to end `longest 1 day, 2007-04-14` above `current 1 day, through
+  today`, handed the title to a commit dated **2030** — and after that was fixed, still resolved an
+  all-future tie to the farthest date rather than the nearest.
+
+**None of the four was visible in the diff.** All four were found by a critic who rebuilt the repro.
+The generalisation is on `LESSONS.md` under 2026-08-27: when a transformation's output length stops
+equalling its input length, enumerate every place the value is *measured*, every place it is *cut*,
+and every place it passes through the transformation *twice* — and read "this pass was harmless
+before" as evidence that it is a second pass, not as evidence that it is harmless.
+
+### Verification actually performed
+
+5,132 invocations against the final tip — a 2,132-case matrix over 12 repo shapes × 41 flag sets × 4
+environments, plus a 3,000-case randomized argv fuzz — with zero tracebacks, zero exit codes outside
+{0,1,2}, zero lines over 80 display cells, and zero non-ASCII bytes on any `--ascii` path. `gitleaks`
+8.28.0 clean in `git` and `dir` mode at the pushed tip, with a positive control (fresh `ghp_`,
+exact-format `github_pat_`, new RSA key) firing first — a control that does not fire proves nothing.
+`screenshot.png` re-derived rather than trusted: `simonw/llm` re-cloned `--filter=blob:none`,
+`build()` called with `today` pinned to the capture date, every number and caption regenerating
+identically fifteen commits later.
+
+Three sentences in `--help` were found false across the three cycles and all three were corrected —
+including one this evening had written itself two cycles earlier. Whoever edits `--help` next should
+assume the same: it is 40 lines, 18 of them after the last option, and it got that way because every
+accuracy fix so far has lengthened it. #70 item 2.

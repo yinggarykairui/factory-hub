@@ -32,7 +32,7 @@
 | 028 | 2026-08-21 | factory-hub | meta | Authorship binds every working copy, and the check that proves it now reads the run's whole range before every push | Markdown, MANUAL.md doctrine | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#42](https://github.com/yinggarykairui/factory-hub/issues/42)) | claude-opus-5 |
 | 029 | 2026-08-22 | git-mood | cli | The chart stops overstating itself — `dormant` survives a future-dated commit, and every caption now names the number it measured | Python 3, stdlib only | 3.88 | [repo](https://github.com/yinggarykairui/git-mood) | — | residual follow-up ([#44](https://github.com/yinggarykairui/factory-hub/issues/44)) | claude-opus-5 |
 
-**KPI:** streak: **25** · verified rate: 14/29 (day 029 ships unverified — the evening shift owns §11.2. Day 028 **stays unverified**: not for its doctrine work, which re-verified clean, but because §8's must-pass set fails twice on the hub itself — no LICENSE ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 6) and no root README (item 7). Both are owner calls under §15 and are paged on [#65](https://github.com/yinggarykairui/factory-hub/issues/65), still unanswered as of this ship; days 019–022, 024, 026 and 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.31** (29 rows, recomputed from the column rather than adjusted; day 029 scored delight 3 · clarity 4 · readme 3.5 · scope 5 by the three critics that voted it — delight docked for a tempo panel now carrying four caption lines under one chart line, readme for a "What it does" still 2–3× over STYLE's 2–5 sentences, scope full because all five of the spec's exclusions held byte-for-byte) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 029 is a `type:cli` build with no demo to add and none re-probed · clean evenings: 11, contested on day 023 — unchanged by a noon shift, counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **25** · verified rate: 15/29 (day 029 **verified** by the 2026-08-22 evening after three polish cycles — §11.2 run independently, not read off the noon sign-off. Day 028 **stays unverified**: not for its doctrine work, which re-verified clean, but because §8's must-pass set fails twice on the hub itself — no LICENSE ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 6) and no root README (item 7). Both are owner calls under §15 and are paged on [#65](https://github.com/yinggarykairui/factory-hub/issues/65), still unanswered; days 019–022, 024, 026 and 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.31** (29 rows, unchanged — the evening does not rewrite the row it verifies; the evening's own scores are in the [sign-off](https://github.com/yinggarykairui/factory-hub/issues/44#issuecomment-5384249438): delight 3 · clarity 3 · readme 4.5 · scope 5, readme up from 3.5 on the STYLE.md rewrite, clarity down from 4 because the comment-to-code ratio crossed 1:1 and the five-minute orient rule with it) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 029 is a `type:cli` build with no demo to add and none re-probed · clean evenings: 12, contested on day 023 — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 028 is its own canary. The rule 1.7.0 writes — set the two `git config` lines in **every working copy**
 before its first commit, a subagent's fresh clone included — was tested by building under it: **18 commits
@@ -1587,3 +1587,51 @@ while every gitleaks scan stayed green because `.git/config` is not history and 
 stripped on the spot and every later push passed the credential as a one-shot argument. The durable fix is doctrine, and
 it is filed on [#68](https://github.com/yinggarykairui/factory-hub/issues/68) as `blocked` — with the observation that §8's secrets line is true of the artifact and
 silent about the surface this leaked through.*
+
+
+### The 2026-08-22 evening — three cycles, twelve residuals, and the sixth fix that broke the next thing
+
+*Day 029 is `verified`. The §11.2 spot-check was run rather than read: `gitleaks` clean in both modes at the pushed
+tip with a live positive control firing on a fresh `ghp_`, an exact-format `github_pat_` and a new RSA key first;
+all 15 evening commits over `f1d5ae9..04b8480` authored **and** committed `yinggarykairui@gmail.com`, whole history
+likewise at 90; LICENSE, description and topics present; and the committed screenshot re-derived rather than trusted
+— `simonw/llm` re-cloned `--filter=blob:none` and `build()` called with `today` pinned to the capture date, every
+number and caption regenerating identically fifteen commits later. There is no demo link to probe: `type:cli`.*
+
+*Twelve of [#67](https://github.com/yinggarykairui/factory-hub/issues/67)'s twenty residuals closed, in three cycles.
+The largest was `--ascii`, which answered `git-mood --ascii /tmp/<four CJK characters>` with
+`not a git repository: /tmp/????` — one `?` per codepoint, applied in `write()` **after** every width had been
+measured, over the one datum the line exists to carry. The escape that replaces it lives in `tame()` instead, ahead
+of `oneline()`, `fit()` and `display_width()`, so a six-cell `\u4e2d` is budgeted as six cells. Alongside it: the
+`teal = 00-05` key now requires a cell that is actually teal; `git-mood ""` is exit 1 rather than a silent chart of
+the current directory; a `git` that exits 77 in silence is reported as that rather than as a missing repository, and
+one that answers `rev-parse` with a NUL byte gets a sentence rather than `ValueError: embedded null byte`; an empty
+`NO_COLOR=` stops suppressing colour, which is what no-color.org says it must; `--weeks` reads the digits it
+documents rather than everything `int()` takes; and `-aw`, `-w8` and `--` all say what they mean.*
+
+*The cost is the story. **Three of cycle 1's ten fixes introduced a defect of their own**, and a fourth was found in
+cycle 2's repair of them. The escape double-escaped its own backslash wherever a second `tame()` pass ran — a repo
+named with one CJK character printed `\\u4e2d`, which is the escape meaning the literal six-character name — because
+two call sites tamed text a later stage tames again, harmless for as long as the transformation was `?` → `?`. The
+same escape got cut in half by trim budgets that predate it (`"\u4e2d\u4e2`). The new advice line became the only
+line in the program able to run past 80 cells, at 146 for `-aaaa…`. And the streak tie-break, written to end a
+`longest 1 day, 2007-04-14` sitting above `current 1 day, through today`, handed the title to a commit dated **2030**
+— then, once that was fixed, still resolved an all-future tie to the farthest date rather than the nearest. Every one
+was caught by a critic on clean context who **rebuilt the repro**; not one was visible in the diff.*
+
+*Verified at the tip: **5,132 invocations** — a 2,132-case matrix over 12 repo shapes × 41 flag sets × 4 environments,
+plus a 3,000-case randomized argv fuzz — with **zero tracebacks, zero exit codes outside {0,1,2}, zero lines over 80
+display cells and zero non-ASCII bytes on any `--ascii` path**. Every sentence in `--help` was attacked individually
+across the three cycles; **three were false and all three were corrected**, including one this evening had written
+itself two cycles earlier.*
+
+*The ux and hygiene critics both voted **REJECT**, and both rejections rest on one finding this shift declined to fix:
+`nocturnal` fires at ≥20% of commits in 00:00–05:59, and that window is 6 of 24 hours — **25%** of a uniform day;
+`weekend-coded` fires at ≥25%, and Saturday plus Sunday is **28.6%** of a uniform week. Both lines sit below their own
+null baseline, so both tags fire on the absence of a pattern — a 168-commit repo holding exactly one commit per
+hour-of-week slot prints `nocturnal · weekend-coded`, and `simonw/llm`'s 28.7% weekend share carries
+`weekend-coded` as the headline verdict of the README's hero image. Nothing on the page is false — every tag prints
+the number it measured and the line it crossed — but the word attached to the true number is wrong. Fixing it
+rewrites the README's published table and re-shoots the screenshot, which is scope and not polish, so it is filed as
+[#69](https://github.com/yinggarykairui/factory-hub/issues/69) with `priority` rather than smuggled into an evening.
+This evening's own residuals are [#70](https://github.com/yinggarykairui/factory-hub/issues/70).*
