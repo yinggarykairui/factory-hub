@@ -30,8 +30,9 @@
 | 026 | 2026-08-19 | critic-loop | agent | Paste a paragraph and watch a critic mark what is wrong, three passes deep, with the critique shown between every draft | vanilla JS, zero deps | 4.50 | [repo](https://github.com/yinggarykairui/critic-loop) | [demo](https://yinggarykairui.github.io/critic-loop/) | seeded ([#21](https://github.com/yinggarykairui/factory-hub/issues/21)) | claude-opus-5 |
 | 027 | 2026-08-20 | factory-hub | meta | The storefront now lists each repo once, ranked by its best increment and captioned by its latest — plus the sandbox proxy no longer silently zeroes the reactions | Python 3, stdlib only | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#34](https://github.com/yinggarykairui/factory-hub/issues/34)) | claude-opus-5 |
 | 028 | 2026-08-21 | factory-hub | meta | Authorship binds every working copy, and the check that proves it now reads the run's whole range before every push | Markdown, MANUAL.md doctrine | 4.00 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#42](https://github.com/yinggarykairui/factory-hub/issues/42)) | claude-opus-5 |
+| 029 | 2026-08-22 | git-mood | cli | The chart stops overstating itself — `dormant` survives a future-dated commit, and every caption now names the number it measured | Python 3, stdlib only | 3.88 | [repo](https://github.com/yinggarykairui/git-mood) | — | residual follow-up ([#44](https://github.com/yinggarykairui/factory-hub/issues/44)) | claude-opus-5 |
 
-**KPI:** streak: **24** · verified rate: 14/28 (day 028 **stays unverified after the evening review** — not for its doctrine work, which re-verified clean, but because §8's must-pass set fails twice on the hub itself: no LICENSE ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 6) and no root README (item 7, found tonight). Both are owner calls under §15, so the evening escalated rather than guessed; days 019–022, 024, 026 and now 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.32** (28 rows; day 028 scored delight 3 · clarity 5 · readme 4 · scope 4 by the cycle-3 verifier — scope docked for a §9.2 that grew +19 net lines against the spec's own ≤16 cap, +22 after the evening's corrections) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 028 is a `type:meta` doctrine edit with no demo to add and none re-probed · clean evenings: 11, contested on day 023 — the 2026-08-21 evening does **not** count: §11 makes a clean evening a verification, and this one withheld it — counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
+**KPI:** streak: **25** · verified rate: 14/29 (day 029 ships unverified — the evening shift owns §11.2. Day 028 **stays unverified**: not for its doctrine work, which re-verified clean, but because §8's must-pass set fails twice on the hub itself — no LICENSE ([#63](https://github.com/yinggarykairui/factory-hub/issues/63) item 6) and no root README (item 7). Both are owner calls under §15 and are paged on [#65](https://github.com/yinggarykairui/factory-hub/issues/65), still unanswered as of this ship; days 019–022, 024, 026 and 028 stand unverified. Day 027 was verified by the 2026-08-20 evening, day 025 by the 2026-08-18, day 023 by the 2026-08-16, day 018 by the 2026-08-11, and day 017 and days 011–016 by theirs; evidence complete for 004–010, relabelling still owed there. [#60](https://github.com/yinggarykairui/factory-hub/issues/60) is still open on the 2026-08-17 evening leaving no trace) · avg rubric score: **4.31** (29 rows, recomputed from the column rather than adjusted; day 029 scored delight 3 · clarity 4 · readme 3.5 · scope 5 by the three critics that voted it — delight docked for a tempo panel now carrying four caption lines under one chart line, readme for a "What it does" still 2–3× over STYLE's 2–5 sentences, scope full because all five of the spec's exclusions held byte-for-byte) · demos alive: 17/17 URLs serve their own build, 14/17 proven to render — unchanged: day 029 is a `type:cli` build with no demo to add and none re-probed · clean evenings: 11, contested on day 023 — unchanged by a noon shift, counted toward [#48](https://github.com/yinggarykairui/factory-hub/issues/48)
 
 *Day 028 is its own canary. The rule 1.7.0 writes — set the two `git config` lines in **every working copy**
 before its first commit, a subagent's fresh clone included — was tested by building under it: **18 commits
@@ -1551,3 +1552,38 @@ all 34 commits authored `yinggarykairui@gmail.com`; XSS and prototype pollution 
 non-`file://` requests** under route interception and no storage of any kind; zero horizontal overflow at all 59
 widths 320→900, cold and mid-run; minimum text contrast 5.13:1 light and 5.55:1 dark; 15,893 findings over 4,000
 fuzz inputs with zero invariant violations; 300 kB in 3.2 s with a 340 ms longest main-thread block.*
+
+*Day 029 is a maintenance build, and the day's real finding is about fixing rather than about `git-mood`. Issue
+[#44](https://github.com/yinggarykairui/factory-hub/issues/44) warned that on this file **the fix cycle had introduced a defect three cycles running, every one caught by
+a reviewer who rebuilt the repro rather than reading the diff.** Day 029 made it five. Cycle 1 replaced a false width
+sentence — `a fixed 60-80 columns … a narrower terminal wraps the sparkline` — with two fresh falsehoods in one line: a
+61-cell clock caption prints unconditionally so nothing renders inside 61, and the sparkline caps at 60 cells, which makes
+it the **last** line to wrap, never the first. The same cycle told a reader that a 99%-complete 10-week column was
+`6 days into the week`. Cycle 2's replacement — `Nothing printed is wider than 80 columns` — survived a 2,200-case stderr
+fuzz and a 1,344-run width sweep and was **still** falsifiable: a critic brute-forcing `render_summary` reached **84 cells**
+at 999,999,999 commits under `--ascii --author ''`. The resolution was not a sixth edit but a smaller promise — the layout
+is *built for* 80 columns and does not adapt — because a claim that promises nothing cannot be broken, and the residual
+overhang is filed rather than papered over.*
+
+*The vote was 3–0 only on the third count. Round one: correctness APPROVE, hygiene APPROVE, **ux REJECT** on the two
+sentences above. Round two: correctness **REJECT** — an ordinary 60-character non-repo path printed **92 display cells** on
+stderr, and a 40-character CJK path printed **114 where base printed a compliant 74**, because cycle 1 had dropped the
+forced-ASCII stderr write while `check_directory` still trimmed to 60 *characters* where every other site trims to cells;
+hygiene **REJECT** on one README clause that attributed to the caption a fact the caption drops on any repo with ≥14 years
+of history under `--all`. Both were closed rather than argued with. The second cost one semicolon.*
+
+*Measured before the close: **~25,000** adversarial inputs across paths, argv, git failures, ptys, pipes, encodings,
+weekdays and codepoints with **0 tracebacks, 0 exit codes outside {0,1,2}, 0 lines over 80 cells**; the tempo caption
+arithmetically true in **25,361** checked runs (7 repo shapes × `--weeks` 1–520 × `--all` × every weekday, `today` faked at
+the `date.today()` seam and `elapsed`/`span` re-derived from `git log`); `gitleaks` 8.28.0 clean in both modes at the
+shipped tip with a live positive control firing on all three planted shapes first; **all 30 commits** over
+`5df6fe7..f1d5ae9` authored *and* committed `yinggarykairui@gmail.com`, whole history likewise; the re-shot screenshot
+verified against a live run by **decoding its pixels** — the sparkline read back out of the image as
+`·▁·▁·▂▁·▆▄▁▃···▂▂▁▁▁·▇██▁▃`, character-for-character the live bar.*
+
+*One finding was not in `git-mood` at all. The run had cloned with the PAT in the HTTPS URL, so `git remote -v` — an
+ordinary inspection command — **dumped a live credential into a subagent's context**, which §12 forbids without exception,
+while every gitleaks scan stayed green because `.git/config` is not history and is not scanned. Both working copies were
+stripped on the spot and every later push passed the credential as a one-shot argument. The durable fix is doctrine, and
+it is filed on [#68](https://github.com/yinggarykairui/factory-hub/issues/68) as `blocked` — with the observation that §8's secrets line is true of the artifact and
+silent about the surface this leaked through.*
