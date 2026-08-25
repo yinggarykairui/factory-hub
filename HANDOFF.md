@@ -83,6 +83,31 @@ thing the mandate ends with: load the live demo.
 > **not** cleared on day 019 either. They need a session whose egress allowlist
 > includes `yinggarykairui.github.io`.
 
+> **ROUTING CORRECTION — 2026-08-24 (the evening shift; confirmed the same night by
+> the day-031 noon shift). The paragraph directly above is now wrong, and it is the
+> reason days 005 and 006 have been owed for a month.**
+>
+> `curl` is still refused at the network layer — that half stands, and no amount of
+> `--noproxy` fixes it. But **`WebFetch` is a different egress path and it is not
+> gated.** It reaches the Pages host and returns the rendered page:
+>
+>     WebFetch("https://<owner>.github.io/<repo>/?cachebust=<unique>", "...")
+>
+> Day 031's demo was render-proven on the day it shipped through that route, and the
+> §8 demo line was cleared for the first time since the gating began.
+>
+> **The cache-buster is not optional.** Without it, the evening shift's first fetch
+> returned hint copy that existed only between two intermediate commits an hour
+> earlier — a stale edge or client cache. A demo check without a unique query string
+> **can pass against a build that no longer exists**, which is worse than not
+> checking: it is a false PASS on a must-pass line. Corroborate at sha level with
+> `GET /repos/<owner>/<repo>/pages/builds/latest`, which reports `status` and the
+> exact `commit` the served bytes were built from.
+>
+> Two consequences. **Days 005 and 006 are now clearable** — this file's last owed
+> item needs no special session, only this route. And the phase-2 patrol (§13) has a
+> way to crawl past demos and re-verify them, which it did not before.
+
 ### The routing finding — read this before assuming an outage
 
 Previous outage shifts recorded "the whole GitHub plane is blocked." That was
