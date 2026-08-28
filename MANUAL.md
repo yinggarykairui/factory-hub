@@ -367,11 +367,12 @@ polish). Then verify **last**, because verified state is immutable:
   epic issue. The `verified` label goes on only when the epic closes; the
   repo stays workable for tomorrow's increment.
 Both forms are the *artifact* a clean evening leaves. Whether an evening was
-clean is **§16's** definition and only §16's — five numbered clauses, checked by
-`scripts/graduation_audit.py`, not judged on the night. Do not count your own
+clean is **§16's** definition and only §16's — five numbered clauses, checked
+against the issue record, not judged on the night. Do not count your own
 evening here: a shift that verified today is not the one that decides whether
-today counts. If nothing shipped
-today, fall through to §11.3–.5 (rescue, circuit breaker). Until phase 1,
+today counts.
+
+If nothing shipped today, fall through to §11.3–.5 (rescue, circuit breaker). Until phase 1,
 the evening shift performs only this mandate; the full foreman duties of
 §11.1–.5 activate with phase 1.
 
@@ -494,9 +495,12 @@ gate is audited, never argued:
    clause only ever disqualifies: closing the issue later does not retroactively
    clean that evening or re-splice a run it broke. A broken run is spent.
 5. **Its ship's must-pass set passed** — every §8 line that applies to that
-   build. One of the seven is conditional (the Pages demo link, web only), so a
-   CLI or `meta` ship's full set is six; §10's sign-off template still prints
-   `7/7` and a non-web ship writing it there is rounding. Say which lines applied.
+   build, which is rarely seven. Two of §8's lines are conditional: the Pages demo
+   link (web only), and "Web: usable at phone width. CLI: `--help` is accurate",
+   which has a web branch and a CLI branch and **no `meta` branch at all**. So a
+   web ship's full set is seven, a CLI ship's is six, and a doctrine-only `meta`
+   ship's is five. §10's template still prints `7/7`; anything but a web ship
+   writing it there is rounding. Say which lines applied and to what.
    An evening cannot verify past a failing must-pass line; if it did, that is the
    failure, not the gate. **Consequence, stated rather than discovered:** while a
    `blocked` issue records the hub itself failing a must-pass line — today #65,
@@ -508,7 +512,9 @@ gate is audited, never argued:
 
 **Consecutive** counts *factory days that shipped*, in dashboard-row order, with
 no gap: a zero day — a calendar date with no dashboard row — breaks the run and
-starts a new one. A day that shipped but whose evening was not clean also breaks
+starts a new one. Two rows on one date are **one** factory day and count once,
+not twice — §11's evening trigger fires once, so there was one evening (days 001
+and 002 are the standing example). A day that shipped but whose evening was not clean also breaks
 it. Runs are never spliced across a break, and never back-filled.
 
 **Live.** The run must *end at the dashboard's last row*, and that row must be
@@ -526,18 +532,18 @@ record clears forever is a bar that measures history rather than capability. The
 count of clean evenings ever recorded is a statistic; only the live run is
 evidence.
 
-`scripts/graduation_audit.py` is this clause set as a program. It machine-checks
-clause 1's `verified` label, clause 3's header-and-sha artifact and its author,
-`consecutive`, and `live`. Clauses 2, 4 and 5 it cannot check — they come from a
-hand-maintained table in which every entry names the artifact it was read from
-and the standard it was read under, repo state or the sign-off's own report. A
-day with no entry prints `UNPROVEN` and never counts. That table is where a shift
-could rig a verdict, so read the table before the verdict; its rows through day
-033 are a **retrospective seed** written in one sitting by the build that wrote
-this clause, which is the weakest evidence in the file, and every row after it
-should be added by the shift that decides the day rather than by the shift that
-needs the number. The audit is evidence, not authority: the manual is the gate,
-and a disagreement between them is a bug in the program.
+This is checked **by hand**, day by day, against the issue record. Day 034 wrote a
+program for it and then scoped the program out under §7.4 — three critic cycles,
+and each one found it returning a wrong verdict in a new way, the last of them
+silently permissive on a one-character typo in a dashboard row. A tool that can be
+wrong in the *generous* direction is worse than no tool, because the gate is the
+one place the factory grades itself. The tool is owed and is filed as a follow-up;
+until it exists and is trusted, a shift asserting these clauses asserts them one
+day at a time, in the advancing issue, where a reader can check each one. Two
+standing cautions for whoever writes it: clauses 2, 4 and 5 are not decidable from
+a comment body and need a hand-kept table, and any such table is where a shift
+could rig a verdict — so it names the artifact each row was read from, and a day
+with no row counts as unproven, never as fine.
 
 The advancing `meta` issue must quote the five as a table — day number, date,
 verification comment link, verified sha — and state explicitly, in one line per
@@ -730,7 +736,7 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   dashboard rows so a zero day breaks the run; `live` requires the run to reach
   the present; and the advancing issue owes a five-row table plus a per-clause
   assertion. §11's competing definition of the same term is deleted and points
-  here. `scripts/graduation_audit.py` is the clause set as a program.
+  here.
 
   **How the `live` rule was arrived at, in the order it happened, because the
   order is the part a reader should be able to judge.** The clause set was written
@@ -748,39 +754,45 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   level up: "ends at the last row" lets a factory that stopped shipping in June
   graduate in December. Both halves are now required.
 
-  Three critic cycles, and the second was the one that mattered: it found `live`
-  as first written was blind to *trailing* zero days, so a factory that stopped
-  shipping in June still graduated in December — the same hole one level up. It
-  also found the fix's own bug: the sandbox runs UTC, a factory day is
-  America/Los_Angeles, and an audit run after 17:00 PT thought tomorrow was today,
-  which made the gate unclearable at exactly the hour a shift would clear it. The
-  anchor is now the current factory day **or the one before it**, in the factory's
-  own zone, because the noon shift that files the advancing issue does so before
-  §9.8 appends today's row. Two controls hold the shape: five clean evenings
-  ending yesterday returns GRADUATES, and the same five with the verification
-  comments authored by a stranger returns 0 — §15's owner-only rule now reaches
-  the artifact the gate is built on. The audit's output is committed at
-  `dashboard/graduation_audit.txt`; a build whose thesis is "decidable from an
-  artifact" owes its own verdict one.
+  **Three critic cycles, and the tool did not survive them.** The clause set was
+  written as a program as well as prose, and each cycle found the program wrong in
+  a new way: `live` blind to trailing zero days, so a factory that stopped shipping
+  in June graduated in December; then the fix for that off by one against the
+  factory's own timezone — the sandbox runs UTC, a factory day is
+  America/Los_Angeles, and an audit after 17:00 PT thought tomorrow was today,
+  making the gate unclearable at the hour a shift would clear it; then, at the
+  third pass, silence in the *permissive* direction — a one-character typo in a
+  dashboard row (`2026-8-27` for `2026-08-27`) dropped that row unparsed, moved the
+  anchor back a day, and printed `GRADUATES` on a record that does not clear the
+  gate, with nothing on stderr. §7.4 says a defect that survives two cycles gets
+  its feature removed rather than a third cycle, so the program is **scoped out**
+  and filed as a follow-up; §16 is checked by hand until a tool exists that can be
+  trusted with the one judgement the factory makes about itself. What survived is
+  the doctrine, which is what #48 asked for. The timezone bug is worth carrying
+  forward on its own: every scheduled shift runs in a UTC sandbox and every rule in
+  this manual is stated in America/Los_Angeles.
 
-  Under the fixed clause set the audit returns **does not graduate**: the live run
-  is **0**, and the last real run was **four** — days 029–032 — ended by the
-  2026-08-26 zero day (#93). The factory came one evening short of its own gate
-  and a scheduled task that did not fire is what stopped it. Day 029 is carried as
-  **contested** rather than quietly counted: its evening made fifteen commits over
-  three polish cycles before verifying, which is clean under clause 2's stated
-  test and uncomfortable under its headline, and an advancing issue must quote the
+  The verdict the audit produced before it was withdrawn, which the record supports
+  independently: **does not graduate.** The live run is **0**, and the last real
+  run was **four** — days 029–032. Three separate things ended it, and the
+  changelog should not flatter the factory by naming only the sympathetic one: the
+  2026-08-26 zero day (#93, a scheduled task that did not fire), day 033's evening
+  building what it verified under §11.4 (clause 2), and day 033 having no
+  `EVENING VERIFIED` artifact at all (clause 3). Day 029 is carried as
+  **contested** rather than quietly counted — its evening made fifteen commits over
+  three polish cycles before verifying, which is clean under clause 2's stated test
+  and uncomfortable under its headline — and an advancing issue must quote the
   contest. #48's two objections are **sustained** by the clauses rather than by
   lean: day 011 fails clause 4 (#41 open against its own eight commits), day 012
   fails clauses 1 and 3 (it amended the ship after verifying; its header is
   `EVENING day-012`). That is the dossier's own preferred resolution. Day 027 is
-  reclassified with them — it was a `meta` ship on a hub that already failed §8's
-  LICENSE and root-README lines; #65 discovered that condition, it did not create
-  it, and one standard has to apply to 027 and 028 alike. Which is the clause-5
-  consequence stated out loud: while #65 stands, every `meta` ship day —
-  **including this one** — fails clause 5 and breaks the run, and an advancing
-  `meta` build therefore can never be inside its own five. The phase gate does
-  **not** move: `phase: 0`, unchanged.
+  reclassified with them — a `meta` ship on a hub that already failed §8's LICENSE
+  and root-README lines; #65 discovered that condition, it did not create it, and
+  one standard has to apply to 027 and 028 alike. Which is clause 5's consequence
+  stated out loud: while #65 stands, every `meta` ship day — **including this one**
+  — fails clause 5 and breaks the run, and an advancing `meta` build can therefore
+  never be inside its own five. The phase gate does **not** move: `phase: 0`,
+  unchanged.
 
 - **1.7.2** (2026-08-21) — 1.7.1 was wrong twice, and the §14 canary it waived
   is what proved it. §9.2's repair now reads: `<start>` is the later of `<base>`
