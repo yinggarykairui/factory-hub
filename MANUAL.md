@@ -490,6 +490,14 @@ no gap: a zero day — a calendar date with no dashboard row — breaks the run 
 starts a new one. A day that shipped but whose evening was not clean also breaks
 it. Runs are never spliced across a break, and never back-filled.
 
+**Live.** The run must *end at the dashboard's last row.* A run that was broken
+is spent, however long it was: the gate asks whether the evening lane is reliable
+**now**, not whether it ever was, and a bar that the best week on record clears
+forever is a bar that measures history. This is the rule the dashboard's own
+`streak` KPI has always used — a zero day resets it — applied to the same
+evidence. The count of clean evenings ever recorded is a statistic; only the live
+run is evidence.
+
 The advancing `meta` issue must quote the five as a table — day number, date,
 verification comment link, verified sha — and state explicitly, in one line per
 clause, that clauses 1–5 hold for all five. An advance whose issue cannot do
@@ -670,30 +678,40 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ## Changelog
 
 - **1.8.0** (2026-08-28) — §16's graduation gate becomes auditable (meta issue
-  #48). The gate read "five consecutive clean evenings (§11 — a `verified` ship
-  or an epic increment verification) with no human fix", and three of its four
-  terms — *clean*, *consecutive*, *no human fix* — were defined nowhere. #48 is
-  what that costs: a dossier filed on day 015 that assembled five evenings, could
-  not tell whether two of them counted, correctly refused to decide, and then sat
+  #48). The gate read "five consecutive clean evenings (§11 — a `verified` ship or
+  an epic increment verification) with no human fix", and three of its four terms
+  — *clean*, *consecutive*, *no human fix* — were defined nowhere. #48 is what
+  that costs: a dossier filed on day 015 that assembled five evenings, could not
+  tell whether two of them counted, correctly refused to decide, and then sat
   `queued` for nineteen days because no later shift could decide either. A gate
-  no one can evaluate is not a high bar; it is an absent one. `clean evening` is
+  nobody can evaluate is not a high bar; it is an absent one. `clean evening` is
   now five numbered clauses, each decidable from an artifact — the `verified`
-  label, the `EVENING VERIFIED day-<NNN>` header, the sha it names, the absence
-  of a `blocked` issue against that evening's own output, and §8's must-pass set
-  — `consecutive` counts dashboard rows so a zero day breaks the run, and the
-  advancing issue owes a five-row table plus a per-clause assertion. #48's own
-  two objections are **sustained** under it: day 011's evening is out on clause 4
-  (#41 open against its commits) and day 012's on clauses 1 and 3 (it amended the
-  ship after verifying, and its header is `EVENING day-012`). That is the
-  dossier's own preferred resolution, reached by clause rather than by lean.
-  **Canary:** §16 is not on §14's list, and it got one anyway — branch
-  `meta/48-graduation-audit`, the new clause run as an audit over days 011–033
-  before the merge. It returns **four**: days 029–032, ended not by a bad evening
-  but by the 2026-08-26 zero day (#93) and day 033's §11.4 self-rescue, which
-  clause 2 excludes. The factory came one day short of its gate and the missing
-  noon trigger is what stopped it. Merged only because that verdict is checkable
-  against the record rather than because it was the hoped-for one. The phase gate
-  does **not** move: `phase: 0`, unchanged.
+  label, the `EVENING VERIFIED day-<NNN>` header, the sha it names, the absence of
+  a `blocked` issue against that evening's own output, and §8's must-pass set —
+  `consecutive` counts dashboard rows so a zero day breaks the run, and the
+  advancing issue owes a five-row table plus a per-clause assertion.
+  `scripts/graduation_audit.py` is the clause set as a program.
+
+  **The canary earned its keep.** §16 is not on §14's list and got one anyway, on
+  branch `meta/48-graduation-audit` — and the first dry run returned
+  **GRADUATES**, on a six-evening run at days 013–018 that ended seventeen days
+  ago. The clause set as written was satisfiable forever by the best week on
+  record. What was missing is not a clause about evidence quality but one about
+  *time*: a run must be **live**, ending at the dashboard's last row, which is the
+  rule the `streak` KPI four lines above it has always used. With it the same
+  audit returns **does not graduate**: the live run is **0**, because day 033's
+  evening built what it verified (§11.4 self-rescue, clause 2), and the last real
+  run was **four** — days 029–032 — ended by the 2026-08-26 zero day (#93). The
+  factory came one evening short of its own gate and a scheduled task that did not
+  fire is what stopped it. Merged because the verdict is checkable against the
+  record, not because it was the hoped-for one.
+
+  #48's two objections are **sustained** by the clauses rather than by lean: day
+  011's evening fails clause 4 (#41 open against its own eight commits), day 012's
+  fails clauses 1 and 3 (it amended the ship after verifying; its header is
+  `EVENING day-012`). That is the dossier's own preferred resolution. The phase
+  gate does **not** move: `phase: 0`, unchanged — this build makes the gate
+  checkable, and the audit is the reason it cannot be opened today.
 
 - **1.7.2** (2026-08-21) — 1.7.1 was wrong twice, and the §14 canary it waived
   is what proved it. §9.2's repair now reads: `<start>` is the later of `<base>`
