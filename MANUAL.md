@@ -477,12 +477,14 @@ gate is audited, never argued:
    spot-check of a *past* ship is verification debt being paid, not a clean
    evening, and never counts here.
 2. **It did not build or finish what it verified** (§6: no role grades its own
-   work). The binding test is *authorship of the thing being graded*: an evening
-   that ran a §11.3 rescue or a §11.4 build is disqualified for that day — not
-   penalised, just not evidence. The polish cycles §11's own mandate orders are
-   **not** disqualifying; if they were, the mandate would forbid the evidence it
-   asks for. The line between them is whether the ship existed and passed before
-   the evening touched it.
+   work). Two artifacts decide it, and nothing else: the day's `SHIP` sign-off
+   and the `EVENING VERIFIED` comment were posted by **different shifts**, and the
+   evening's own comment records no §11.3 rescue and no §11.4 build. The polish
+   cycles §11's mandate *orders* are not disqualifying — if they were, the mandate
+   would forbid the evidence it asks for — so "how much polish is too much" is not
+   a question this clause asks; a shift that thinks an evening polished its way
+   into authorship files that as a contest on the advancing issue rather than
+   arguing it into the count.
 3. **Its artifact is in the required form**: the header `EVENING VERIFIED
    day-<NNN>` (epics: `… (increment k/N)`), naming the sha it checked. A
    verification whose header or sha is missing is not quotable.
@@ -492,40 +494,50 @@ gate is audited, never argued:
    clause only ever disqualifies: closing the issue later does not retroactively
    clean that evening or re-splice a run it broke. A broken run is spent.
 5. **Its ship's must-pass set passed** — every §8 line that applies to that
-   build (two of the seven are conditional on web vs CLI; "all seven" was never
-   literally reachable and sign-offs have been quietly rounding it for weeks).
+   build. One of the seven is conditional (the Pages demo link, web only), so a
+   CLI or `meta` ship's full set is six; §10's sign-off template still prints
+   `7/7` and a non-web ship writing it there is rounding. Say which lines applied.
    An evening cannot verify past a failing must-pass line; if it did, that is the
-   failure, not the gate. **Consequence, stated rather than discovered:** while
-   #65 stands — the hub itself has no LICENSE and no root README — every `meta`
-   ship day fails this clause and breaks the run. That is not a side effect to
-   route around; it is the gate saying the factory cannot certify its own lane
-   while its own repo fails the bar it certifies against.
+   failure, not the gate. **Consequence, stated rather than discovered:** while a
+   `blocked` issue records the hub itself failing a must-pass line — today #65,
+   no LICENSE and no root README — every `meta` ship day fails this clause and
+   breaks the run. That is not a side effect to route around; it is the gate
+   saying the factory cannot certify its own lane while its own repo fails the bar
+   it certifies against. It also means an advancing `meta` build cannot be inside
+   its own five: the run it quotes ends the day before it.
 
 **Consecutive** counts *factory days that shipped*, in dashboard-row order, with
 no gap: a zero day — a calendar date with no dashboard row — breaks the run and
 starts a new one. A day that shipped but whose evening was not clean also breaks
 it. Runs are never spliced across a break, and never back-filled.
 
-**Live.** The run must *end at the dashboard's last row, and that row must be
-the day the advancing issue is filed.* Both halves are required: ending at the
-last row alone would let a factory that stopped shipping in June graduate in
-December, because a trailing stretch of zero days is invisible to a rule that
-only looks between rows. A run that was broken is spent, however long it was: the
-gate asks whether the evening lane is reliable **now**, not whether it ever was,
-and a bar that the best week on record clears forever is a bar that measures
-history. The dashboard's `streak` KPI already resets on a zero day, trailing ones
-included; this is that same arithmetic applied to evenings rather than ships. The
+**Live.** The run must *end at the dashboard's last row*, and that row must be
+**the current factory day or the one before it**. Both halves are required.
+Ending at the last row alone would let a factory that stopped shipping in June
+graduate in December, because a trailing stretch of zero days is invisible to a
+rule that only looks *between* rows. And the tolerance is one day, not zero,
+because of when the advancing issue gets written: a noon shift files it before
+§9.8 has appended today's row, so demanding that the last row be today would make
+the gate unclearable by the only shift positioned to clear it. One factory day of
+slack, no more — a second missed day is a zero day and the run is over. A run
+that was broken is spent, however long it was: the gate asks whether the evening
+lane is reliable **now**, not whether it ever was, and a bar that the best week on
+record clears forever is a bar that measures history rather than capability. The
 count of clean evenings ever recorded is a statistic; only the live run is
 evidence.
 
-`scripts/graduation_audit.py` is this clause set as a program: it machine-checks
-clauses 1 and 3, `consecutive` and `live`, and carries clauses 2, 4 and 5 as a
+`scripts/graduation_audit.py` is this clause set as a program. It machine-checks
+clause 1's `verified` label, clause 3's header-and-sha artifact and its author,
+`consecutive`, and `live`. Clauses 2, 4 and 5 it cannot check — they come from a
 hand-maintained table in which every entry names the artifact it was read from
-and the standard it was read under — repo state, or the sign-off's own report. A
+and the standard it was read under, repo state or the sign-off's own report. A
 day with no entry prints `UNPROVEN` and never counts. That table is where a shift
-could rig a verdict, so read the table before the verdict, and add today's row on
-the day it is decided rather than on the day it is needed. The audit is evidence,
-not authority: the manual is the gate.
+could rig a verdict, so read the table before the verdict; its rows through day
+033 are a **retrospective seed** written in one sitting by the build that wrote
+this clause, which is the weakest evidence in the file, and every row after it
+should be added by the shift that decides the day rather than by the shift that
+needs the number. The audit is evidence, not authority: the manual is the gate,
+and a disagreement between them is a bug in the program.
 
 The advancing `meta` issue must quote the five as a table — day number, date,
 verification comment link, verified sha — and state explicitly, in one line per
@@ -736,17 +748,39 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   level up: "ends at the last row" lets a factory that stopped shipping in June
   graduate in December. Both halves are now required.
 
+  Three critic cycles, and the second was the one that mattered: it found `live`
+  as first written was blind to *trailing* zero days, so a factory that stopped
+  shipping in June still graduated in December — the same hole one level up. It
+  also found the fix's own bug: the sandbox runs UTC, a factory day is
+  America/Los_Angeles, and an audit run after 17:00 PT thought tomorrow was today,
+  which made the gate unclearable at exactly the hour a shift would clear it. The
+  anchor is now the current factory day **or the one before it**, in the factory's
+  own zone, because the noon shift that files the advancing issue does so before
+  §9.8 appends today's row. Two controls hold the shape: five clean evenings
+  ending yesterday returns GRADUATES, and the same five with the verification
+  comments authored by a stranger returns 0 — §15's owner-only rule now reaches
+  the artifact the gate is built on. The audit's output is committed at
+  `dashboard/graduation_audit.txt`; a build whose thesis is "decidable from an
+  artifact" owes its own verdict one.
+
   Under the fixed clause set the audit returns **does not graduate**: the live run
-  is **0**, the last real run was **four** (days 029–032), and it ended at the
-  2026-08-26 zero day (#93) — the factory came one evening short of its own gate
-  and a scheduled task that did not fire is what stopped it. #48's two objections
-  are **sustained** by the clauses rather than by lean: day 011 fails clause 4
-  (#41 open against its own eight commits), day 012 fails clauses 1 and 3 (it
-  amended the ship after verifying; its header is `EVENING day-012`). That is the
-  dossier's own preferred resolution. Also recorded, because clause 5 now says it
-  out loud: while #65 stands, every `meta` ship day — **including this one** —
-  fails clause 5 and breaks the run. The phase gate does **not** move: `phase: 0`,
-  unchanged.
+  is **0**, and the last real run was **four** — days 029–032 — ended by the
+  2026-08-26 zero day (#93). The factory came one evening short of its own gate
+  and a scheduled task that did not fire is what stopped it. Day 029 is carried as
+  **contested** rather than quietly counted: its evening made fifteen commits over
+  three polish cycles before verifying, which is clean under clause 2's stated
+  test and uncomfortable under its headline, and an advancing issue must quote the
+  contest. #48's two objections are **sustained** by the clauses rather than by
+  lean: day 011 fails clause 4 (#41 open against its own eight commits), day 012
+  fails clauses 1 and 3 (it amended the ship after verifying; its header is
+  `EVENING day-012`). That is the dossier's own preferred resolution. Day 027 is
+  reclassified with them — it was a `meta` ship on a hub that already failed §8's
+  LICENSE and root-README lines; #65 discovered that condition, it did not create
+  it, and one standard has to apply to 027 and 028 alike. Which is the clause-5
+  consequence stated out loud: while #65 stands, every `meta` ship day —
+  **including this one** — fails clause 5 and breaks the run, and an advancing
+  `meta` build therefore can never be inside its own five. The phase gate does
+  **not** move: `phase: 0`, unchanged.
 
 - **1.7.2** (2026-08-21) — 1.7.1 was wrong twice, and the §14 canary it waived
   is what proved it. §9.2's repair now reads: `<start>` is the later of `<base>`
