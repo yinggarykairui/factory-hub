@@ -361,7 +361,11 @@ polish cycles on it — a **separate evening budget**; §11.3's
 close defects and raise scored rubric lines, never add scope (feature
 freeze stands; for an epic, tomorrow's done-map items are scope, not
 polish). Then verify **last**, because verified state is immutable:
-- Normal ship: §11.2 spot-check → relabel the closed issue `verified`.
+- Normal ship: §11.2 spot-check → relabel the closed issue `verified`, **and
+  post `EVENING VERIFIED day-<NNN>` naming the sha checked**. The label is the
+  state; the comment is the evidence, and §16 clause 3 cannot be met without it —
+  days 005, 006 and 008 wrote `EVENING day-<NNN>` instead and are unquotable for
+  it.
 - Epic increment: §11.2 spot-check against the increment → post
   `EVENING VERIFIED day-<NNN> (increment k/N)` as a comment on the open
   epic issue. The `verified` label goes on only when the epic closes; the
@@ -495,12 +499,15 @@ gate is audited, never argued:
    clause only ever disqualifies: closing the issue later does not retroactively
    clean that evening or re-splice a run it broke. A broken run is spent.
 5. **Its ship's must-pass set passed** — every §8 line that applies to that
-   build, which is rarely seven. Two of §8's lines are conditional: the Pages demo
-   link (web only), and "Web: usable at phone width. CLI: `--help` is accurate",
-   which has a web branch and a CLI branch and **no `meta` branch at all**. So a
-   web ship's full set is seven, a CLI ship's is six, and a doctrine-only `meta`
-   ship's is five. §10's template still prints `7/7`; anything but a web ship
-   writing it there is rounding. Say which lines applied and to what.
+   build. Seven is the common case and not the only one: two of §8's lines are
+   conditional — the Pages demo link (web only), and "Web: usable at phone width.
+   CLI: `--help` is accurate", which has a web branch and a CLI branch and **no
+   `meta` branch at all**. Which branch applies is decided by what the build *is*,
+   not by the dashboard's `type` column: a `game` or `agent` build that ships a
+   Pages demo is a web build for §8 and its full set is seven, like any other web
+   ship. A CLI ship's set is six; a doctrine-only `meta` ship's is five. §10's
+   template still prints `7/7`; a non-web ship writing it there is rounding. Say
+   which lines applied and to what.
    An evening cannot verify past a failing must-pass line; if it did, that is the
    failure, not the gate. **Consequence, stated rather than discovered:** while a
    `blocked` issue records the hub itself failing a must-pass line — today #65,
@@ -537,7 +544,7 @@ program for it and then scoped the program out under §7.4 — three critic cycl
 and each one found it returning a wrong verdict in a new way, the last of them
 silently permissive on a one-character typo in a dashboard row. A tool that can be
 wrong in the *generous* direction is worse than no tool, because the gate is the
-one place the factory grades itself. The tool is owed and is filed as a follow-up;
+one place the factory grades itself. The tool is owed and is filed as #94;
 until it exists and is trusted, a shift asserting these clauses asserts them one
 day at a time, in the advancing issue, where a reader can check each one. Two
 standing cautions for whoever writes it: clauses 2, 4 and 5 are not decidable from
@@ -764,10 +771,11 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   third pass, silence in the *permissive* direction — a one-character typo in a
   dashboard row (`2026-8-27` for `2026-08-27`) dropped that row unparsed, moved the
   anchor back a day, and printed `GRADUATES` on a record that does not clear the
-  gate, with nothing on stderr. §7.4 says a defect that survives two cycles gets
-  its feature removed rather than a third cycle, so the program is **scoped out**
-  and filed as a follow-up; §16 is checked by hand until a tool exists that can be
-  trusted with the one judgement the factory makes about itself. What survived is
+  gate, with nothing on stderr. §7.4 removes the feature a defect keeps
+  surviving in rather than buying it another cycle — this one had already had
+  three — so the program is **scoped out** and filed as **#94**, which carries all
+  eight defects the cycles found; §16 is checked by hand until a tool exists that
+  can be trusted with the one judgement the factory makes about itself. What survived is
   the doctrine, which is what #48 asked for. The timezone bug is worth carrying
   forward on its own: every scheduled shift runs in a UTC sandbox and every rule in
   this manual is stated in America/Los_Angeles.
@@ -777,8 +785,10 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   run was **four** — days 029–032. Three separate things ended it, and the
   changelog should not flatter the factory by naming only the sympathetic one: the
   2026-08-26 zero day (#93, a scheduled task that did not fire), day 033's evening
-  building what it verified under §11.4 (clause 2), and day 033 having no
-  `EVENING VERIFIED` artifact at all (clause 3). Day 029 is carried as
+  building what it verified under §11.4 (clause 2), and day 033's verification
+  leaving no artifact in clause 3's required form (clause 3) — the dashboard
+  records it verified at `66603bd` with §11.2 run against the live deploy, but not
+  under a quotable header. Day 029 is carried as
   **contested** rather than quietly counted — its evening made fifteen commits over
   three polish cycles before verifying, which is clean under clause 2's stated test
   and uncomfortable under its headline — and an advancing issue must quote the
