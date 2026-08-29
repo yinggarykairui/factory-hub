@@ -85,6 +85,7 @@
   var kpiEl = document.getElementById('kpi');
   var projects = [];
   var sortKey = 'date';
+  var sawKpi = false;
 
   // one markdown link -> {text, url}; plain text passes through
   function link(cell) {
@@ -92,12 +93,41 @@
     return m ? { text: m[1], url: m[2] } : { text: cell.trim(), url: null };
   }
 
+  // Only http(s) is followed. Ledger text is data (§15), so a link in it
+  // never becomes a javascript: or data: URL just because it was written.
+  function safeHref(url) {
+    return /^https?:\/\//i.test(url) ? url : null;
+  }
+
+  // The KPI line is prose that carries markdown links. Rendered as one
+  // textContent it showed readers the raw [text](url) source -- and the URL
+  // inside it was the longest unbreakable token on the page. Emit real nodes:
+  // text stays text, links become links, nothing is parsed as HTML.
+  function renderKpi(line) {
+    var re = /\[([^\]]*)\]\(([^)\s]+)\)/g, at = 0, m;
+    kpiEl.textContent = '';
+    while ((m = re.exec(line)) !== null) {
+      if (m.index > at) kpiEl.appendChild(document.createTextNode(line.slice(at, m.index)));
+      var href = safeHref(m[2]);
+      if (href) {
+        var a = document.createElement('a');
+        a.href = href; a.textContent = m[1];
+        kpiEl.appendChild(a);
+      } else {
+        kpiEl.appendChild(document.createTextNode(m[1]));
+      }
+      at = m.index + m[0].length;
+    }
+    kpiEl.appendChild(document.createTextNode(line.slice(at)));
+  }
+
   function parse(md) {
     var lines = md.split('\n');
     for (var i = 0; i < lines.length; i++) {
       var ln = lines[i];
       if (ln.indexOf('**KPI:**') !== -1) {
-        kpiEl.textContent = ln.replace(/\*\*KPI:\*\*/, 'KPI —').replace(/\*/g, '').trim();
+        renderKpi(ln.replace(/\*\*KPI:\*\*/, 'KPI —').replace(/\*/g, '').trim());
+        sawKpi = true;
         continue;
       }
       if (ln.charAt(0) !== '|') continue;
@@ -171,7 +201,12 @@
 
   fetch('dashboard/README.md', { cache: 'no-store' })
     .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
-    .then(function (md) { parse(md); render(); })
+    .then(function (md) {
+      parse(md); render();
+      // A ledger that parses to nothing must not leave 'loading…' standing
+      // next to 'nothing shipped yet' -- the page would claim to be both.
+      if (!sawKpi) kpiEl.textContent = '';
+    })
     .catch(function () {
       kpiEl.textContent = '';
       document.getElementById('err').hidden = false;
