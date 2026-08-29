@@ -28,6 +28,10 @@
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
     font-size: 0.85rem; color: var(--faint); margin-top: 0.5rem;
   }
+  /* Ledger prose is free text: a single long token (a URL, a slug) must not
+     become the page's minimum width. `anywhere` — not `break-word` — because
+     only `anywhere` also shrinks the min-content size the grid measures. */
+  #kpi, .liner, .meta, .slug { overflow-wrap: anywhere; }
   nav { display: flex; gap: 0.5rem; align-items: baseline; margin: 1.25rem 0 1.75rem; }
   nav span { font-size: 0.85rem; color: var(--faint); margin-right: 0.25rem; }
   nav button {
@@ -36,7 +40,7 @@
     padding: 0.2rem 0.7rem; cursor: pointer; color: var(--faint);
   }
   nav button[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); }
-  #cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 1.5rem; }
+  #cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr)); gap: 1.5rem; }
   .card { border: 1px solid var(--line); border-radius: 3px; background: #fff; display: flex; flex-direction: column; }
   .shot { aspect-ratio: 16/9; background: #11150f; overflow: hidden; }
   .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
