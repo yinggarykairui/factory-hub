@@ -380,25 +380,47 @@ If nothing shipped today, fall through to §11.3–.5 (rescue, circuit breaker).
 the evening shift performs only this mandate and the verification-debt
 paragraph below; the full foreman duties of §11.1–.5 activate with phase 1.
 
-**Verification debt (active now).** Twenty-three of the forty ships are
-`verified`. The other seventeen are closed `shipped` and unchecked, and the
-mandate above is scoped to *today's* ship, so it cannot pay them down. It may
-now. After this shift's own mandate is finished — today's ship polished and
-verified, or a §11.3–.4 rescue carried to its ship — and with at least
-45 minutes left before pencils-down for §2.6's dashboard row and sign-off, the
-evening may spot-check **past** ships. Debt is the last thing an evening does
-and the first thing it drops: it never displaces polish or rescue, and a shift
-short of time exits without it. A shift that tripped §11.5's circuit breaker
-has already exited and does none of this.
+**Verification debt (active now).** The dashboard's `verified rate` is a
+fraction, and the ships it leaves out are the debt. The mandate above is scoped
+to *today's* ship, so the shift best placed to clear that backlog was the one
+forbidden to. The evening may now. After its own mandate is finished — today's
+ship polished and verified, or a §11.3–.4 rescue carried to its ship — it may
+spot-check **past** ships. No new check starts with less than 45 minutes left
+before pencils-down: §2.6's dashboard row and sign-off own that time, and a
+check still running when it is needed is abandoned, not finished. Debt is the
+last thing an evening does and the first thing it drops; it never displaces
+polish or rescue, and a shift short of time exits without it. A shift that
+tripped §11.5's circuit breaker has already exited and does none of this.
 
+Paying debt does not disturb §16 clause 1. Clause 1 disqualifies the *past-ship
+check* as a qualifying artifact, never the evening that also did its own job —
+otherwise no evening acting in the factory's interest would ever pay a penny of
+this, and the permission would be dead on the page.
+
+- **Two things are missing from the `verified` set, and only one of them is
+  this paragraph's.** A ship with no recorded evidence is a candidate. A ship
+  whose evidence a past shift already gathered and never relabelled — today
+  days 004–010, which the dashboard marks "evidence complete, relabelling still
+  owed" — is **not**: relabelling on evidence this shift did not gather and
+  cannot attribute to a shift is a different job at a different risk. Skip
+  those. Read the dashboard's own account of a candidate before checking it, so
+  the distinction is made from the record rather than from the label's absence.
 - **Candidates come from the dashboard index, lowest day number first** — day
   number, not issue-creation date, which disagrees with it: #21 was created
-  2026-07-25 and shipped as day 026 on 2026-08-19. The index does **not** carry
-  the build issue. Its idea-source column is sometimes the build issue,
-  sometimes a retroactive filing, sometimes the bare word `seeded`, so the
-  issue still has to be resolved from the issue plane — and **a candidate whose
-  build issue cannot be identified unambiguously is skipped, not guessed.** A
-  wrong `verified` is unrecoverable under §3.
+  2026-07-25 and shipped as day 026 on 2026-08-19. The index's idea-source
+  column is **not** reliably the build issue: from day 011 on it usually is
+  (`seeded ([#21])`), for days 005–010 it is a retroactive filing of the idea,
+  for 002 and 003 a job posting and a replay, and for 001 and 004 the bare word
+  `seeded`. So the issue is resolved from the issue plane, and **a candidate
+  whose build issue cannot be identified unambiguously is skipped, not
+  guessed**: a wrong `verified` is unrecoverable under §3.
+- **Check the code that shipped, not the code that is there now.** Several
+  candidate repos have been revisited since — `countup` on day 040,
+  `sprite-stamp` on 039, `ascii-rain` on 038 — so a fresh clone's tip is a
+  later day's work, and a `verified` written against it permanently certifies
+  the wrong tree. Check out the sha that day shipped, from its sign-off or its
+  dashboard narrative. **No recoverable sha, no check:** skip. §10's sign-off
+  carries no sha field, which is why this skip will be common until it does.
 - Only a ship **this shift had no hand in** building or finishing, and never
   one already `verified` (§3: immutable). The principle is §16 clause 2's, not
   §6's — §6 governs roles inside one build, this governs shifts across days.
@@ -406,52 +428,64 @@ has already exited and does none of this.
   run's own knowledge of what it did tonight.
 - Epic increments are **not** debt candidates: §11's own epic form covers them,
   and their `verified` label waits for the epic to close.
-- §11.2's four sub-checks land in **two scopes**. *Repo-scope*, against a fresh
-  clone: `screenshot.png` present and referenced by the README; gitleaks clean
-  over history, with a control built from randomly generated values asserted to
-  fire **before** the clean result is read. *Deploy-scope*, against the live URL
-  with a cache-buster: the page loads **and carries a marker unique to the sha
-  under test** — the sandbox reaches `github.io` only through `WebFetch`, which
-  returns no status code and no bytes, so "it loaded" is the weakest of the
-  four and the marker is what makes it a check. **A ship with no deploy — a
-  CLI, a doctrine-only `meta` ship — runs the repo half only, and says so.**
+- §11.2's four sub-checks land in **two scopes**. *Repo-scope*, against a clone
+  at the shipped sha: `screenshot.png` present and referenced by the README;
+  gitleaks clean over history, with a control built from randomly generated
+  values asserted to fire **before** the clean result is read. *Deploy-scope*,
+  against the live URL with a cache-buster: the page loads **and carries a
+  marker unique to the sha under test** — the sandbox reaches `github.io` only
+  through `WebFetch`, which returns no status code and no bytes, so "it loaded"
+  is the weakest of the four and the marker is what makes it a check. **A ship
+  with no deploy — a CLI, a doctrine-only `meta` ship — runs the repo half
+  only, and says so.**
 - The fourth sub-check re-tests **one §8 must-pass line, drawn at random from
-  the lines that apply to this ship, less the three §11.2 has already run** —
-  the screenshot line, the gitleaks line and the demo-link line restate
-  sub-checks 1–3, and drawing them yields a fourth check that looks independent
-  and is not. What is left to draw from: loads-without-errors, garbage-input,
-  phone-width-or-`--help`, and LICENSE-description-topics. Named, not numbered:
-  §8 is an unnumbered list, and an insertion into it would silently re-map a
-  numbered draw.
+  the lines that apply to this ship, less what §11.2 has already tested.** That
+  subtraction is narrower than it looks: §11.2 retires the gitleaks line, the
+  demo-link line, and only the *screenshot clause* of §8's README line —
+  README-is-truthful and says-how-to-run stay in the draw, and on a six-week-old
+  ship they are the two likeliest to have rotted. Named, not numbered: §8 is an
+  unnumbered list, and an insertion into it would silently re-map a numbered
+  draw.
 
-Three outcomes, each leaving an artifact — a check that records nothing is a
-check the next evening runs again.
+Four outcomes. The first three are a comment **on the ship's build issue** —
+the only place a later evening knows to look — carrying the block below.
 
-- **Pass** → relabel the closed issue `verified`, post the block below, and
-  refresh the dashboard's verified rate (§9.8), which this changes.
+- **Pass** → relabel the closed issue `verified`, post the block, and refresh
+  the dashboard's verified rate (§9.8), which this changes.
 - **Fail** → do not relabel and do not build. Post the block with
-  `result: FAIL`, and file a follow-up issue in the hub labelled `queued`
-  `priority`, naming the failing line and linking the ship issue. Deliberately
-  **not** `needs-retry`: §4 picks that up only "from today", so one filed
-  tonight matches no branch of §4's pick order and would sit forever.
-- **Unverifiable** → the ship fails nothing this shift can test, but a §8 line
-  applying to it is failing for a reason outside the ship, and §16 clause 5
-  says an evening cannot verify past a failing must-pass line. Do not relabel,
-  do not file. Post the block with `result: UNVERIFIABLE` naming the blocking
-  issue; later evenings skip the ship until that issue closes. While #65 stands
-  this is every `meta` ship, and recording it is not the same as failing it.
+  `result: FAIL`, and file a follow-up issue in the hub labelled `queued`,
+  naming the failing line and linking the ship issue. Not `needs-retry`: §4
+  takes that only "from today", so one filed tonight matches no branch of the
+  pick order and would sit forever. Not `priority` either — the activity that
+  is first to be dropped does not get to jump the whole queue. **A ship already
+  carrying a FAIL block is skipped until its follow-up closes**, or every
+  evening files the same issue again.
+- **Unverifiable** → nothing this shift can test fails, but a §8 line applying
+  to the ship is failing for a reason outside it, and §16 clause 5 says an
+  evening cannot verify past a failing must-pass line. Do not relabel, do not
+  file; post the block with `result: UNVERIFIABLE` and the blocking issue in
+  `blocked-by:`. Later evenings skip the ship until that issue closes. While
+  #65 stands this is every `meta` ship, and recording it is not failing it.
+- **Skip** → the build issue or the shipped sha could not be identified, or the
+  ship is one of the relabel-owed. A skip leaves no artifact — there is no
+  issue it is safe to comment on — so it costs the next evening the same two
+  minutes. That is the price of not guessing, and it is the cheap half of the
+  trade.
 
 ```
-EVENING SPOT-CHECK day-<NNN>     ← NNN is the day being checked, not tonight
-result:  PASS | FAIL | UNVERIFIABLE
-sha:     <repo sha checked; for a deploy, whether it was confirmed to carry it>
-checked: <the checking evening's date, factory timezone>
-lines:   <the §8 must-pass lines that applied, named>
-by:      <the checking shift>
+EVENING SPOT-CHECK day-<NNN>
+result:     PASS | FAIL | UNVERIFIABLE
+sha:        <the shipped sha that was checked out>
+deploy:     <confirmed to carry that sha | no deploy>
+checked:    <the checking evening's date, factory timezone>
+by:         <the checking shift>
+lines:      <the §8 must-pass lines that applied, named>
+failing:    <the line at fault, for FAIL and UNVERIFIABLE; else none>
+blocked-by: <the blocking issue, for UNVERIFIABLE; else none>
 ```
 
-The header is deliberately **not** clause 3's `EVENING VERIFIED`, and that is
-the point of the paragraph rather than a detail of it: §16 clause 1 says a
+`<NNN>` is the day being checked, not the evening checking it. The header is
+deliberately **not** clause 3's `EVENING VERIFIED`: §16 clause 1 says a
 past-ship check is never a clean evening, so an artifact that reads like
 clause 3's is an invitation to quote it as one. Two headers, two meanings,
 nothing left to judgement at audit time.
@@ -849,8 +883,9 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   were the same class one level up — **a confident sentence whose premise is
   false.** The candidate-list bullet had claimed the dashboard index carries
   each ship's issue link. It does not: the column is *idea source*, and for
-  days 001–010 it is variously blank, a retroactive filing, or the bare word
-  `seeded`. Since "lowest day number first" sends the shift to exactly those
+  days 001–010 it is a retroactive filing of the idea, a job posting, a replay,
+  or the bare word `seeded` — never blank, a claim the second draft made and
+  no row supports. Since "lowest day number first" sends the shift to exactly those
   rows, and the procedure ends in a `verified` label that §3 makes
   unrecoverable, the first candidate of seventeen was a live path to
   permanently mislabelling an idea issue as a verified ship. The bullet now
@@ -875,6 +910,50 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   control. The paragraph also moved **below** §11's rescue fall-through: on the
   one night the ordering matters, a shift was meeting 47 lines of optional work
   before it reached the rescue that is the job.
+
+  **A third cycle, and the reason §7's cap is three rather than one.** The
+  second draft was rejected by all three critics again, and their findings
+  converged on the same sentence twice over. "The other seventeen are closed
+  `shipped` and **unchecked**" was false for seven of them: the dashboard says
+  in the same line that days 004–010 have *evidence complete, relabelling still
+  owed*, and "lowest day number first" routes the shift at exactly those seven
+  before anything else. So the paragraph's first act would have been to re-run
+  a check that had already been run, on the only candidates whose owed action is
+  something else entirely. They are now excluded and named, with the reason:
+  relabelling on evidence this shift did not gather and cannot attribute to a
+  shift is a different job at a different risk, and it belongs to #116's third
+  residual, not here. The frozen count went with it — the run appending today's
+  dashboard row makes any hard-coded "seventeen of forty" false within the hour,
+  and the pass path's own instruction to refresh the KPI makes it false again on
+  first use; the paragraph now names the fraction rather than its value.
+
+  Two more from the third cycle are worth recording because neither is a
+  wording problem. **A fresh clone is the wrong tree.** Repo-scope said "against
+  a fresh clone", which gives the repo's *tip* — and `countup`, `sprite-stamp`
+  and `ascii-rain` have all been revisited since the ships that owe
+  verification, so a clone of `countup` today is day 040's work and a `verified`
+  written against it would permanently certify code the day under test never
+  shipped. The check now runs against the sha that day shipped, and **no
+  recoverable sha means no check**, which will be a common skip because §10's
+  sign-off has no sha field — filed on #116. And **the draw's subtraction was
+  too wide**: "the screenshot line" is not a line, it is the *screenshot clause*
+  of §8's `README is truthful, has a screenshot, and says how to run it`.
+  Retiring the whole bullet silently deleted README-truthfulness and
+  how-to-run from every future draw — the two assertions most likely to have
+  rotted on a six-week-old ship. The pre-computed pool that carried the error is
+  deleted; the rule states the subtraction instead.
+
+  Also closed in the third cycle: a `sha:` field that was two data types and two
+  ambiguous pronouns, now `sha:` and `deploy:`; a `blocked-by:` field, without
+  which the UNVERIFIABLE outcome ordered a datum the block had no slot for and
+  its skip-until-closed rule could not work; the FAIL path's missing
+  de-duplication, which would have filed the same issue every night forever, and
+  its `priority` label, which let the activity an evening drops first jump the
+  whole queue; a fourth outcome (**Skip**) stated plainly rather than left
+  implicit by two bullets that said "skipped" and defined nothing; the artifact's
+  home, which was nowhere; and a misreading of §16 clause 1 that would have made
+  paying debt cost an evening its own clean status — which, with the live run at
+  0, would have made the whole permission irrational to use.
 
   Filed rather than fixed, because each would touch a section this edit is not
   in or a rule #55 excluded: §3's "a closed issue labeled `shipped` or
