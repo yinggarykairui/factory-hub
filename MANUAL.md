@@ -433,11 +433,15 @@ this, and the permission would be dead on the page.
   gitleaks clean over history, with a control built from randomly generated
   values asserted to fire **before** the clean result is read. *Deploy-scope*,
   against the live URL with a cache-buster: the page loads **and carries a
-  marker unique to the sha under test** — the sandbox reaches `github.io` only
-  through `WebFetch`, which returns no status code and no bytes, so "it loaded"
-  is the weakest of the four and the marker is what makes it a check. **A ship
-  with no deploy — a CLI, a doctrine-only `meta` ship — runs the repo half
-  only, and says so.**
+  marker unique to the sha under test**, read out of the rendering `WebFetch`
+  returns — the only channel to `github.io` here, and it gives a rendering
+  rather than a status code or bytes, so "it loaded" is the weakest of the four
+  and the marker is what makes it a check. **A repo revisited since the day
+  under test serves a later sha, so the marker cannot be there — that is a
+  Skip, not a failure**: nothing is broken and nothing is provable, and a
+  `verified` written anyway would certify a build this check never saw. A ship
+  with **no** deploy — a CLI, a doctrine-only `meta` ship — runs the repo half
+  only, and says so.
 - The fourth sub-check re-tests **one §8 must-pass line, drawn at random from
   the lines that apply to this ship, less what §11.2 has already tested.** That
   subtraction is narrower than it looks: §11.2 retires the gitleaks line, the
@@ -466,8 +470,9 @@ the only place a later evening knows to look — carrying the block below.
   file; post the block with `result: UNVERIFIABLE` and the blocking issue in
   `blocked-by:`. Later evenings skip the ship until that issue closes. While
   #65 stands this is every `meta` ship, and recording it is not failing it.
-- **Skip** → the build issue or the shipped sha could not be identified, or the
-  ship is one of the relabel-owed. A skip leaves no artifact — there is no
+- **Skip** → the build issue or the shipped sha could not be identified; the
+  ship is one of the relabel-owed; or its deploy has moved past the sha under
+  test. A skip leaves no artifact — there is no
   issue it is safe to comment on — so it costs the next evening the same two
   minutes. That is the price of not guessing, and it is the cheap half of the
   trade.
@@ -845,7 +850,9 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 - **1.9.0** (2026-09-04) — the evening may pay verification debt (meta issue
   #55), and the artifact it leaves cannot be mistaken for a clean evening.
-  Seventeen of the forty ships are closed `shipped` and unchecked; the evening
+  Seventeen of the forty ships are closed `shipped` and not `verified` — and
+  seven of those, days 004–010, have evidence complete and are owed only a
+  relabel, a different job this paragraph deliberately does not take. The evening
   mandate is scoped to *today's* ship, so the shift best placed to pay that
   down was the one forbidden to. §11 gains a verification-debt paragraph —
   after its own mandate is finished and with 45 minutes reserved for §2.6, the
@@ -964,6 +971,25 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   unauditable because no artifact records which shift built a ship; and §16
   clause 5's 5/6/7 arithmetic only works if §8's two compound lines count as
   one each, which it never says.
+
+  **The third cycle's re-verify rejected too, and two scoped fixes went in after
+  it under directive 4 rather than a fourth cycle §7's cap does not allow.** All
+  three critics converged on the same two, and both were the un-propagated half
+  of an earlier fix rather than anything new. The paragraph had stopped
+  hard-coding the debt count; **this entry's own opening sentence had not**, and
+  still read "seventeen … unchecked" sixty-nine lines above the paragraph
+  explaining why that is false for seven of them — a correction applied in one
+  of the two places it was owed, which is the same shape as every other defect
+  this build found. And the shipped-sha rule reached repo-scope but not
+  deploy-scope: a repo revisited since the day under test serves a *later* sha,
+  so the marker deploy-scope requires can never be present, and the first two
+  web candidates a lowest-day-first walk reaches — days 020 and 021, revisited
+  on 039 and 040 — fitted no outcome at all. FAIL would have parked a sound ship
+  behind a bogus follow-up; passing it on the repo half would have written an
+  irreversible `verified` on a web ship with its demo-link line untested, which
+  is the generous-direction error 1.8.0 calls worse than no tool. It is a
+  **Skip**: nothing broken, nothing provable. Both fixes are unreviewed, and the
+  sign-off says so.
 
   This ship's own must-pass set is **not clean, and it is the clause it just
   wrote about**: a doctrine-only `meta` ship's five lines include a truthful
