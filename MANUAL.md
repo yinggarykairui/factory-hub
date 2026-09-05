@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.8.0
+manual_version: 1.9.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -376,9 +376,36 @@ against the issue record, not judged on the night. Do not count your own
 evening here: a shift that verified today is not the one that decides whether
 today counts.
 
+**Verification debt (phase 0+).** After this shift's own mandate is complete —
+today's ship polished and verified, or §11.3–.5 run to its end — and before
+pencils-down, the evening may spot-check **past** ships, oldest first. This is
+debt being paid, not a second mandate: it never displaces polish or rescue, and
+a shift out of time exits without it.
+
+- Only a ship **this shift had no hand in** building or finishing (§6), and
+  never one already `verified` (§3: immutable).
+- The check is §11.2's, unchanged, run against the live deploy.
+- **Pass** → relabel the closed issue `verified` and comment
+  `EVENING SPOT-CHECK day-<NNN>`, naming the sha checked, the date of the
+  evening that checked it, and which §8 must-pass lines applied. The header is
+  deliberately **not** clause 3's `EVENING VERIFIED`, and the reason is the
+  point of the whole paragraph: §16 clause 1 says a past-ship check is never a
+  clean evening, so an artifact that reads like clause 3's is an invitation to
+  quote it as one. Two headers, two meanings, nothing left to judgement at
+  audit time.
+- **Fail** → do not relabel and do not build. File a `needs-retry` follow-up
+  issue naming the failing line, for the next noon shift.
+- A ship that fails any §8 line applying to it is **not verifiable at all**
+  (§16 clause 5: an evening cannot verify past a failing must-pass line), and
+  the applicable set is not always seven — five for a doctrine-only `meta`
+  ship, six for a CLI, seven for anything serving a Pages demo. While #65
+  stands (the hub carries no LICENSE and no root README), every `meta` ship is
+  in this case; recording a ship as unverifiable-for-now is the correct
+  outcome there, and is not the same as failing it.
+
 If nothing shipped today, fall through to §11.3–.5 (rescue, circuit breaker). Until phase 1,
-the evening shift performs only this mandate; the full foreman duties of
-§11.1–.5 activate with phase 1.
+the evening shift performs only this mandate and the verification-debt
+paragraph above it; the full foreman duties of §11.1–.5 activate with phase 1.
 
 ---
 
@@ -458,7 +485,8 @@ the evening shift performs only this mandate; the full foreman duties of
 ## 16. Phase gates — what is active right now
 
 **Phase 0 (now):** §1–§5, §7–§10, §12–§15, plus the standing exceptions:
-§17 (job lane) and §11's evening-shift mandate. Crew may run reduced:
+§17 (job lane) and §11's evening-shift mandate, verification-debt paragraph
+included. Crew may run reduced:
 planner + builder + one combined critic pass + shipper. The evening shift
 covers verification and polish; if it is ever offline, the noon shift
 self-checks §11.2 before exiting. Phase 0 opens with a **genesis
@@ -568,7 +596,8 @@ the retro tracks response rates.
 
 Do not attempt features from phases above the config block's `phase` value.
 The standing exceptions: §17's owner-triggered job lane (live at any phase,
-only ever on an owner-filed `job` issue) and §11's evening-shift mandate.
+only ever on an owner-filed `job` issue) and §11's evening-shift mandate,
+its verification-debt paragraph included.
 Advancing a phase is a `meta` issue like any other manual edit.
 
 ---
