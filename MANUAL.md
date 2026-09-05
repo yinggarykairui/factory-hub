@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.8.0
+manual_version: 1.9.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -377,8 +377,123 @@ evening here: a shift that verified today is not the one that decides whether
 today counts.
 
 If nothing shipped today, fall through to §11.3–.5 (rescue, circuit breaker). Until phase 1,
-the evening shift performs only this mandate; the full foreman duties of
-§11.1–.5 activate with phase 1.
+the evening shift performs only this mandate and the verification-debt
+paragraph below; the full foreman duties of §11.1–.5 activate with phase 1.
+
+**Verification debt (active now).** The dashboard's `verified rate` is a
+fraction, and the ships it leaves out are the debt. The mandate above is scoped
+to *today's* ship, so the shift best placed to clear that backlog was the one
+forbidden to. The evening may now. After its own mandate is finished — today's
+ship polished and verified, or a §11.3–.4 rescue carried to its ship — it may
+spot-check **past** ships. No new check starts with less than 45 minutes left
+before pencils-down: §2.6's dashboard row and sign-off own that time, and a
+check still running when it is needed is abandoned, not finished. Debt is the
+last thing an evening does and the first thing it drops; it never displaces
+polish or rescue, and a shift short of time exits without it. A shift that
+tripped §11.5's circuit breaker has already exited and does none of this.
+
+Paying debt does not disturb §16 clause 1. Clause 1 disqualifies the *past-ship
+check* as a qualifying artifact, never the evening that also did its own job —
+otherwise no evening acting in the factory's interest would ever pay a penny of
+this, and the permission would be dead on the page.
+
+- **Two things are missing from the `verified` set, and only one of them is
+  this paragraph's.** A ship with no recorded evidence is a candidate. A ship
+  whose evidence a past shift already gathered and never relabelled — today
+  days 004–010, which the dashboard marks "evidence complete, relabelling still
+  owed" — is **not**: relabelling on evidence this shift did not gather and
+  cannot attribute to a shift is a different job at a different risk. Skip
+  those. Read the dashboard's own account of a candidate before checking it, so
+  the distinction is made from the record rather than from the label's absence.
+- **Candidates come from the dashboard index, lowest day number first** — day
+  number, not issue-creation date, which disagrees with it: #21 was created
+  2026-07-25 and shipped as day 026 on 2026-08-19. The index's idea-source
+  column is **not** reliably the build issue: from day 011 on it usually is
+  (`seeded ([#21])`), for days 005–010 it is a retroactive filing of the idea,
+  for 002 and 003 a job posting and a replay, and for 001 and 004 the bare word
+  `seeded`. So the issue is resolved from the issue plane, and **a candidate
+  whose build issue cannot be identified unambiguously is skipped, not
+  guessed**: a wrong `verified` is unrecoverable under §3.
+- **Check the code that shipped, not the code that is there now.** Several
+  candidate repos have been revisited since — `countup` on day 040,
+  `sprite-stamp` on 039, `ascii-rain` on 038 — so a fresh clone's tip is a
+  later day's work, and a `verified` written against it permanently certifies
+  the wrong tree. Check out the sha that day shipped, from its sign-off or its
+  dashboard narrative. **No recoverable sha, no check:** skip. §10's sign-off
+  carries no sha field, which is why this skip will be common until it does.
+- Only a ship **this shift had no hand in** building or finishing, and never
+  one already `verified` (§3: immutable). The principle is §16 clause 2's, not
+  §6's — §6 governs roles inside one build, this governs shifts across days.
+  Nothing on a ship records which shift built it, so the gate rests on the
+  run's own knowledge of what it did tonight.
+- Epic increments are **not** debt candidates: §11's own epic form covers them,
+  and their `verified` label waits for the epic to close.
+- §11.2's four sub-checks land in **two scopes**. *Repo-scope*, against a clone
+  at the shipped sha: `screenshot.png` present and referenced by the README;
+  gitleaks clean over history, with a control built from randomly generated
+  values asserted to fire **before** the clean result is read. *Deploy-scope*,
+  against the live URL with a cache-buster: the page loads **and carries a
+  marker unique to the sha under test**, read out of the rendering `WebFetch`
+  returns — the only channel to `github.io` here, and it gives a rendering
+  rather than a status code or bytes, so "it loaded" is the weakest of the four
+  and the marker is what makes it a check. **A repo revisited since the day
+  under test serves a later sha, so the marker cannot be there — that is a
+  Skip, not a failure**: nothing is broken and nothing is provable, and a
+  `verified` written anyway would certify a build this check never saw. A ship
+  with **no** deploy — a CLI, a doctrine-only `meta` ship — runs the repo half
+  only, and says so.
+- The fourth sub-check re-tests **one §8 must-pass line, drawn at random from
+  the lines that apply to this ship, less what §11.2 has already tested.** That
+  subtraction is narrower than it looks: §11.2 retires the gitleaks line, the
+  demo-link line, and only the *screenshot clause* of §8's README line —
+  README-is-truthful and says-how-to-run stay in the draw, and on a six-week-old
+  ship they are the two likeliest to have rotted. Named, not numbered: §8 is an
+  unnumbered list, and an insertion into it would silently re-map a numbered
+  draw.
+
+Four outcomes. The first three are a comment **on the ship's build issue** —
+the only place a later evening knows to look — carrying the block below.
+
+- **Pass** → relabel the closed issue `verified`, post the block, and refresh
+  the dashboard's verified rate (§9.8), which this changes.
+- **Fail** → do not relabel and do not build. Post the block with
+  `result: FAIL`, and file a follow-up issue in the hub labelled `queued`,
+  naming the failing line and linking the ship issue. Not `needs-retry`: §4
+  takes that only "from today", so one filed tonight matches no branch of the
+  pick order and would sit forever. Not `priority` either — the activity that
+  is first to be dropped does not get to jump the whole queue. **A ship already
+  carrying a FAIL block is skipped until its follow-up closes**, or every
+  evening files the same issue again.
+- **Unverifiable** → nothing this shift can test fails, but a §8 line applying
+  to the ship is failing for a reason outside it, and §16 clause 5 says an
+  evening cannot verify past a failing must-pass line. Do not relabel, do not
+  file; post the block with `result: UNVERIFIABLE` and the blocking issue in
+  `blocked-by:`. Later evenings skip the ship until that issue closes. While
+  #65 stands this is every `meta` ship, and recording it is not failing it.
+- **Skip** → the build issue or the shipped sha could not be identified; the
+  ship is one of the relabel-owed; or its deploy has moved past the sha under
+  test. A skip leaves no artifact — there is no
+  issue it is safe to comment on — so it costs the next evening the same two
+  minutes. That is the price of not guessing, and it is the cheap half of the
+  trade.
+
+```
+EVENING SPOT-CHECK day-<NNN>
+result:     PASS | FAIL | UNVERIFIABLE
+sha:        <the shipped sha that was checked out>
+deploy:     <confirmed to carry that sha | no deploy>
+checked:    <the checking evening's date, factory timezone>
+by:         <the checking shift>
+lines:      <the §8 must-pass lines that applied, named>
+failing:    <the line at fault, for FAIL and UNVERIFIABLE; else none>
+blocked-by: <the blocking issue, for UNVERIFIABLE; else none>
+```
+
+`<NNN>` is the day being checked, not the evening checking it. The header is
+deliberately **not** clause 3's `EVENING VERIFIED`: §16 clause 1 says a
+past-ship check is never a clean evening, so an artifact that reads like
+clause 3's is an invitation to quote it as one. Two headers, two meanings,
+nothing left to judgement at audit time.
 
 ---
 
@@ -458,7 +573,8 @@ the evening shift performs only this mandate; the full foreman duties of
 ## 16. Phase gates — what is active right now
 
 **Phase 0 (now):** §1–§5, §7–§10, §12–§15, plus the standing exceptions:
-§17 (job lane) and §11's evening-shift mandate. Crew may run reduced:
+§17 (job lane) and §11's evening-shift mandate, verification-debt paragraph
+included. Crew may run reduced:
 planner + builder + one combined critic pass + shipper. The evening shift
 covers verification and polish; if it is ever offline, the noon shift
 self-checks §11.2 before exiting. Phase 0 opens with a **genesis
@@ -568,7 +684,8 @@ the retro tracks response rates.
 
 Do not attempt features from phases above the config block's `phase` value.
 The standing exceptions: §17's owner-triggered job lane (live at any phase,
-only ever on an owner-filed `job` issue) and §11's evening-shift mandate.
+only ever on an owner-filed `job` issue) and §11's evening-shift mandate,
+its verification-debt paragraph included.
 Advancing a phase is a `meta` issue like any other manual edit.
 
 ---
@@ -730,6 +847,158 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.9.0** (2026-09-04) — the evening may pay verification debt (meta issue
+  #55), and the artifact it leaves cannot be mistaken for a clean evening.
+  Seventeen of the forty ships are closed `shipped` and not `verified` — and
+  seven of those, days 004–010, have evidence complete and are owed only a
+  relabel, a different job this paragraph deliberately does not take. The evening
+  mandate is scoped to *today's* ship, so the shift best placed to pay that
+  down was the one forbidden to. §11 gains a verification-debt paragraph —
+  after its own mandate is finished and with 45 minutes reserved for §2.6, the
+  evening may spot-check past ships, lowest day number first, relabel the
+  closed issue `verified`, and post an `EVENING SPOT-CHECK day-<NNN>` block.
+  Three edits carry it: the paragraph itself; §11's "Until phase 1, the evening
+  shift performs only this mandate" sentence, widened to admit it, which is the
+  clause that would otherwise forbid the whole thing; and §16's two
+  standing-exception lines, so the permission is readable from the phase gate
+  as well as from §11.
+
+  **Three of #55's four asks were already shipped, and this says so rather than
+  re-claiming them.** 1.8.0's §16 clause 1 had already ruled that a past-ship
+  check is never a clean evening, and had already settled #48 the strict way
+  #55 preferred. What survived was the permission — plus one thing #55 could
+  not have anticipated, because it predates the clause it turns on: once the
+  check is *permanently* non-qualifying, its artifact must not wear clause 3's
+  `EVENING VERIFIED` header. #55 asked for the opposite ("so the §16 graduation
+  evidence can quote it"), which was right in August and is wrong now.
+
+  **The dry run and the critics are the entry's real content, because the
+  paragraph as first written could not be executed and the second draft was
+  still wrong.** §11 is not on §14's canary list, so no canary was owed;
+  1.7.2's entry is why one ran anyway. It found six defects against day 026
+  (`critic-loop`, which passed all four sub-checks — the target was never the
+  point): no source for the candidate list, an "oldest first" with three
+  readings that disagree **on that very target** (#21 created 2026-07-25,
+  shipped as day 026 on 2026-08-19), a "run against the live deploy" that
+  gitleaks cannot obey because a deploy has no history, no sub-check shape for
+  a ship with no deploy, a random draw that **re-ran a completed check three
+  times in seven** (the canary drew §8's demo-link line, which is verbatim
+  §11.2's first sub-check), and an under-determined comment format.
+
+  Then all three critics rejected the fixed draft, and four of their findings
+  were the same class one level up — **a confident sentence whose premise is
+  false.** The candidate-list bullet had claimed the dashboard index carries
+  each ship's issue link. It does not: the column is *idea source*, and for
+  days 001–010 it is a retroactive filing of the idea, a job posting, a replay,
+  or the bare word `seeded` — never blank, a claim the second draft made and
+  no row supports. Since "lowest day number first" sends the shift to exactly those
+  rows, and the procedure ends in a `verified` label that §3 makes
+  unrecoverable, the first candidate of seventeen was a live path to
+  permanently mislabelling an idea issue as a verified ship. The bullet now
+  says the index does not carry the build issue and that **a candidate whose
+  issue cannot be identified unambiguously is skipped, not guessed.** With it
+  went a fabricated citation — Appendix C says nothing about the issue plane
+  going dark, and the rationale it was propping up ("needs no API call") was
+  self-refuting anyway, since both outcomes are issue-plane writes. Also
+  corrected: the motivating count, which had read "twenty-three" — that is the
+  *verified* number from `verified rate: 23/40`, the numerator read as the
+  debt, overstating it by six; `(phase 0+)`, which is this file's notation for
+  *not yet* and sat under a heading reading `phase 1+`, so the likeliest
+  outcome was a shift skipping the paragraph entirely; a mandate-complete test
+  that licensed work after §11.5's circuit breaker had said stop and exit; a
+  draw pool containing §8's phone-width line, which §16 clause 5 says has no
+  `meta` branch at all; a third outcome ("unverifiable-for-now") named with no
+  artifact, which is the outcome for every `meta` ship while #65 stands and so
+  would have had every evening re-checking the same ships forever; a
+  `needs-retry` fail-path that §4's pick order can never select, since it takes
+  `needs-retry` only "from today"; and a bare `(2026-09-12)` lessons citation
+  that is a **future** date and reads as an effective date for a safety
+  control. The paragraph also moved **below** §11's rescue fall-through: on the
+  one night the ordering matters, a shift was meeting 47 lines of optional work
+  before it reached the rescue that is the job.
+
+  **A third cycle, and the reason §7's cap is three rather than one.** The
+  second draft was rejected by all three critics again, and their findings
+  converged on the same sentence twice over. "The other seventeen are closed
+  `shipped` and **unchecked**" was false for seven of them: the dashboard says
+  in the same line that days 004–010 have *evidence complete, relabelling still
+  owed*, and "lowest day number first" routes the shift at exactly those seven
+  before anything else. So the paragraph's first act would have been to re-run
+  a check that had already been run, on the only candidates whose owed action is
+  something else entirely. They are now excluded and named, with the reason:
+  relabelling on evidence this shift did not gather and cannot attribute to a
+  shift is a different job at a different risk, and it belongs to #116's third
+  residual, not here. The frozen count went with it — the run appending today's
+  dashboard row makes any hard-coded "seventeen of forty" false within the hour,
+  and the pass path's own instruction to refresh the KPI makes it false again on
+  first use; the paragraph now names the fraction rather than its value.
+
+  Two more from the third cycle are worth recording because neither is a
+  wording problem. **A fresh clone is the wrong tree.** Repo-scope said "against
+  a fresh clone", which gives the repo's *tip* — and `countup`, `sprite-stamp`
+  and `ascii-rain` have all been revisited since the ships that owe
+  verification, so a clone of `countup` today is day 040's work and a `verified`
+  written against it would permanently certify code the day under test never
+  shipped. The check now runs against the sha that day shipped, and **no
+  recoverable sha means no check**, which will be a common skip because §10's
+  sign-off has no sha field — filed on #116. And **the draw's subtraction was
+  too wide**: "the screenshot line" is not a line, it is the *screenshot clause*
+  of §8's `README is truthful, has a screenshot, and says how to run it`.
+  Retiring the whole bullet silently deleted README-truthfulness and
+  how-to-run from every future draw — the two assertions most likely to have
+  rotted on a six-week-old ship. The pre-computed pool that carried the error is
+  deleted; the rule states the subtraction instead.
+
+  Also closed in the third cycle: a `sha:` field that was two data types and two
+  ambiguous pronouns, now `sha:` and `deploy:`; a `blocked-by:` field, without
+  which the UNVERIFIABLE outcome ordered a datum the block had no slot for and
+  its skip-until-closed rule could not work; the FAIL path's missing
+  de-duplication, which would have filed the same issue every night forever, and
+  its `priority` label, which let the activity an evening drops first jump the
+  whole queue; a fourth outcome (**Skip**) stated plainly rather than left
+  implicit by two bullets that said "skipped" and defined nothing; the artifact's
+  home, which was nowhere; and a misreading of §16 clause 1 that would have made
+  paying debt cost an evening its own clean status — which, with the live run at
+  0, would have made the whole permission irrational to use.
+
+  Filed rather than fixed, because each would touch a section this edit is not
+  in or a rule #55 excluded: §3's "a closed issue labeled `shipped` or
+  `verified` is immutable" is in tension with relabelling one, and resolving it
+  edits §3, which makes a canary mandatory; §11.2's own unrestricted random
+  draw has the same defect the debt paragraph just fixed in its copy, and #55's
+  constraint was that §11.2 stays unchanged; the eligibility gate is
+  unauditable because no artifact records which shift built a ship; and §16
+  clause 5's 5/6/7 arithmetic only works if §8's two compound lines count as
+  one each, which it never says.
+
+  **The third cycle's re-verify rejected too, and two scoped fixes went in after
+  it under directive 4 rather than a fourth cycle §7's cap does not allow.** All
+  three critics converged on the same two, and both were the un-propagated half
+  of an earlier fix rather than anything new. The paragraph had stopped
+  hard-coding the debt count; **this entry's own opening sentence had not**, and
+  still read "seventeen … unchecked" sixty-nine lines above the paragraph
+  explaining why that is false for seven of them — a correction applied in one
+  of the two places it was owed, which is the same shape as every other defect
+  this build found. And the shipped-sha rule reached repo-scope but not
+  deploy-scope: a repo revisited since the day under test serves a *later* sha,
+  so the marker deploy-scope requires can never be present, and the first two
+  web candidates a lowest-day-first walk reaches — days 020 and 021, revisited
+  on 039 and 040 — fitted no outcome at all. FAIL would have parked a sound ship
+  behind a bogus follow-up; passing it on the repo half would have written an
+  irreversible `verified` on a web ship with its demo-link line untested, which
+  is the generous-direction error 1.8.0 calls worse than no tool. It is a
+  **Skip**: nothing broken, nothing provable. Both fixes are unreviewed, and the
+  sign-off says so.
+
+  This ship's own must-pass set is **not clean, and it is the clause it just
+  wrote about**: a doctrine-only `meta` ship's five lines include a truthful
+  README and a LICENSE, and the hub has neither while #65 stands. Pre-existing
+  and unchanged by this build — the correct outcome for it is the
+  *unverifiable* one this entry adds. It is also why the 2026-09-04 evening
+  cannot be a clean one, which it could not be under clause 2 either, a §11.4
+  rescue having built what it would verify. The phase gate does **not** move:
+  `phase: 0`, unchanged.
 
 - **1.8.0** (2026-08-28) — §16's graduation gate becomes auditable (meta issue
   #48). The gate read "five consecutive clean evenings (§11 — a `verified` ship or
