@@ -780,6 +780,66 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.9.0** (2026-09-04) — the evening may pay verification debt (meta issue
+  #55), and the artifact it leaves cannot be mistaken for a clean evening.
+  §11 gains a verification-debt paragraph: after its own mandate is complete —
+  today's ship polished and verified, or §11.3–.5 run to its end — and before
+  pencils-down, the evening may spot-check **past** ships, lowest day number
+  first, relabel the closed issue `verified`, and comment
+  `EVENING SPOT-CHECK day-<NNN>`. §16's two standing-exception lines name the
+  paragraph so the permission is readable from the phase gate as well.
+  Twenty-three ships are closed `shipped` and unverified; the mandate that
+  creates that debt could not pay it, which is what #55 filed on 2026-08-15 and
+  what kept it queued for twenty days.
+
+  **Three of #55's four asks were already shipped, and the entry says so rather
+  than re-claiming them.** 1.8.0's §16 clause 1 had already ruled that a
+  past-ship check is never a clean evening, and had already settled #48 the
+  strict way #55 preferred. What survived was the permission itself — plus one
+  thing #55 could not have anticipated, because it predates the clause: once
+  the check is *permanently* non-qualifying, its artifact must not wear clause
+  3's `EVENING VERIFIED` header. #55 had asked for the opposite ("so the §16
+  graduation evidence can quote it"), which was right in August and is wrong
+  now. Two headers, two meanings; an auditor reading the issue record never has
+  to decide which kind of evening a comment describes.
+
+  **The canary is the entry's real content, because the paragraph as first
+  written could not be executed.** §11 is not on §14's canary list, so none was
+  owed — 1.7.2's entry is why one was run anyway, and it found six defects on a
+  single dry run against day 026 (`critic-loop`, which passed all four
+  sub-checks; the target was never the point). The paragraph had **no source
+  for its own candidate list**: enumerating closed ship issues needs the issue
+  plane, the first thing to go dark in a degraded run, and the dashboard index
+  is a file in the clone that already carries day number, repo and issue link.
+  "Oldest first" had three readings that disagree **on that very target** —
+  issue #21 was created 2026-07-25 and shipped as day 026 on 2026-08-19 — now
+  fixed to lowest day number. "Run against the live deploy" was unobeyable and
+  was this edit's phrase, not §11.2's: gitleaks reads history and a deploy has
+  none, so the four sub-checks are now split into repo-scope and deploy-scope,
+  and a CLI or `meta` ship runs the repo half and says so. And the fourth
+  sub-check's random draw **duplicated a check already run, three times in
+  seven** — the canary drew line 7, which is verbatim §11.2's own "demo link
+  loads" — so the draw is now from lines 1, 2, 3 and 5, the four that are not
+  restatements. The lesson generalises past this edit: a procedure written as
+  prose reads as executable to its author because the author already knows the
+  answers to the questions it does not ask.
+
+  Six further canary findings are **residuals rather than defects in this
+  edit** and are filed: the eligibility gate "a ship this shift had no hand in"
+  is unauditable, since no shift identity is recorded on any ship; the sandbox
+  can reach `github.io` only through `WebFetch`, which returns no status code,
+  no bytes and no images, so "demo link loads" is weaker evidence than it
+  reads; §16 clause 5's line-count arithmetic only works if §8's two compound
+  lines are read as one line each, which it never says; and three smaller ones.
+
+  This ship's own must-pass set is **not clean, and it is the clause it just
+  wrote about**: a doctrine-only `meta` ship's five lines include a truthful
+  README and a LICENSE, and the hub has neither while #65 stands. Pre-existing,
+  unchanged by this build, and the reason the 2026-09-04 evening cannot be a
+  clean one — which it also could not be under clause 2, since a §11.4 rescue
+  builds what it would verify. The phase gate does **not** move: `phase: 0`,
+  unchanged.
+
 - **1.8.0** (2026-08-28) — §16's graduation gate becomes auditable (meta issue
   #48). The gate read "five consecutive clean evenings (§11 — a `verified` ship or
   an epic increment verification) with no human fix", and three of its four terms
