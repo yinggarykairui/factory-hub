@@ -378,30 +378,50 @@ today counts.
 
 **Verification debt (phase 0+).** After this shift's own mandate is complete —
 today's ship polished and verified, or §11.3–.5 run to its end — and before
-pencils-down, the evening may spot-check **past** ships, oldest first. This is
-debt being paid, not a second mandate: it never displaces polish or rescue, and
-a shift out of time exits without it.
+pencils-down, the evening may spot-check **past** ships. This is debt being
+paid, not a second mandate: it never displaces polish or rescue, and a shift
+out of time exits without it.
 
+- **The candidate list is the dashboard index, not the issue tracker.** Every
+  ship is a row there carrying its day number, repo and issue link, so the list
+  is built from a file in the clone and needs no API call — the issue plane is
+  the first thing to go dark in a degraded run (Appendix C). **Oldest first
+  means lowest day number**, the only one of day number, issue-creation date
+  and ship date that is stable: seeded ideas are filed in batches, and #21 was
+  created 2026-07-25 and shipped as day 026 on 2026-08-19.
 - Only a ship **this shift had no hand in** building or finishing (§6), and
   never one already `verified` (§3: immutable).
-- The check is §11.2's, unchanged, run against the live deploy.
+- §11.2's four sub-checks land in **two scopes**, and saying which is which is
+  the difference between a check and a gesture. *Repo-scope*, against a fresh
+  clone: `screenshot.png` present and referenced by the README, and gitleaks
+  clean over history — with a control built from randomly generated values that
+  is asserted to fire **before** the clean result is read (2026-09-12). *Deploy-
+  scope*, against the live URL with a cache-buster: the demo loads and serves
+  the build under test. **A ship with no deploy — a CLI, a doctrine-only
+  `meta` ship — runs the repo-scope half only, and its comment says so.**
+- The fourth sub-check draws **one §8 line at random from lines 1, 2, 3 and
+  5**. Lines 4, 6 and 7 are out of the draw because they restate the three
+  sub-checks above them: three draws in seven would otherwise re-run a check
+  already done and look like a fourth independent one.
 - **Pass** → relabel the closed issue `verified` and comment
-  `EVENING SPOT-CHECK day-<NNN>`, naming the sha checked, the date of the
-  evening that checked it, and which §8 must-pass lines applied. The header is
-  deliberately **not** clause 3's `EVENING VERIFIED`, and the reason is the
-  point of the whole paragraph: §16 clause 1 says a past-ship check is never a
-  clean evening, so an artifact that reads like clause 3's is an invitation to
-  quote it as one. Two headers, two meanings, nothing left to judgement at
-  audit time.
+  `EVENING SPOT-CHECK day-<NNN>`, naming the **repo sha** checked and, for a
+  ship with a deploy, whether the deploy was confirmed to carry it; the
+  evening's own date in factory timezone; and the §8 line **numbers** that
+  applied. The header is deliberately **not** clause 3's `EVENING VERIFIED`,
+  and the reason is the point of the whole paragraph: §16 clause 1 says a
+  past-ship check is never a clean evening, so an artifact that reads like
+  clause 3's is an invitation to quote it as one. Two headers, two meanings,
+  nothing left to judgement at audit time.
 - **Fail** → do not relabel and do not build. File a `needs-retry` follow-up
-  issue naming the failing line, for the next noon shift.
+  issue **in the hub**, naming the failing line and linking the closed ship
+  issue, for the next noon shift.
 - A ship that fails any §8 line applying to it is **not verifiable at all**
   (§16 clause 5: an evening cannot verify past a failing must-pass line), and
   the applicable set is not always seven — five for a doctrine-only `meta`
   ship, six for a CLI, seven for anything serving a Pages demo. While #65
   stands (the hub carries no LICENSE and no root README), every `meta` ship is
-  in this case; recording a ship as unverifiable-for-now is the correct
-  outcome there, and is not the same as failing it.
+  in this case; recording a ship as unverifiable-for-now is the correct outcome
+  there, and is not the same as failing it.
 
 If nothing shipped today, fall through to §11.3–.5 (rescue, circuit breaker). Until phase 1,
 the evening shift performs only this mandate and the verification-debt
