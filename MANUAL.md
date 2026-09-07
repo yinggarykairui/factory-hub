@@ -421,9 +421,8 @@ this, and the permission would be dead on the page.
   the wrong tree. Check out the sha that day shipped, from its sign-off or its
   dashboard narrative. **No recoverable sha, no check:** skip. §10's sign-off
   carries no sha field, which is why this skip will be common until it does.
-  The rule has a deploy half too — see *Deploy-scope*, below: a sha that is no
-  longer the repo's tip cannot be **confirmed** as the tree Pages serves. Both
-  halves, or the rule is stated twice and obeyed once.
+  *Deploy-scope*, below, states the same rule where it is used, and is the only
+  other place it belongs.
 - Only a ship **this shift had no hand in** building or finishing, and never
   one already `verified` (§3: immutable). The principle is §16 clause 2's, not
   §6's — §6 governs roles inside one build, this governs shifts across days.
@@ -431,7 +430,10 @@ this, and the permission would be dead on the page.
   run's own knowledge of what it did tonight.
 - Epic increments are **not** debt candidates: §11's own epic form covers them,
   and their `verified` label waits for the epic to close.
-- §11.2's four sub-checks land in **two scopes**. *Repo-scope*, against a clone
+- §11.2's four sub-checks land in **two scopes**. A sub-check **applies** when
+  the ship's kind calls for it — a CLI has no deploy half. It is **available**
+  when this shift can actually run it; an applying sub-check that is unavailable
+  is recorded as such and never read as a failure. *Repo-scope*, against a clone
   at the shipped sha: `screenshot.png` present and referenced by the README;
   gitleaks clean over history, with a control built from randomly generated
   values asserted to fire **before** the clean result is read. *Deploy-scope*
@@ -441,24 +443,37 @@ this, and the permission would be dead on the page.
   list below reads.
 
   1. **Nothing newer exists.** In the clone, `git rev-parse origin/HEAD` against
-     the sha under test. Equal → what Pages serves cannot be *newer* than the
-     tree under test, because there is nothing newer. Not equal → the deploy
-     half is **unavailable**; record that and run the rest of the checks anyway.
+     the sha under test — or, where the repo's Pages source is another branch or
+     a `/docs` root, that ref instead; the inference is about the tree Pages
+     builds from, not about `main` as such. Equal → what Pages serves cannot be
+     *newer* than the tree under test, because there is nothing newer. Not equal
+     → the deploy half is **unavailable**; record that and run the rest of the
+     checks anyway.
   2. **Nothing older is being served.** `WebFetch` the demo URL with a
-     cache-buster and read the rendering for a **marker** — a literal the page
-     renders that the *previous* ship's tree did not. Step 1 rules out newer, the
-     marker rules out older, and the two together leave only the tree under test.
-     A rendering alone would not: `WebFetch` gives a rendering rather than a
+     cache-buster and read the rendering for a **marker** — a literal that the
+     *previous* ship's tree did not have. Step 1 rules out anything newer, the
+     marker rules out anything older than the commit that introduced it. **That
+     is an interval, not a point**: a deploy stale by a few commits *within the
+     day's own range* satisfies both, and this check does not exclude it. It
+     excludes the thing that matters, another factory day's tree. A rendering
+     alone would exclude nothing: `WebFetch` gives a rendering rather than a
      status code, so "it loaded" is the weakest of the four sub-checks and the
      marker is what makes it a check.
+
+     **And what it buys is bounded.** `LESSONS.md` records the ceiling of this
+     transport: it converts to markdown, so it *"proves the right document is
+     served and cannot prove the app runs."* Deploy-scope certifies **which tree
+     `github.io` serves**. Whether that tree works in a browser is not observable
+     from here, and a block that says otherwise is claiming more than it has.
 
   **Do not settle step 1 from the Pages API.** `LESSONS.md` records
   `/pages/builds/latest` reporting a build sha that `/deployments` and the live
   page both contradicted — on `sprite-stamp`, the repo this bullet keeps using as
-  its example — so *built* is not *served*, and §11 grants no API channel anyway.
-  The cheap pre-read is the dashboard's **Slug column**, which names every ship
-  to every repo: a repo shipped again after the day under test will fail step 1,
-  and knowing that costs seconds rather than a clone.
+  its example — so *built* is not *served*. §11 uses the API plane freely to
+  write its outcomes; what it does not do is accept a Pages or deployments
+  reading as **evidence** about a tree. The dashboard's **Slug column** names
+  every ship to every repo, so it predicts step 1's answer before you look. It is
+  never the evidence; step 1 is.
 
   **Never run that reasoning backwards from the marker.** A marker the sha under
   test introduced can *survive* a later increment to the same page: of the eleven
@@ -470,14 +485,24 @@ this, and the permission would be dead on the page.
 
   **Deriving the marker.** From the day's own diff, never guessed:
   `git diff <previous ship's sha>..<sha> -- <the files Pages serves>`, take a
-  short literal the diff adds **to text the page renders** — not CSS, not an
-  attribute, not a comment, none of which a rendering will ever show — and
-  confirm it with `git grep -F` at `<sha>` (present) and at the previous ship's
-  sha (absent). Two cases need no such literal and are not failures: a repo's
-  **first** ship has no earlier tree to be distinguished from, and a day whose
-  diff changes nothing the page renders leaves an older tree rendering the same
-  text, so there is nothing for a marker to tell apart. In both, any literal the
-  served tree renders will do. Say which of the three cases applied.
+  short literal the diff adds, and confirm it with `git grep -F` at `<sha>`
+  (present) and at the previous ship's sha (absent). The literal has to **survive
+  the markdown conversion**, which is a narrower set than "text in the file": the
+  `<title>`, the meta description, and text in the DOM all come back — a fetch of
+  `noise-poster` returned its six control labels verbatim — while CSS, comments,
+  other attributes, and **anything drawn into a canvas** do not. A page whose
+  entire content is canvas-drawn returns its title and meta description and
+  nothing else, and its marker has to come from those.
+
+  Two cases need no distinguishing literal and are not failures: a repo's
+  **first** ship has no earlier tree to be told apart from, and a day whose diff
+  changes nothing that survives the conversion leaves an older tree returning the
+  same text, so there is nothing for a marker to distinguish. In both, any
+  surviving literal will do. **And if the day's diff changes nothing that
+  survives and the tree offers no literal at all, step 2 is *unavailable*, not
+  failed** — the difference between a check that could not run and a check that
+  found something wrong, which is the difference between a Skip and a Fail
+  against a sound ship. Say which case applied.
 
   A ship with **no** deploy — a CLI, a doctrine-only `meta` ship — runs the repo
   half only, and says so.
@@ -502,24 +527,30 @@ relabel-owed ship whose sub-checks all pass would land on line 4 and be
 relabelled `verified`, which is the unrecoverable mislabel the gates exist to
 prevent.
 
-**Then run every sub-check that is available**, and read the list top to bottom,
-stopping at the first line that matches. A sub-check **applies** when the ship's
-kind calls for it — a CLI has no deploy half. It is **available** when this
-shift can actually run it.
+**Then run every sub-check that is available** (*applies* and *available* are
+defined with the two scopes above), and read the list top to bottom, stopping at
+the first line that matches.
 
-1. An available sub-check failed for a reason **inside this ship** → **Fail**.
-2. Nothing failed inside the ship, but a §8 must-pass line applying to it is
-   failing because of an open hub issue no work on this ship could fix — today
-   #65 — → **Unverifiable**.
-3. A sub-check that applies could not be run → **Skip**.
+1. An available sub-check failed on **something in the ship's own tree or its
+   deploy** → **Fail**.
+2. Nothing in the ship failed, but a §8 must-pass line applying to it is failing
+   on a condition the ship does not own and an open hub issue already records —
+   today #65, the hub's own missing LICENSE and root README → **Unverifiable**.
+3. A sub-check that applies could not be run → **Skip**. Infrastructure that is
+   simply down — Pages erroring, the API rate-limited — is *could not run*, not a
+   failure of the ship.
 4. Every applicable sub-check ran and passed → **Pass**.
 
 **Line 1 is scoped to the ship, and line 2 is why.** The fourth sub-check draws
-a §8 line at random, so on a `meta` ship the draw lands on #65's LICENSE or
-README line about two times in five. Read as "any failure", that is a Fail —
-which would file a follow-up on a sound ship, and contradicts this section's own
-"while #65 stands this is every `meta` ship, and recording it is not failing it".
-The cause, not the draw, decides between them.
+a §8 line at random from the lines that apply *less what §11.2 already tested*,
+which on a `meta` ship is a pool of four — gitleaks is retired — of which #65
+fails two. The draw lands on #65 about **half the time**. Read as "any failure",
+that is a Fail, which would file a follow-up on a sound ship and contradict this
+section's own "while #65 stands this is every `meta` ship, and recording it is
+not failing it". Note the test is not "could work on this ship fix it": on a
+`meta` ship the ship *is* the hub, and adding the hub's LICENSE would fix it. The
+test is whether the failing condition is **this build's** — #65 predates every
+`meta` ship it touches and is unchanged by them.
 
 **Fail precedes Skip, and that ordering is the whole point.** The overlapping
 case is real and common: day 020's repo half can fail — no `screenshot.png`, or
@@ -561,10 +592,15 @@ leaves none.
   list: the build issue cannot be identified unambiguously; the shipped sha is
   not recoverable (which §10's missing sha field makes the usual one); the ship
   is one of the relabel-owed, days 004–010; the sha under test is no longer the
-  repo's tip, so nothing can confirm what the deploy serves. **A repo the
-  factory has revisited is unpayable debt until §10 records shas** — which is
-  most of them, and is the honest size of what this paragraph can drain today.
-  A skip leaves no artifact — there is no issue it is safe to comment on — so it
+  repo's tip, so nothing can confirm what the deploy serves.
+
+  **Two independent things make a ship unpayable, and §10 fixes only one.** An
+  unrecoverable sha stops the check before it starts, on any ship of any kind,
+  and §10 recording shas ends that. A revisited **web** repo will keep failing
+  step 1 however well §10 records — its deploy half cannot be confirmed by
+  anything this shift has — while a revisited CLI or `meta` ship has no deploy
+  half and is unaffected. That is the honest size of what this paragraph can
+  drain today. A skip leaves no artifact — there is no issue it is safe to comment on — so it
   costs the next evening the same two minutes. That is the price of not
   guessing, and it is the cheap half of the trade.
 
@@ -572,7 +608,7 @@ leaves none.
 EVENING SPOT-CHECK day-<NNN>
 result:     PASS | FAIL | UNVERIFIABLE
 sha:        <the shipped sha that was checked out>
-deploy:     <confirmed to carry that sha | unavailable — <why> | no deploy>
+deploy:     <confirmed to carry that sha | unavailable (why) | no deploy>
 checked:    <the checking evening's date, factory timezone>
 by:         <the checking shift>
 lines:      <the §8 must-pass lines that applied, named>
@@ -939,10 +975,10 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
-- **1.9.1** (2026-09-06) — #55's five remedies, discharged. 1.9.0 shipped two
-  fixes unreviewed under directive 4 after `loop_cap: 3` was spent; the
-  2026-09-05 evening re-voted and rejected both, leaving a numbered list. This is
-  that list. The four structural residuals stay on #116.
+- **1.9.1** (2026-09-06) — #55's five remedies, discharged, and the paragraph's
+  reach measured honestly for the first time. 1.9.0 shipped two fixes unreviewed
+  under directive 4; the 2026-09-05 evening rejected both and left a numbered
+  list. This is that list. The four structural residuals stay on #116.
 
   **Markers survive revisits, so the Skip cannot rest on one.** 1.9.0 justified
   skipping a revisited repo with *"the marker cannot be there"*. Day 020 shipped
@@ -953,68 +989,91 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   a licensed route to an irreversible `verified` on a tree it never saw — the
   generous-direction error, written into the fix meant to prevent it.
 
-  **Deploy-scope is rebuilt around what the shift can actually observe.** Two
-  readings, no API: `git rev-parse origin/HEAD` against the sha under test rules
-  out anything *newer* being served, and a marker the page renders that the
-  previous ship's tree did not rules out anything *older*. The Pages API is
-  explicitly not the way to settle the first — `LESSONS.md` records
-  `/pages/builds/latest` contradicting `/deployments` and the live page on this
-  same repo, so *built* is not *served*, and §11 grants no API channel anyway.
-  The dashboard's Slug column stays as the cheap pre-read that predicts the
-  answer, never as the evidence for it. The marker is derived from the day's diff
-  and must be **text the page renders** — the earlier wording blessed CSS and
-  comments, which no rendering ever shows. Two cases need no distinguishing
-  literal and are not failures: a repo's first ship, and a day that changed
-  nothing the page renders.
+  **Deploy-scope is rebuilt around what this shift can actually observe.** Two
+  readings, no Pages API: `git rev-parse origin/HEAD` against the sha under test
+  rules out anything *newer* being served, and a marker the previous ship's tree
+  lacked rules out anything *older* than the commit that introduced it. That is
+  an interval and the file now says so — a deploy stale within the day's own
+  commit range satisfies both — but it excludes the thing that matters, another
+  factory day's tree. The Pages API is named as the wrong evidence, because
+  `LESSONS.md` records `/pages/builds/latest` contradicting `/deployments` and
+  the live page on this same repo: *built* is not *served*.
 
-  **The outcomes now partition, in two stages.** Eligibility first — an
-  unidentifiable issue, an unrecoverable sha, a relabel-owed ship — is a Skip
-  before any sub-check runs, because without that gate a relabel-owed ship whose
-  sub-checks all pass reaches the Pass line and gets the unrecoverable label the
-  gates exist to prevent. Then sub-check results, first match wins: Fail,
-  Unverifiable, Skip, Pass. Fail is scoped to failures **inside the ship**, which
-  is what keeps a `meta` ship off the Fail path when the random draw lands on
-  #65's LICENSE or README line — about two times in five, and this section
-  already says recording that is not failing it. And Fail precedes Skip, so a
-  §12 secrets finding on a ship whose deploy half is unavailable is never buried
-  by the cheaper outcome.
+  **The marker has to survive the transport, which is narrower than "text in the
+  file".** `WebFetch` converts to markdown: the `<title>`, the meta description
+  and DOM text come back — a fetch of `noise-poster` returned its six control
+  labels verbatim — while CSS, comments, other attributes and anything drawn into
+  a canvas do not. A page that is all canvas returns a title and a meta
+  description and nothing else. The first draft of this rule said "not an
+  attribute", which would have excluded the one channel such a page has. And
+  where no surviving literal exists, step 2 is now **unavailable** rather than
+  failed: without that branch a sound ship draws a Fail, and a ship carrying a
+  FAIL block is skipped until its follow-up closes, so a false Fail here is
+  sticky.
 
-  **The dry run walked three real candidates, read-only, and wrote nothing.**
-  Day 019 (`ascii-rain`, CLI, #11): the sign-off carries no sha and the dashboard
-  narrative none either → **Skip** at the eligibility gate, before any clone.
-  That is the first live confirmation that §10's missing sha field, filed as
-  #116, is the binding constraint on this debt. Day 020 (`sprite-stamp`, web,
-  #12): sha `d74b16f` from the sign-off; repo half **passes** — `screenshot.png`
-  present and referenced, gitleaks clean over 45 commits behind a control of
-  freshly randomised values that fired first — and `origin/HEAD` is `e23a18d`, so
-  the deploy half is unavailable → **Skip**. Day 024 (`noise-poster`, web, #16):
-  sha `287a103` from its sign-off on #16, `origin/HEAD` equal to it, marker
-  *"A poster made of layered noise. The seed is in the link."* read back out of a
-  cache-busted `WebFetch`, repo half clean behind the same control, drawn
-  must-pass line *loads/runs without errors on first use* satisfied by the
-  rendering → **Pass**. One outcome each, reached three different ways. The Pass
-  was **not acted on**: tonight is a rescue evening, its mandate is this build,
-  and §11 puts debt after that.
+  **What deploy-scope buys is now stated as well as how to get it.** `LESSONS.md`
+  fixes the ceiling: the fetch *"proves the right document is served and cannot
+  prove the app runs."* So the check certifies which tree `github.io` serves, and
+  nothing about whether it works in a browser. That is not a small caveat — see
+  the dry run.
 
-  **Remedies 1 and 2 are one defect in three places**, which is the shape every
-  1.9.0 cycle found. The 1.9.0 entry's opening sentence still asserted a frozen
+  **The outcomes partition in two stages.** Eligibility first: an unidentifiable
+  issue, an unrecoverable sha, a relabel-owed ship — a Skip before any sub-check
+  runs, because without that gate a relabel-owed ship whose checks all pass
+  reaches the Pass line and gets the unrecoverable label the gates exist to
+  prevent. Then results, first match wins: Fail, Unverifiable, Skip, Pass. Fail
+  is scoped to what the ship owns, which keeps a `meta` ship off the Fail path
+  when the random draw lands on #65 — a pool of four after §11.2's own
+  subtraction, of which #65 fails two, so about half the time. Fail precedes
+  Skip, so a §12 secrets finding on a ship whose deploy half is unavailable is
+  never buried by the cheaper outcome. Infrastructure that is simply down is
+  *could not run*, not a failure of the ship.
+
+  **The dry run walked three real candidates, read-only, wrote nothing — and all
+  three ended in a Skip.** Day 019 (`ascii-rain`, CLI, #11): the sign-off carries
+  no sha and the dashboard narrative none → Skip at the eligibility gate, before
+  any clone. Day 020 (`sprite-stamp`, web, #12): sha `d74b16f` from the sign-off;
+  repo half passes — `screenshot.png` present and referenced, and gitleaks clean
+  behind a control of freshly randomised values that fired first, in `dir` mode
+  over the worktree checked out at the shipped sha and in `git` mode over the
+  repo's history, which is whole-history by construction and so a superset of
+  that sha's — but `origin/HEAD` is `e23a18d`, so the deploy half is unavailable
+  → Skip. Day 024 (`noise-poster`, web, #16): sha `287a103` from its sign-off on
+  #16, `origin/HEAD` equal to it, marker *"A poster made of layered noise. The
+  seed is in the link."* read back out of a cache-busted fetch, repo half clean
+  behind the same control — and then the random draw landed on *loads/runs
+  without errors on first use*, which this transport cannot answer for a canvas
+  app. **Unavailable, so Skip.**
+
+  **That third Skip is the finding, and it is bigger than the ship.** Of the five
+  §8 lines in a web ship's draw pool, three — loads/runs without errors, survives
+  garbage input, usable at phone width — need a browser this shift does not have;
+  only README-truthfulness and the LICENSE/description/topics line are answerable
+  from the repo and the API. So roughly three web draws in five are unavailable
+  whatever the ship's condition, and the paragraph's real yield today is smaller
+  than its permission suggests. Filed, not fixed: §11.2's draw is fenced out of
+  this edit by #55's own constraint. **No Pass was demonstrated, and the entry
+  does not claim one** — an earlier draft of it did, on the strength of a
+  rendering, which is exactly the inference `LESSONS.md` forbids.
+
+  **Remedies 1 and 2 are one defect in three places**, the shape every 1.9.0
+  cycle found. The 1.9.0 entry's opening sentence still asserted a frozen
   "seventeen of the forty" well above the paragraph explaining why any such
   number is false within the hour; the count was asserted again outside a
   quotation later in the same entry, and a third time in the day-041 dashboard
   row, which is the first thing a later evening reads. All three now name the
-  fraction or nothing. The remaining `seventeen` hits are quotations of the
+  fraction or nothing; the remaining `seventeen` hits are quotations of the
   defect and past-tense narrative and stay. The re-vote's third finding goes with
-  them: the shipped-sha rule reached one of the two bullets that state it, and
-  the repo-scope bullet now points at its deploy half by name rather than by
-  position.
+  them: the shipped-sha rule is now stated once, where it is used.
 
   §11 is not on §14's canary list and none was owed; the dry run ran anyway, on
-  1.7.2's and 1.9.0's precedent, and is why this entry cites `e23a18d` instead of
-  asserting a premise. This ship's must-pass set is the five a doctrine-only
-  `meta` ship has, and the same two still fail on #65 — no LICENSE, no root
-  README at the hub. Pre-existing, unchanged here, and the reason no `meta` ship
-  day can be a clean evening while #65 stands. The phase gate does **not** move:
-  `phase: 0`, unchanged.
+  1.7.2's and 1.9.0's precedent, and it is the reason this entry can cite
+  `e23a18d` and three Skips instead of asserting a premise. Three critic cycles,
+  nine votes; the cap is spent. This ship's must-pass set is the five a
+  doctrine-only `meta` ship has, and the same two still fail on #65 — no LICENSE,
+  no root README at the hub. Pre-existing, unchanged here, and the reason no
+  `meta` ship day can be a clean evening while #65 stands. The phase gate does
+  **not** move: `phase: 0`, unchanged.
 
 - **1.9.0** (2026-09-04) — the evening may pay verification debt (meta issue
   #55), and the artifact it leaves cannot be mistaken for a clean evening.
