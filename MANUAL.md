@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.9.0
+manual_version: 1.9.1
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -908,6 +908,83 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.9.1** (2026-09-06) — #55's five remedies, discharged. 1.9.0 shipped two
+  fixes unreviewed under directive 4 after `loop_cap: 3` was spent; the
+  2026-09-05 evening re-voted them and **rejected both**, leaving a numbered
+  list. This is that list, and nothing else — the four structural residuals stay
+  on #116, which is where 1.9.0 put them.
+
+  **The load-bearing correction is fix 2's, and a dry run measured exactly how
+  wrong it was.** 1.9.0 justified skipping a revisited repo with *"a repo
+  revisited since the day under test serves a later sha, so the marker cannot be
+  there"*. Markers survive revisits. Day 020 shipped `sprite-stamp` at
+  `d74b16f`; day 039 revisited the same page; of the three distinctive literals
+  a `>text<` sweep finds in day 020's `index.html`, **three are still served at
+  the tip** `e23a18d` — `Download sprite.png`, `Tap or drag to paint.`, and the
+  press-and-hold line. A shift checking day 020 under 1.9.0 would have found its
+  marker present, concluded the stated reason for skipping did not apply, and
+  had a licensed route to the irreversible `verified` the rule exists to
+  prevent, on a tree it never saw. That is the generous-direction error 1.8.0
+  calls worse than no check at all, written into the fix meant to stop it.
+
+  **So the Skip stops resting on the marker and rests on the revisit.** The
+  dashboard index's Slug column names every ship to every repo, so *was this
+  repo revisited?* is read off the index before any network call. Deploy-scope
+  is then two readings rather than one: `/pages/builds/latest` says **which sha
+  Pages built** — the question a marker was never able to answer — and `WebFetch`
+  with a cache-buster says it renders, tied to the tree by a marker **derived**
+  from the day's own diff (`git diff <previous ship's sha>..<sha>` over the
+  served files, confirmed present at one end and absent at the other) rather than
+  guessed. That closes #55's remedy 5 by definition instead of by exception, and
+  the case it cannot cover — a day whose diff adds no literal to a served file —
+  is named and given the Skip it was missing.
+
+  **The outcomes now partition, because they are ordered.** Available sub-checks
+  run first; then Fail, Unverifiable, Skip, Pass, first match wins. Unordered,
+  day 020 with a missing `screenshot.png` matched both Fail and Skip, and the
+  cheaper reading was the one that leaves no artifact — so a §12 secrets finding
+  could be buried by an unrelated unavailable deploy check. Fail strictly
+  precedes Skip: an examinable ship that fails is never a Skip. The order also
+  states out loud the half nobody had written down — **a Pass needs every
+  applicable sub-check to have run**, so a web ship whose deploy half is
+  unavailable cannot Pass on a clean repo half alone.
+
+  **The dry run walked three real candidates and each landed on exactly one
+  outcome**, which is what 1.9.0's first draft could not do. Day 019
+  (`ascii-rain`, CLI, #11): issue identified, **sha not recoverable** — the
+  sign-off has no sha field and the dashboard narrative carries none — so a Skip
+  settled before any clone, and the first live confirmation that §10's missing
+  sha field (#116) is the binding constraint on paying this debt at all. Day 020
+  (`sprite-stamp`, web, #12): sha `d74b16f` recoverable from the sign-off, repo
+  revisited on day 039, `/pages/builds/latest` returns `e23a18d` ≠ `d74b16f`, so
+  the deploy half is unavailable and the ship is a Skip unless its repo half
+  fails, in which case it is a Fail. Day 024 (`noise-poster`, web, #16): sha
+  `287a103` in the sign-off, never revisited, and `/pages/builds/latest` returns
+  `287a103` — deploy-scope is satisfiable and the ship is fully checkable. One
+  outcome each, and the two Skips are reached for two different reasons the file
+  now distinguishes.
+
+  **Remedies 1 and 2 are the same defect in three places, which is the shape
+  every 1.9.0 cycle found.** :853 still asserted *"Seventeen of the forty ships"*
+  eighty lines above the paragraph explaining why any hard-coded "seventeen of
+  forty" is false within the hour — and the denominator was already stale at push
+  time. The count was asserted a second time outside a quotation at :897, and a
+  third time in the day-041 dashboard row, which is the first thing a later
+  evening reads. All three now name the fraction or nothing; the remaining
+  `seventeen` hits are quotations of the defect and past-tense narrative, and
+  they stay, because deleting the record of a mistake is not the same as fixing
+  it. The re-vote's third further finding goes with them: the shipped-sha rule
+  reached one of the two bullets that state it, and the repo-scope bullet now
+  points at its deploy half.
+
+  §11 is not on §14's canary list and none was owed; the dry run above ran
+  anyway, on 1.7.2's and 1.9.0's precedent, and is the reason this entry can cite
+  `e23a18d` instead of asserting a premise. This ship's own must-pass set is the
+  same five a doctrine-only `meta` ship always has, and the same two still fail
+  on #65 — no LICENSE, no root README at the hub. Pre-existing, unchanged here,
+  and the reason no `meta` ship day can be a clean evening while #65 stands. The
+  phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.9.0** (2026-09-04) — the evening may pay verification debt (meta issue
   #55), and the artifact it leaves cannot be mistaken for a clean evening.
