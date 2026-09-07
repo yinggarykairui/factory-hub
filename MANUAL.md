@@ -484,8 +484,33 @@ this, and the permission would be dead on the page.
   unnumbered list, and an insertion into it would silently re-map a numbered
   draw.
 
-Four outcomes. The first three are a comment **on the ship's build issue** —
-the only place a later evening knows to look — carrying the block below.
+Four outcomes, reached **in this order**. Run every sub-check available to this
+shift first, then read the list top to bottom and stop at the first line that
+matches:
+
+1. Any available sub-check **failed** → **Fail**.
+2. Nothing available failed, but a §8 must-pass line applying to the ship is
+   failing for a reason outside it → **Unverifiable**.
+3. A sub-check that applies could not be run at all → **Skip**.
+4. Every applicable sub-check ran and passed → **Pass**.
+
+**Fail strictly precedes Skip, and the ordering is the whole point.** The
+overlapping case is real and common: day 020's repo half can fail — no
+`screenshot.png`, or gitleaks dirty behind a firing control — while its deploy
+half is unavailable because `sprite-stamp` was revisited on day 039. Unordered,
+that ship matches both, and the cheaper reading is the one that leaves no
+artifact, so a §12 secrets finding would be buried by an unrelated unavailable
+check. Ordered, it is a **Fail**: an examinable ship that fails is never a Skip.
+Skip is the outcome for a ship that is *unexaminable*.
+
+Note what the order does **not** license. A Pass needs *every applicable*
+sub-check to have run, so a web ship whose deploy half is unavailable cannot
+Pass on the repo half alone, however clean that half is: its demo-link line
+would be untested and the `verified` is irreversible. §16's own standard is that
+an error in the generous direction is worse than no check at all.
+
+The first three outcomes are a comment **on the ship's build issue** — the only
+place a later evening knows to look — carrying the block below.
 
 - **Pass** → relabel the closed issue `verified`, post the block, and refresh
   the dashboard's verified rate (§9.8), which this changes.
@@ -503,12 +528,15 @@ the only place a later evening knows to look — carrying the block below.
   file; post the block with `result: UNVERIFIABLE` and the blocking issue in
   `blocked-by:`. Later evenings skip the ship until that issue closes. While
   #65 stands this is every `meta` ship, and recording it is not failing it.
-- **Skip** → the build issue or the shipped sha could not be identified; the
-  ship is one of the relabel-owed; or its deploy has moved past the sha under
-  test. A skip leaves no artifact — there is no
-  issue it is safe to comment on — so it costs the next evening the same two
-  minutes. That is the price of not guessing, and it is the cheap half of the
-  trade.
+- **Skip** → reached only when nothing testable has failed. A sub-check that
+  applies could not be run, for one of five reasons: the build issue cannot be
+  identified unambiguously; the shipped sha is not recoverable; the ship is one
+  of the relabel-owed (days 004–010); the repo was revisited after the day under
+  test, so Pages no longer serves that sha; or the day's diff adds no literal to
+  a served file, so no marker is obtainable. A skip leaves no artifact — there
+  is no issue it is safe to comment on — so it costs the next evening the same
+  two minutes. That is the price of not guessing, and it is the cheap half of
+  the trade.
 
 ```
 EVENING SPOT-CHECK day-<NNN>
