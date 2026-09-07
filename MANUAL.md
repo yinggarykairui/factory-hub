@@ -421,6 +421,9 @@ this, and the permission would be dead on the page.
   the wrong tree. Check out the sha that day shipped, from its sign-off or its
   dashboard narrative. **No recoverable sha, no check:** skip. §10's sign-off
   carries no sha field, which is why this skip will be common until it does.
+  The rule has a second half two bullets down: a repo the index shows was
+  revisited after the day under test no longer *serves* that sha, so its deploy
+  half is skipped too. Both halves, or the rule is stated twice and obeyed once.
 - Only a ship **this shift had no hand in** building or finishing, and never
   one already `verified` (§3: immutable). The principle is §16 clause 2's, not
   §6's — §6 governs roles inside one build, this governs shifts across days.
@@ -431,17 +434,47 @@ this, and the permission would be dead on the page.
 - §11.2's four sub-checks land in **two scopes**. *Repo-scope*, against a clone
   at the shipped sha: `screenshot.png` present and referenced by the README;
   gitleaks clean over history, with a control built from randomly generated
-  values asserted to fire **before** the clean result is read. *Deploy-scope*,
-  against the live URL with a cache-buster: the page loads **and carries a
-  marker unique to the sha under test**, read out of the rendering `WebFetch`
-  returns — the only channel to `github.io` here, and it gives a rendering
-  rather than a status code or bytes, so "it loaded" is the weakest of the four
-  and the marker is what makes it a check. **A repo revisited since the day
-  under test serves a later sha, so the marker cannot be there — that is a
-  Skip, not a failure**: nothing is broken and nothing is provable, and a
-  `verified` written anyway would certify a build this check never saw. A ship
-  with **no** deploy — a CLI, a doctrine-only `meta` ship — runs the repo half
-  only, and says so.
+  values asserted to fire **before** the clean result is read. *Deploy-scope*
+  proves that `github.io` is serving **the tree under test**, which takes two
+  readings, in this order:
+
+  1. **Which sha Pages built.** `GET /repos/<owner>/<repo>/pages/builds/latest`
+     returns the built `commit`. Equal to the sha under test → the deploy is
+     that tree, and the second reading can mean something. Not equal → the
+     deploy has moved on, the deploy half is **unavailable**, and that is a Skip
+     (below), never a FAIL.
+  2. **That it renders.** `WebFetch` the demo URL with a cache-buster and read
+     the rendering — the only channel to `github.io` here, and it gives a
+     rendering rather than a status code or bytes, so "it loaded" is the weakest
+     of the four. Tie it to the tree with a **marker**: a literal string this
+     shift derived from the tree under test, never one it guessed.
+
+  **Decide the revisit before any network call.** The dashboard index's Slug
+  column names every ship to every repo, so *was this repo revisited after the
+  day under test?* is read off the index in seconds. A revisited repo is a Skip
+  on the deploy half — settle it there and spend nothing further on it. **Do not
+  reason from the marker instead.** A marker the sha under test introduced can
+  *survive* a later increment to the same page — days 039 and 040 are increments
+  to the pages days 020 and 021 shipped, so most such strings are still served —
+  and a shift that finds one present and concludes the deploy is current has a
+  licensed route to exactly the irreversible `verified` this rule exists to
+  prevent. Presence proves the string was never deleted. Reading 1 is what
+  settles which sha is served; the marker only ever ties reading 2's rendering
+  to a tree.
+
+  **Deriving the marker.** With reading 1 satisfied, the sha under test is the
+  tip Pages built, so any literal that tree serves and no earlier ship's tree
+  did will do. Take it from the day's own diff, not from the page:
+  `git diff <previous ship's sha>..<sha> -- <the files Pages serves>`, pick a
+  short literal the diff **adds**, and confirm it with `git grep -F` at `<sha>`
+  (present) and at the previous ship's sha (absent). For a repo's first ship any
+  distinctive literal in the served tree qualifies — there is no earlier tree to
+  distinguish it from. **If the day's diff adds no literal to a file Pages
+  serves** — a day that touched only tests, docs or CI — no marker is
+  obtainable, which is again a Skip on the deploy half, and the block says so.
+
+  A ship with **no** deploy — a CLI, a doctrine-only `meta` ship — runs the repo
+  half only, and says so.
 - The fourth sub-check re-tests **one §8 must-pass line, drawn at random from
   the lines that apply to this ship, less what §11.2 has already tested.** That
   subtraction is narrower than it looks: §11.2 retires the gitleaks line, the
