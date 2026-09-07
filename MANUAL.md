@@ -911,9 +911,10 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 - **1.9.0** (2026-09-04) — the evening may pay verification debt (meta issue
   #55), and the artifact it leaves cannot be mistaken for a clean evening.
-  Seventeen of the forty ships are closed `shipped` and not `verified` — and
-  seven of those, days 004–010, have evidence complete and are owed only a
-  relabel, a different job this paragraph deliberately does not take. The evening
+  The ships the dashboard's `verified rate` leaves out are closed `shipped` and
+  not `verified` — and seven of them, days 004–010, have evidence complete and
+  are owed only a relabel, a different job this paragraph deliberately does not
+  take. The evening
   mandate is scoped to *today's* ship, so the shift best placed to pay that
   down was the one forbidden to. §11 gains a verification-debt paragraph —
   after its own mandate is finished and with 45 minutes reserved for §2.6, the
@@ -955,7 +956,7 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   or the bare word `seeded` — never blank, a claim the second draft made and
   no row supports. Since "lowest day number first" sends the shift to exactly those
   rows, and the procedure ends in a `verified` label that §3 makes
-  unrecoverable, the first candidate of seventeen was a live path to
+  unrecoverable, the first candidate the walk reaches was a live path to
   permanently mislabelling an idea issue as a verified ship. The bullet now
   says the index does not carry the build issue and that **a candidate whose
   issue cannot be identified unambiguously is skipped, not guessed.** With it
