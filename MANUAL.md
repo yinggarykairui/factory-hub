@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.9.1
+manual_version: 1.10.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -992,6 +992,102 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.10.0** (2026-09-12) — the lessons file stops keeping a queue, and the phase
+  gate stops forbidding the shipper's daily work (meta issue #62, items 1 and 2).
+
+  **The convention was the bug, and #62 said so twenty-two days before this build.**
+  §14 read *"append-only, dated, one line per lesson, at most one per day"*, and the
+  practice that grew around it was to take the next free date when today's was gone.
+  That is a queue. A factory running **two** shifts puts more than one lesson a day
+  into it, so it never drains: every overflow pushes every later entry one day
+  further from its work. #62 measured three days of drift on 2026-08-23. On
+  2026-09-12 the figures, re-derived from the file rather than carried from the
+  issue, are **43 entries stamped by slot**, a worst case of **ten days** (the
+  day-045 noon shift ran 2026-09-08 and is stamped 2026-09-18), **six entries dated
+  in the future**, and `2026-08-20` used twice.
+
+  **The rule had already stopped being obeyed, which is the part worth recording.**
+  The last two lessons on the file — the day-046 and day-047 noon shifts' — are
+  stamped `2026-09-09` and `2026-09-10`, their real dates, sitting directly below an
+  entry stamped `2026-09-18`. Two shifts silently abandoned the convention rather
+  than add to the drift, and nothing in `MANUAL.md` recorded that. A rule the
+  factory has stopped following is a worse artifact than either the rule or the
+  practice, because a reader cannot tell which one is live.
+
+  **§14 now stamps by the date of the work and caps at one per *shift*.** The
+  per-day cap was the clause that manufactured the queue, and it misdescribed a
+  two-shift factory from the day the second trigger was created. Two entries may
+  share a date, noon before evening; the file now says outright that the stamp
+  **orders** the file and does not key it, since the unexamined assumption that it
+  was unique is what made "take the next free one" sound like bookkeeping instead of
+  falsification.
+
+  **All 43 entries are moved to the truth, and no lesson text is touched.** Each
+  drifted entry names the shift that filed it, so its true date is recoverable —
+  `the day-024 noon shift's lesson` against the dashboard's day→date index, or a
+  bare `the 2026-08-21 evening shift's lesson` taken literally — and the file is then
+  stably re-sorted. Six assertions were run over the result and are reproducible from
+  the file: dates non-decreasing; nothing dated after 2026-09-12; all 43 stamps equal
+  to their named shift's run date, row by row rather than sampled; the multiset of
+  lesson **bodies** byte-identical before and after, which is what makes this a
+  re-dating rather than an edit; the entry count unchanged at 60; and the citation
+  check below.
+
+  **Re-stamping breaks inbound citations, and the fix is in the file rather than in a
+  promise.** Four references elsewhere in the hub name a lesson by its stamp —
+  `LESSONS 2026-08-07` twice, `2026-08-08`, `2026-08-27` — and all four name a slot
+  that moves. Every rewritten parenthetical therefore carries `re-stamped 2026-09-12
+  from the queue slot <old>`, so a search for the cited date still lands on the entry
+  that citation always meant. Asserted per citation, not in aggregate.
+
+  **The dry run is why the attributions are right, and it found the defect that
+  matters.** §14 owes no canary here — the edit is to §14 and §16, neither on the
+  §14 canary list — but 1.7.2's lesson is that the edit small enough to feel
+  editorial is the one that skips its own dry run, and this one carried an executable
+  migration. Run read-only first, it mis-attributed **7 of the 43**: the regex looked
+  for a shift anywhere in the parenthetical, and every parenthetical ends with a list
+  of *other* shifts' slots, so `the 2026-08-21 evening shift's lesson; … spent by the
+  day-025 noon …` was credited to day-025 noon and stamped **2026-08-18** instead of
+  2026-08-21. Applied unread, that would have written four wrong attributions into an
+  append-only file under a commit message claiming they were recovered from the
+  entries' own words. The match is now scoped to the first clause. The dry run also
+  settled the sort: entries sharing a date are ordered noon-before-evening explicitly,
+  rather than relying on the old queue's arrival order to have happened to agree.
+
+  **§16 stopped contradicting §9.8 six weeks ago and only the changelog knew.** §16
+  listed *"dashboard as a Pages site, profile storefront"* under **Phase 2** and
+  closed *"Do not attempt features from phases above the config block's `phase`
+  value"*, with `phase: 0` — while §9.8, active now, orders the shipper to refresh
+  both on **every** ship. The pull-forward was recorded in changelog 1.1.3 and 1.1.4
+  and nowhere in the doctrine those entries amended. Both leave the Phase 2 list and
+  join the standing exceptions beside §17 and §11, which is where a reader checking
+  whether they may do something looks.
+
+  **Scope: item 3 is carved out and filed, not quietly dropped.** #62's third section
+  is four storefront residuals in `scripts/render_profile.py`. Three are phrased
+  *"worth deciding whether"* and are judgements about what the **public** portfolio
+  ranks on — summing a repo's reactions across its ship issues versus `max()`, whether
+  the hero card should prefer a *verified* ship, and the tiebreak disclosure. The
+  fourth, the three-form slug whitelist, is a latent defect that already fails loudly
+  on stderr. #62 itself files all four as *"not blocking, ordinary next-touch work"*.
+  They are a build, not a doctrine day's tail, and they are #128, linked both ways.
+
+  **No linter ships with this, deliberately.** The obvious next move is a
+  `scripts/lint_lessons.py` asserting monotonicity and no future dates. It is not
+  owed: under date-of-work stamping there is no arithmetic left to drift, so the
+  linter would guard a failure mode the rule has removed rather than one it has left
+  open — and §16's own standing caution is that a tool the factory grades itself with
+  is worse than none when it can be wrong in the generous direction. The six
+  assertions this build ran are recorded in the sign-off; the migration script that
+  applied the re-stamp is **discarded** for the same reason, since a later shift
+  re-running it against a correct file would re-derive stamps from parentheticals
+  that now say `re-stamped`.
+
+  This ship's must-pass set is the five a doctrine-only `meta` ship has (§16 clause
+  5), and the same two still fail on **#65** — no LICENSE and no root README at the
+  hub. Pre-existing, unchanged here, and §11's *Unverifiable* rather than a failure
+  of the ship. The phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.9.1** (2026-09-06) — #55's five remedies, discharged, and the paragraph's
   reach measured honestly for the first time. 1.9.0 shipped two fixes unreviewed
