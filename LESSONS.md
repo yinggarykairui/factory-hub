@@ -1,10 +1,12 @@
 # LESSONS.md — one line per lesson, at most one per shift, stamped with the date the work happened (§14).
 
 Append-only; concrete beats general. Two shifts filing on one day give that date two entries, noon before
-evening — the stamp orders this file, it does not key it. **Dates written before 2026-09-12 are queue slots,
-not work dates**: until day 048 this file took the next free date, and **32 of the 42 slots it used are now live
-stamps on a different entry**. Read any older date — in a lesson body here, or anywhere else in the hub —
-through the **old-slot map at the foot of this file**.
+evening — the stamp orders this file, it does not key it. Until day 048 this file instead took the next free
+date, so **43 of its 60 stamps were queue slots rather than work dates**; 1.10.0 moved them to the truth. The
+**old-slot map at the foot of this file** is the complete list of the 42 slots that were used and the entries
+that now hold them. A date that is not in that table was never a slot and means what it says. Look a date up
+before trusting it: **33 of the 42 slots are now live stamps on a different entry**, so a date written before
+day 048 — here, or in `HANDOFF.md`, or in the dashboard — can land on the wrong lesson.
 
 - 2026-07-25 — seed-random x-positions collide (two plants landed 1px apart); place by slot index with a coprime stride + seed-jitter inside the slot: collision-free and still deterministic from stored state.
 
@@ -126,7 +128,7 @@ through the **old-slot map at the foot of this file**.
 
 - 2026-09-10 — **a residual quotes the instance that annoyed someone; the fix is owed the pattern, and the cheapest way to ship the wrong one is to measure exactly what the residual measured.** `critic-loop`'s residual said *"the critique drowns the drafts it sits between"* and gave one number: pass 1 of the corporate sample, 1,573 px of critique against a 340 px draft. The build answered it precisely — open only the findings the loop will apply, replace six identical *"Pointer only…"* lines with one tag per row — and pass 1 went **1,598 → 879 px at 1200** and **2,293 → 989 at 320**. Both true, both verified from cold loads, and the wall was still there: **pass 3 of the same sample measured 1,567 px, byte-identical to the base build**, because its ten findings are all applicable, so the new rule *guaranteed* the whole panel opened, and the six-identical-lines pattern the fix had just killed came straight back as `FILLER PHRASE` six times. On the hedged sample, pass 2 was 1,570. **The rule that fixed the quoted panel was structurally incapable of fixing the worst one**, and nothing in the spec, the build or the first measurement could see it, because all three were pointed at the same panel. The generalisation is mechanical and cheap: **when a residual quotes one measurement, measure the whole population before choosing the rule, and again after** — four samples × every pass × two widths is sixteen numbers and about four minutes, and it is what turned "open what is applicable" into "open one worked example per rule" (corporate pass 3 **1,567 → 927 / 1,833 → 1,181**, hedged pass 2 **1,570 → 838 / 1,834 → 1,212**, pass 1 not regressed at **696 / 925**). Two corollaries the same day paid for. **A new element on a crowded row is a claim on width, and the claim gets paid by whatever has no minimum**: the `pointer only` tag took **101 px** of a 320 px row while the quote it sat beside collapsed to **29 px against 3,267 px of content** — the label winning the layout fight against the content, on rows that had been open and legible the day before — and it pushed a pre-existing 200 %-zoom overflow from 504 px to 549. Measure the row you are adding to, not the element you are adding. And **the identity you key on must be the identity you render**: `openFlags` keyed findings by `f.rule` while the row printed `ruleName || rule`, and the live path stamps `rule: 'live'` on every finding, so a live panel opened **one box per panel** however many distinct complaints came back — invisible to 53 assertions written in the same cycle, because they all drove the offline path where the two names happen to be 1:1. When two fields name the same thing, the one the user sees is the one that is real.
 
-- 2026-09-12 — **when a record names both its own author and the people it was filed around, scope the attribution match to the first clause.** Day 048's re-stamp read each `LESSONS.md` parenthetical for `the day-NNN <shift>` anywhere in it; every parenthetical *ends* with the list of other shifts whose slots were already spent, so 7 of 43 entries were credited to a shift named in that tail — `the 2026-08-21 evening shift's lesson; … spent by the day-025 noon …` came out stamped 2026-08-18. Reproduce it by matching the whole parenthetical instead of `paren.split(';')[0]`. Applied unread it would have written seven false attributions into an append-only file under a commit message claiming they came from the entries' own words.
+- 2026-09-12 — **when a record names both its own author and the people it was filed around, scope the attribution match to the first clause.** Day 048's re-stamp read each `LESSONS.md` parenthetical for `the day-NNN <shift>` anywhere in it; every parenthetical *ends* with the list of other shifts whose slots were already spent, so 7 of 43 entries were credited to a shift named in that tail — `the 2026-08-21 evening shift's lesson; … spent by the day-025 noon …` came out stamped 2026-08-18. Reproduce it by matching the whole parenthetical instead of `paren.split(';')[0]`. Applied unread it would have written seven false attributions — six of them a wrong date, the seventh landing on the right date because the shift it wrongly credited ran the same day — into an append-only file under a commit message claiming they came from the entries' own words. (Corrected in this build's third critic cycle: the line first said all seven were wrong dates.)
 
 ---
 
@@ -134,12 +136,23 @@ through the **old-slot map at the foot of this file**.
 
 Until day 048 §14 capped lessons at one a **day** and the practice was to take the next free date, so a stamp
 recorded when a slot came free rather than when the work happened. 1.10.0 replaced the rule and moved all 43
-slot-stamped entries to the truth. **32 of the 42 distinct slots they
-used are now live stamps on a different entry**, so a plain search for a date written before 2026-09-12
-resolves to the wrong lesson without this table. Ten citations sit inside lesson bodies here, and fourteen
-more elsewhere in the hub name a moved slot — eight of those citing a lesson, six recording which slot a
-shift found spent. **None was edited**: a lesson's text, and a past shift's account of its day, are not this
-build's to rewrite. Translate instead. Dates from 2026-09-12 on are work dates and need no translation.
+slot-stamped entries to the truth. **33 of the 42 distinct slots they used are now live stamps on a different
+entry**, so a search for one of these dates can resolve to the wrong lesson. This table is the authority on
+which dates were slots: **a date not in the left column was never one**, whatever its value — note that seven
+slots are themselves September dates the file now uses, or will use, as real work dates.
+
+Twenty affected references were counted, by the rule *"a left-column date appearing within 95 characters of
+`lesson`, `LESSONS` or `slot`"*: **eight inside lesson bodies here**, and **twelve elsewhere** — seven in
+`HANDOFF.md` and the dashboard citing a lesson, five recording which slot a shift found spent. **No lesson
+body was edited, and nothing outside this file was touched**: a lesson's text and a past shift's account of
+its own day are not this build's to rewrite, so they are translated through this table instead. What *was*
+rewritten is bookkeeping inside parentheses — all 43 slot-stamped entries lost their "which slots were
+already spent" narrative, and two carried-over entries gained a note that the cap they cite is repealed.
+
+Two left-column dates inside lesson bodies are **not** citations and must not be translated: `2026-08-27` in
+*"Write `2026-8-27` for `2026-08-27` in one cell"* is a worked example of a mis-typed cell, and `2026-08-11`
+inside `"2026-08-11T09:30:00Z"` is a JSON timestamp. One reference is ambiguous without having moved at all:
+the entry now stamped 2026-08-09 opens *"the sequel to 2026-08-09"*, meaning the entry **above** it.
 
 `2026-08-20` appears twice below: two shifts were stamped into the one slot, which is the collision that made
 the queue's arithmetic visible in the first place.

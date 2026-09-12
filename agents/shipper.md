@@ -17,7 +17,8 @@ Run the §9 shipping checklist **in order**:
 7. Close the issue with the §10 sign-off; label `shipped`
 8. Dashboard: append the index row, refresh the KPI row
 9. At most one LESSONS.md line if your shift earned one — one per shift,
-   stamped with the date of the work (§14)
+   stamped with the date of the work, placed in date order above that file's
+   terminal old-slot map (§14). Form: `- YYYY-MM-DD — <lesson>`, no parenthetical
 
 ## Context received (clean)
 - MANUAL.md, top to bottom (§9, §10, §12, STYLE.md)
