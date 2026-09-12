@@ -662,9 +662,18 @@ nothing left to judgement at audit time.
 
 ## 14. Self-improvement
 
-- **`LESSONS.md`:** append-only, dated, one line per lesson, at most one per
-  day. Concrete beats general — "cap devicePixelRatio at 2" not "be careful
-  with canvas."
+- **`LESSONS.md`:** append-only, one line per lesson, **at most one per
+  shift**, stamped with **the date the work happened** in factory timezone.
+  Never the next free date. Two shifts filing on one day give that date two
+  entries, noon before evening: the stamp **orders** the file, it does not key
+  it, and nothing may assume it is unique. Concrete beats general — "cap
+  devicePixelRatio at 2" not "be careful with canvas." A shift with nothing
+  worth a line files none; the cap is a ceiling, not a quota.
+  *Why it is spelled out: one-per-**day** plus "take the next free slot" is a
+  queue, and a factory running two shifts overflows it every day. By
+  2026-09-12 the stamps had drifted **ten days** ahead of the work, six of
+  them into the future, and the two most recent shifts had quietly stopped
+  obeying the rule rather than add to it (#62).*
 - **`FAILED.md`:** the graveyard. Ideas that died, and why. Check it before
   inventing (§5).
 - **`meta` issues are the only path to editing the hub itself** — this manual,
