@@ -677,7 +677,8 @@ nothing left to judgement at audit time.
     evening's one slot, not a third.
   - **Midnight:** a run that crosses it stamps the date it **started**.
   - **Order:** the stamp *orders* the file; it does **not** key it, and
-    nothing may assume it is unique. Same date, noon before evening.
+    nothing may assume it is unique. Same date, noon before evening — except
+    where Back-dating below puts a later-filed entry last.
   - **Back-dating:** append-only governs the content, not the position. A
     lesson about earlier work carries **that work's** date and is inserted in
     date order, last among that date's entries; it spends the **filing**
@@ -1015,7 +1016,8 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   practice that grew around it was to take the next free date when today's was gone.
   That is a queue. A factory running **two** shifts puts more than one lesson a day
   into it, so it never drains: every overflow pushes every later entry one day
-  further from its work. #62, filed 2026-08-21, found the newest stamp already three days into the future. On
+  further from its work. #62, filed 2026-08-21, found the newest stamp already three
+  days into the future. On
   2026-09-12 the figures, re-derived from the file rather than carried from the
   issue, are **43 entries stamped by slot**, a worst case of **ten days** (the
   day-045 noon shift ran 2026-09-08 and is stamped 2026-09-18), **six entries dated
@@ -1027,7 +1029,8 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   **The rule had already stopped being obeyed, which is the part worth recording.**
   Before this commit the last two lessons on the file — the day-046 and day-047 noon
   shifts' — were stamped `2026-09-09` and `2026-09-10`, their real dates, sitting
-  directly below an entry stamped `2026-09-18`. Two shifts silently abandoned the convention rather
+  directly below an entry stamped `2026-09-18`. Two shifts silently abandoned the
+  convention rather
   than add to the drift, and nothing in `MANUAL.md` recorded that. A rule the
   factory has stopped following is a worse artifact than either the rule or the
   practice, because a reader cannot tell which one is live.
@@ -1046,13 +1049,15 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   bare `the 2026-08-21 evening shift's lesson` taken literally — and the file is then
   stably re-sorted. **Twenty-four assertions** were run over the result, every one of
   them re-derivable from the repo and all twenty-four enumerated in the sign-off rather
-  than summarised as a number. The load-bearing ones: dates non-decreasing; nothing dated after 2026-09-12; all 43 stamps equal
+  than summarised as a number. The load-bearing ones: dates non-decreasing; nothing
+  dated after 2026-09-12; all 43 stamps equal
   to their named shift's run date, row by row rather than sampled; all 60 pre-existing
   lesson **bodies** surviving byte-identical, which is what makes this a re-dating
   rather than an edit; exactly one body added, the day-048 lesson §9.9 owes, taking the
-    count 60 → 61; and the citation check below. Two changes fall outside those
-  assertions and are named rather than
-  left to the diff. **Three** of them. Entry **separation was normalised** to one blank line throughout —
+  count 60 → 61; and the citation check below. **Three changes** fall outside those
+    assertions and are named rather than left to the diff. Entry **separation was
+  normalised** to one
+  blank line throughout —
   the first **eighteen** entries ran together unseparated. The file's one-line header
   became a heading plus a paragraph. And two entries that were **not** re-stamped had
   their parentheticals annotated: the 2026-07-29 and 2026-08-04 carried-over lessons
@@ -1074,7 +1079,8 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   answers, none of them 20: the window is wrong for citations that name the lesson
   paragraphs away, and after this build the rule counts its own 43 new `queue slot`
   annotations. The twenty are enumerable — ten in-body slot-date occurrences less the
-  two named non-citations, and twelve external, listed row by row on #129. (Two further in-body matches
+  two named non-citations, and twelve external, listed row by row on #129. (Two
+  further in-body matches
   the rule catches are not citations and must not be translated: a worked example of a
   mis-typed cell, `2026-8-27` for `2026-08-27`, and a JSON timestamp. One more reference
   is ambiguous without having moved — an entry now stamped 2026-08-09 opens "the sequel
@@ -1101,13 +1107,13 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   §16 and neither on the §14 canary list — which stopped being true the moment §9's
   step 9 had to change with them, and is recorded above. A dry run ran regardless, on
   1.7.2's lesson that the edit small enough to feel editorial is the one that skips it,
-    and because this one carried an executable migration. Run read-only first, it
+  and because this one carried an executable migration. Run read-only first, it
   mis-attributed **7 of the 43**: the regex looked
   for a shift anywhere in the parenthetical, and every parenthetical ends with a list
   of *other* shifts' slots, so `the 2026-08-21 evening shift's lesson; … spent by the
   day-025 noon …` was credited to day-025 noon and stamped **2026-08-18** instead of
   2026-08-21. Applied unread it would have written **seven** false attributions into an
-    append-only file under a commit message claiming they were recovered from the
+  append-only file under a commit message claiming they were recovered from the
   entries' own words. The match is now scoped to the first
   clause. **Six** of the seven also produce a wrong *date*; the seventh, the 2026-09-03
   evening shift's, is credited to the day-040 noon shift, which ran the same day, so the
@@ -1116,7 +1122,8 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   entry is otherwise about. The migration script is discarded but the result is not
   unreproducible: match
   `the day-(\d{3}) (noon|evening rescue|evening)` against a whole pre-1.10.0 parenthetical
-  rather than against `paren.split(';')[0]` and the same seven fall out. It is also this build's own lesson, `LESSONS.md`'s 2026-09-12 line. The dry run also
+  rather than against `paren.split(';')[0]` and the same seven fall out. It is also
+  this build's own lesson, `LESSONS.md`'s 2026-09-12 line. The dry run also
   settled the sort: entries sharing a date are ordered noon-before-evening explicitly,
   rather than relying on the old queue's arrival order to have happened to agree.
 

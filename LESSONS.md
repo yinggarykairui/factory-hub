@@ -145,9 +145,11 @@ slots are September dates: **eleven** are already live stamps on other entries, 
 2026-09-18) are dates the file has yet to reach, and **2026-09-11** is neither — no shift shipped that day.
 So a date's value tells you nothing and the column is the whole test.
 
-Twenty affected references were counted, by the rule *"a left-column date appearing within 95 characters of
-`lesson`, `LESSONS` or `slot`"*: **eight inside lesson bodies here**, and **twelve elsewhere** — seven in
-`HANDOFF.md` and the dashboard citing a lesson, five recording which slot a shift found spent. **No lesson
+**Twenty affected references, counted by hand** — ten left-column dates appear in lesson bodies here, of which
+**eight** are citations, and **twelve** more sit in `HANDOFF.md` and the dashboard: seven citing a lesson, five
+recording which slot a shift found spent. (A mechanical rule was drafted for this count and scoped out under
+§7.4 when three reviewers re-ran it and got three different answers; the twelve external ones are listed on
+[#129](https://github.com/yinggarykairui/factory-hub/issues/129).) **No lesson
 body was edited, and nothing outside this file was touched**: a lesson's text and a past shift's account of
 its own day are not this build's to rewrite, so they are translated through this table instead. What *was*
 rewritten is bookkeeping inside parentheses — all 43 slot-stamped entries lost their "which slots were
