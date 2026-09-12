@@ -811,8 +811,11 @@ that is not an advance; it is an assertion.
 
 **Phase 2:** veto window (planner posts tomorrow's spec the evening before;
 silence is consent, a thumbs-down forces a re-plan), weekly patrol, monthly
-retro + ratchet, Sunday inbox digest, dashboard as a Pages site, profile
-storefront, the secrets gateway.
+retro + ratchet, Sunday inbox digest, the secrets gateway. The dashboard Pages
+site and the profile storefront were drafted into this list and are **no longer
+in it**: the owner pulled both forward (changelog 1.1.3, 1.1.4) and §9.8 has
+ordered them on every ship since. They are named in the standing exceptions
+below, not here.
 
 **Phase 3:** job-lane *automation* — the core owner-triggered flow is already
 live in §17; phase 3 graduates it: application outcomes feed `TASTE.md`, and
@@ -820,8 +823,14 @@ the retro tracks response rates.
 
 Do not attempt features from phases above the config block's `phase` value.
 The standing exceptions: §17's owner-triggered job lane (live at any phase,
-only ever on an owner-filed `job` issue) and §11's evening-shift mandate,
-its verification-debt paragraph included.
+only ever on an owner-filed `job` issue); §11's evening-shift mandate, its
+verification-debt paragraph included; and the two items the owner pulled
+forward out of phase 2 — **the dashboard Pages site and the profile
+storefront**, which §9.8 orders the shipper to refresh on **every** ship.
+That last exception is written down because for six weeks it was not: §16 read
+as a prohibition on two things §9.8 made mandatory, the pull-forward was
+recorded only in the changelog, and a shift reading the phase gate literally
+would have stopped doing the shipper's daily work (#62).
 Advancing a phase is a `meta` issue like any other manual edit.
 
 ---
