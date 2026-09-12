@@ -16,7 +16,8 @@ Run the §9 shipping checklist **in order**:
 6. Screenshot via headless browser, committed, embedded in README
 7. Close the issue with the §10 sign-off; label `shipped`
 8. Dashboard: append the index row, refresh the KPI row
-9. At most one LESSONS.md line if the day earned one
+9. At most one LESSONS.md line if your shift earned one — one per shift,
+   stamped with the date of the work (§14)
 
 ## Context received (clean)
 - MANUAL.md, top to bottom (§9, §10, §12, STYLE.md)

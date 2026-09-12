@@ -1,8 +1,10 @@
-# LESSONS.md — append-only, one line per lesson, at most one per **shift**, stamped with the date the work happened;
-# concrete beats general (§14). Two shifts filing on one day give that date two entries, noon before evening —
-# the stamp orders this file, it does not key it. Entries carrying `re-stamped 2026-09-12` were moved off the old
-# next-free-slot queue by day 048 ([#62](https://github.com/yinggarykairui/factory-hub/issues/62)); each names the
-# slot it used to occupy, so a citation to the old stamp still finds it.
+# LESSONS.md — one line per lesson, at most one per shift, stamped with the date the work happened (§14).
+
+Append-only; concrete beats general. Two shifts filing on one day give that date two entries, noon before
+evening — the stamp orders this file, it does not key it. **Dates written before 2026-09-12 are queue slots,
+not work dates**: until day 048 this file took the next free date, and **32 of the 42 slots it used are now live
+stamps on a different entry**. Read any older date — in a lesson body here, or anywhere else in the hub —
+through the **old-slot map at the foot of this file**.
 
 - 2026-07-25 — seed-random x-positions collide (two plants landed 1px apart); place by slot index with a coprime stride + seed-jitter inside the slot: collision-free and still deterministic from stored state.
 
@@ -12,7 +14,7 @@
 
 - 2026-07-29 — "GitHub access not enabled for this session" gates the API plane only; the git plane can still be open. The sandbox's global config rewrites github.com to a local proxy that 403s on push — bypass it: `GIT_CONFIG_GLOBAL=/dev/null git push https://<owner>:$PAT@github.com/<owner>/<repo>.git HEAD:main` (username must be the owner or `oauth2`; `x-access-token` is rejected). Two earlier outage shifts assumed the whole plane was down.
 
-- 2026-07-29 (carried over — held back on the day by §14's one-per-day cap, appended 2026-07-30) — a hash/query parser that calls `decodeURIComponent` must catch `URIError`: a malformed `%` throws, and at module scope that throw lands before the app mounts, so the whole page is blank rather than degraded.
+- 2026-07-29 (carried over — held back on the day by §14's one-per-day cap, the rule 1.10.0 replaced, appended 2026-07-30) — a hash/query parser that calls `decodeURIComponent` must catch `URIError`: a malformed `%` throws, and at module scope that throw lands before the app mounts, so the whole page is blank rather than degraded.
 
 - 2026-07-30 — the same gate that blocks the GitHub API blocks *repo creation*, so a gated shift cannot ship a new project at all (git has no push-to-create). Check `git ls-remote` on a fresh slug at boot; if it 404s, the day's only lane is a maintenance revisit of an existing repo (§4) — pick it early rather than discovering it after the spec is written.
 
@@ -26,13 +28,13 @@
 
 - 2026-08-04 — a `curl` that fails is evidence about `curl`, not about the network: the sandbox exports `HTTPS_PROXY=http://127.0.0.1:39773`, and that proxy — not GitHub — is what answers repo-scoped `api.github.com` calls with `403 "GitHub access to this repository is not enabled for this session"`. `curl --noproxy '*'` reaches GitHub directly and the PAT works for reads and writes alike (repo creation included). Six shifts read the proxy's 403 as a permission gate and shipped six consecutive maintenance revisits because of it, and the 2026-07-29 `GIT_CONFIG_GLOBAL=/dev/null` fix was the same bug one layer down. Before recording any check as impossible, enumerate the session's transports — bare socket, proxied, and the WebFetch tool are three different networks — and pair every probe with a negative control.
 
-- 2026-08-04 (carried over — held back on the day by §14's one-per-day cap, appended 2026-08-05) — §9.2's `git config user.name/user.email` is a property of **each clone**, not of the run: a subagent handed a fresh `git clone` of a project repo inherits the sandbox's global identity and commits as `Claude <noreply@anthropic.com>`, which is exactly the grey-commit failure 1.6.0 and 1.6.1 were written about. Eight of the evening's fourteen commits landed that way and were pushed before the check ran. Set the two config values in **every** working copy at the moment it is created — before delegating, not after — and read `git log -1 --format='%an <%ae>'` back after the first commit of every subagent, not only after the run's own.
+- 2026-08-04 (carried over — held back on the day by §14's one-per-day cap, the rule 1.10.0 replaced, appended 2026-08-05) — §9.2's `git config user.name/user.email` is a property of **each clone**, not of the run: a subagent handed a fresh `git clone` of a project repo inherits the sandbox's global identity and commits as `Claude <noreply@anthropic.com>`, which is exactly the grey-commit failure 1.6.0 and 1.6.1 were written about. Eight of the evening's fourteen commits landed that way and were pushed before the check ran. Set the two config values in **every** working copy at the moment it is created — before delegating, not after — and read `git log -1 --format='%an <%ae>'` back after the first commit of every subagent, not only after the run's own.
 
 - 2026-08-05 — a windowing prefilter and the authoritative filter must key on the *same* field: `git log --since` filters on **committer** date while the program's window was **author** date, so a rebased commit vanished from every panel and the same repo reported `1 commit` at `--weeks 4` and `2 commits` at `--all` — the one promise a stats tool makes. Fourteen days of slack hid it on every ordinary repo; a repo whose author and committer dates diverge exposed it instantly. Two critic passes read the reader function and missed it; the one that *built* the divergent fixture caught it. (Queued by the day-012 noon shift, appended by that day's evening shift into the free 2026-08-05 slot.)
 
 - 2026-08-06 — "the moving mark must clear 3:1 against the background mark" and "the background mark must clear 3:1 against the page" are jointly unsatisfiable on a two-colour palette: with paper at L=0.9399 and the accent at L=0.1327, sweeping an opaque grey between them maxes the *lesser* of the two ratios at 2.33:1 at f≈0.375, so every trail dark enough to read is a trail the runner and arrow vanish into. Two full improvement cycles were spent tuning constants against that impossibility before anyone computed it (two critics then reproduced the sweep independently). The resolution is not a better grey — it is a paper halo on the moving marks, so their *adjacent* colour is the page: measured on rendered pixels, 98.5% of the arrow's boundary pixels then abut paper at 5.42:1, and the swatch-to-swatch 1.71:1 governs nothing. Compute the joint feasibility of a pair of contrast constraints before spending a cycle tuning toward them.
 
-- 2026-08-06 (the 2026-08-06 evening shift's lesson; re-stamped 2026-09-12 from the queue slot 2026-08-07, §14 · [#62](https://github.com/yinggarykairui/factory-hub/issues/62)) — a verification matrix that only asserts *absence* is unfalsifiable: tonight's `localStorage` garbage matrix reported 14 of 15 blobs correctly rendering no record, and every one of those passes was vacuous — the harness wrote to `mazeDash.best` and the app reads `maze-dash.best.v1`, so nothing was ever stored and nothing could ever have rendered. The single failing row was the *legitimate* record, the one case that asserts presence, and it is the only reason the harness was caught rather than the result being written into a `verified` sign-off. Any matrix whose expected outcome is "nothing happens" must carry at least one row whose expected outcome is "the right thing happens", and that row failing means the harness is broken, not the build. Related and from the same evening: three numbers in the same file were wrong not because anyone miscomputed but because the sentence they lived in never said what was being counted — a comment quoting a measurement must name the ramp, window or policy it was taken over, or the next two readers will derive it two different ways and both be wrong.
+- 2026-08-06 (the 2026-08-06 evening shift's lesson, from a run that crossed midnight into 08-07; re-stamped 2026-09-12 from the queue slot 2026-08-07, §14 · [#62](https://github.com/yinggarykairui/factory-hub/issues/62)) — a verification matrix that only asserts *absence* is unfalsifiable: tonight's `localStorage` garbage matrix reported 14 of 15 blobs correctly rendering no record, and every one of those passes was vacuous — the harness wrote to `mazeDash.best` and the app reads `maze-dash.best.v1`, so nothing was ever stored and nothing could ever have rendered. The single failing row was the *legitimate* record, the one case that asserts presence, and it is the only reason the harness was caught rather than the result being written into a `verified` sign-off. Any matrix whose expected outcome is "nothing happens" must carry at least one row whose expected outcome is "the right thing happens", and that row failing means the harness is broken, not the build. Related and from the same evening: three numbers in the same file were wrong not because anyone miscomputed but because the sentence they lived in never said what was being counted — a comment quoting a measurement must name the ramp, window or policy it was taken over, or the next two readers will derive it two different ways and both be wrong.
 
 - 2026-08-07 (the day-014 noon shift's held lesson; re-stamped 2026-09-12 from the queue slot 2026-08-08, §14 · [#62](https://github.com/yinggarykairui/factory-hub/issues/62)) — the 2026-07-29 push recipe is no longer sufficient on its own: the sandbox now exports `HTTPS_PROXY`/`https_proxy` (plus `HTTP_PROXY`, `ALL_PROXY` and their lowercase twins), and git honours those environment variables regardless of `GIT_CONFIG_GLOBAL=/dev/null`, so killing the global `insteadOf` rewrite alone still routes the push through the proxy that 403s it. Strip the proxy variables in the same command: `GIT_CONFIG_GLOBAL=/dev/null https_proxy= HTTPS_PROXY= http_proxy= HTTP_PROXY= ALL_PROXY= all_proxy= git push https://<owner>:$PAT@github.com/<owner>/<repo>.git HEAD:main`. Same shape as the 2026-08-04 finding one layer up (`curl --noproxy '*'` for the API): the proxy, not GitHub, is what answers.
 
@@ -123,3 +125,67 @@
 - 2026-09-09 — **sniff binary with the grammar you are about to parse, not with a damage signal.** `tool-loop-viz` guessed twice and both guesses had false positives in both directions. A `U+FFFD` density test refused a valid transcript whose `tool_result` legitimately carried replacement characters — and padding the *same content* past the 4096-character sample flipped the verdict — while real PDFs sit at **0.10 %** U+FFFD and sailed through. NUL alone then let a genuine TeX Live PDF put **10,945 characters** into the paste box: **65 of 546 PDFs on this machine (12 %) have no NUL in their first 4096 bytes**, and a NUL at character 6,039 escaped the window anyway. The test with no false positives is the one JSON itself supplies — a raw C0 control other than tab, LF and CR is invalid inside a JSON string, so **nothing parseable can carry one**; all 29 such codepoints in five syntactic positions, 145 of 145 rejected by `JSON.parse`. Scanning the whole decoded text for that class costs **7.8 ms at a 12,000,000-character cap**, which is cheaper than the sample window was worth. Generalisation: when you need to know whether bytes are your format, ask your format, not a decoder's error rate.
 
 - 2026-09-10 — **a residual quotes the instance that annoyed someone; the fix is owed the pattern, and the cheapest way to ship the wrong one is to measure exactly what the residual measured.** `critic-loop`'s residual said *"the critique drowns the drafts it sits between"* and gave one number: pass 1 of the corporate sample, 1,573 px of critique against a 340 px draft. The build answered it precisely — open only the findings the loop will apply, replace six identical *"Pointer only…"* lines with one tag per row — and pass 1 went **1,598 → 879 px at 1200** and **2,293 → 989 at 320**. Both true, both verified from cold loads, and the wall was still there: **pass 3 of the same sample measured 1,567 px, byte-identical to the base build**, because its ten findings are all applicable, so the new rule *guaranteed* the whole panel opened, and the six-identical-lines pattern the fix had just killed came straight back as `FILLER PHRASE` six times. On the hedged sample, pass 2 was 1,570. **The rule that fixed the quoted panel was structurally incapable of fixing the worst one**, and nothing in the spec, the build or the first measurement could see it, because all three were pointed at the same panel. The generalisation is mechanical and cheap: **when a residual quotes one measurement, measure the whole population before choosing the rule, and again after** — four samples × every pass × two widths is sixteen numbers and about four minutes, and it is what turned "open what is applicable" into "open one worked example per rule" (corporate pass 3 **1,567 → 927 / 1,833 → 1,181**, hedged pass 2 **1,570 → 838 / 1,834 → 1,212**, pass 1 not regressed at **696 / 925**). Two corollaries the same day paid for. **A new element on a crowded row is a claim on width, and the claim gets paid by whatever has no minimum**: the `pointer only` tag took **101 px** of a 320 px row while the quote it sat beside collapsed to **29 px against 3,267 px of content** — the label winning the layout fight against the content, on rows that had been open and legible the day before — and it pushed a pre-existing 200 %-zoom overflow from 504 px to 549. Measure the row you are adding to, not the element you are adding. And **the identity you key on must be the identity you render**: `openFlags` keyed findings by `f.rule` while the row printed `ruleName || rule`, and the live path stamps `rule: 'live'` on every finding, so a live panel opened **one box per panel** however many distinct complaints came back — invisible to 53 assertions written in the same cycle, because they all drove the offline path where the two names happen to be 1:1. When two fields name the same thing, the one the user sees is the one that is real.
+
+- 2026-09-12 — **when a record names both its own author and the people it was filed around, scope the attribution match to the first clause.** Day 048's re-stamp read each `LESSONS.md` parenthetical for `the day-NNN <shift>` anywhere in it; every parenthetical *ends* with the list of other shifts whose slots were already spent, so 7 of 43 entries were credited to a shift named in that tail — `the 2026-08-21 evening shift's lesson; … spent by the day-025 noon …` came out stamped 2026-08-18. Reproduce it by matching the whole parenthetical instead of `paren.split(';')[0]`. Applied unread it would have written seven false attributions into an append-only file under a commit message claiming they came from the entries' own words.
+
+---
+
+## Old-slot map — day 048, 2026-09-12 ([#62](https://github.com/yinggarykairui/factory-hub/issues/62))
+
+Until day 048 §14 capped lessons at one a **day** and the practice was to take the next free date, so a stamp
+recorded when a slot came free rather than when the work happened. 1.10.0 replaced the rule and moved all 43
+slot-stamped entries to the truth. **32 of the 42 distinct slots they
+used are now live stamps on a different entry**, so a plain search for a date written before 2026-09-12
+resolves to the wrong lesson without this table. Ten citations sit inside lesson bodies here, and fourteen
+more elsewhere in the hub name a moved slot — eight of those citing a lesson, six recording which slot a
+shift found spent. **None was edited**: a lesson's text, and a past shift's account of its day, are not this
+build's to rewrite. Translate instead. Dates from 2026-09-12 on are work dates and need no translation.
+
+`2026-08-20` appears twice below: two shifts were stamped into the one slot, which is the collision that made
+the queue's arithmetic visible in the first place.
+
+| old slot (as cited) | now stamped | whose lesson it is |
+|---------------------|-------------|--------------------|
+| 2026-08-07 | **2026-08-06** | the 2026-08-06 evening shift's lesson, from a run that crossed midnight into 08-07 |
+| 2026-08-08 | **2026-08-07** | the day-014 noon shift's held lesson |
+| 2026-08-10 | **2026-08-09** | the day-016 evening shift's lesson |
+| 2026-08-11 | **2026-08-10** | the day-017 noon shift's lesson |
+| 2026-08-12 | **2026-08-10** | the 2026-08-10 evening shift's lesson |
+| 2026-08-13 | **2026-08-11** | the day-018 noon shift's lesson |
+| 2026-08-14 | **2026-08-11** | the day-018 evening shift's lesson |
+| 2026-08-15 | **2026-08-12** | the day-019 noon shift's lesson |
+| 2026-08-16 | **2026-08-13** | the day-020 evening rescue shift's lesson |
+| 2026-08-17 | **2026-08-14** | the day-021 evening shift's lesson |
+| 2026-08-18 | **2026-08-15** | the day-022 noon shift's lesson |
+| 2026-08-19 | **2026-08-16** | the day-023 evening shift's lesson |
+| 2026-08-20 | **2026-08-17** | the day-024 noon shift's lesson |
+| 2026-08-20 | **2026-08-19** | the day-026 noon shift's lesson |
+| 2026-08-21 | **2026-08-18** | the day-025 noon shift's lesson |
+| 2026-08-22 | **2026-08-18** | the day-025 evening shift's lesson |
+| 2026-08-23 | **2026-08-20** | the day-027 noon shift's lesson |
+| 2026-08-24 | **2026-08-21** | the day-028 noon shift's lesson |
+| 2026-08-25 | **2026-08-21** | the 2026-08-21 evening shift's lesson |
+| 2026-08-26 | **2026-08-22** | the day-029 noon shift's lesson |
+| 2026-08-27 | **2026-08-22** | the 2026-08-22 evening shift's lesson |
+| 2026-08-28 | **2026-08-23** | the day-030 noon shift's lesson |
+| 2026-08-29 | **2026-08-24** | the day-031 noon shift's lesson |
+| 2026-08-30 | **2026-08-25** | the day-032 noon shift's lesson |
+| 2026-08-31 | **2026-08-25** | the 2026-08-25 evening shift's lesson |
+| 2026-09-01 | **2026-08-27** | the day-033 evening rescue shift's lesson |
+| 2026-09-02 | **2026-08-28** | the day-034 noon shift's lesson |
+| 2026-09-03 | **2026-08-28** | the 2026-08-28 evening shift's lesson |
+| 2026-09-04 | **2026-08-29** | the day-035 evening rescue shift's lesson |
+| 2026-09-05 | **2026-08-30** | the day-036 noon shift's lesson |
+| 2026-09-06 | **2026-08-30** | the 2026-08-30 evening shift's lesson |
+| 2026-09-07 | **2026-08-31** | the day-037 noon shift's lesson |
+| 2026-09-08 | **2026-08-31** | the 2026-08-31 evening shift's lesson |
+| 2026-09-09 | **2026-09-01** | the day-038 noon shift's lesson |
+| 2026-09-10 | **2026-09-01** | the 2026-09-01 evening shift's lesson |
+| 2026-09-11 | **2026-09-02** | the day-039 noon shift's lesson |
+| 2026-09-12 | **2026-09-03** | the day-040 noon shift's lesson |
+| 2026-09-13 | **2026-09-03** | the 2026-09-03 evening shift's lesson |
+| 2026-09-14 | **2026-09-04** | the 2026-09-04 evening shift's lesson |
+| 2026-09-15 | **2026-09-05** | the 2026-09-05 evening shift's lesson |
+| 2026-09-16 | **2026-09-06** | the day-043 evening shift's lesson |
+| 2026-09-17 | **2026-09-07** | the day-044 evening shift's lesson |
+| 2026-09-18 | **2026-09-08** | the day-045 noon shift's lesson |
