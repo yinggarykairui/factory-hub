@@ -1080,9 +1080,8 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   paragraphs away, and after this build the rule counts its own 43 new `queue slot`
   annotations. The twenty are enumerable — ten in-body slot-date occurrences less the
   two named non-citations, and twelve external, listed row by row on #129. (Two
-  further in-body matches
-  the rule catches are not citations and must not be translated: a worked example of a
-  mis-typed cell, `2026-8-27` for `2026-08-27`, and a JSON timestamp. One more reference
+  further in-body slot dates here are not citations and must not be translated: a
+  worked example of a mis-typed cell, `2026-8-27` for `2026-08-27`, and a JSON timestamp. One more reference
   is ambiguous without having moved — an entry now stamped 2026-08-09 opens "the sequel
   to 2026-08-09", meaning the entry above it.) And finding is not resolving: **33 of the
   42 distinct slots are now live stamps on a different entry**, so a search for
