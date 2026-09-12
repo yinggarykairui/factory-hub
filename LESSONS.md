@@ -3,10 +3,12 @@
 Append-only; concrete beats general. Two shifts filing on one day give that date two entries, noon before
 evening — the stamp orders this file, it does not key it. Until day 048 this file instead took the next free
 date, so **43 of its 60 stamps were queue slots rather than work dates**; 1.10.0 moved them to the truth. The
-**old-slot map at the foot of this file** is the complete list of the 42 slots that were used and the entries
-that now hold them. A date that is not in that table was never a slot and means what it says. Look a date up
-before trusting it: **33 of the 42 slots are now live stamps on a different entry**, so a date written before
-day 048 — here, or in `HANDOFF.md`, or in the dashboard — can land on the wrong lesson.
+**old-slot map at the foot of this file** lists all 42 slots that moved and the entries that now hold them.
+The quick test: **every date from 2026-08-07 to 2026-09-18 except 2026-08-09 is in that table**; anything
+outside that range means what it says. Look one up before trusting it — **33 of the 42 slots are now live
+stamps on a different entry**, so a date written before day 048, here or in `HANDOFF.md` or in the dashboard,
+can land on the wrong lesson. (Append-only governs the *content*, not the position: §14's back-dating rule
+puts a lesson about earlier work in date order, not at the end.)
 
 - 2026-07-25 — seed-random x-positions collide (two plants landed 1px apart); place by slot index with a coprime stride + seed-jitter inside the slot: collision-free and still deterministic from stored state.
 
@@ -138,8 +140,10 @@ Until day 048 §14 capped lessons at one a **day** and the practice was to take 
 recorded when a slot came free rather than when the work happened. 1.10.0 replaced the rule and moved all 43
 slot-stamped entries to the truth. **33 of the 42 distinct slots they used are now live stamps on a different
 entry**, so a search for one of these dates can resolve to the wrong lesson. This table is the authority on
-which dates were slots: **a date not in the left column was never one**, whatever its value — note that seven
-slots are themselves September dates the file now uses, or will use, as real work dates.
+which dates moved: **a date not in the left column did not move**, whatever its value. Eighteen of the 42
+slots are September dates: **eleven** are already live stamps on other entries, **six** (2026-09-13 to
+2026-09-18) are dates the file has yet to reach, and **2026-09-11** is neither — no shift shipped that day.
+So a date's value tells you nothing and the column is the whole test.
 
 Twenty affected references were counted, by the rule *"a left-column date appearing within 95 characters of
 `lesson`, `LESSONS` or `slot`"*: **eight inside lesson bodies here**, and **twelve elsewhere** — seven in

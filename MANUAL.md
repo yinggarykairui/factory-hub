@@ -671,8 +671,8 @@ nothing left to judgement at audit time.
   none; the cap is a ceiling, not a quota. The mechanics, so nothing is left
   to imitation:
   - **Form:** `- YYYY-MM-DD — <lesson>`. The bare stamp is the whole of the
-    bookkeeping; **no parenthetical is owed**. (The 43 that carry one are
-    migration records from 1.10.0, not a template.)
+    bookkeeping; **no parenthetical is owed**. (The 45 that carry one are
+    migration records and older practice, not a template.)
   - **Shifts:** noon and evening. An evening **rescue** files inside the
     evening's one slot, not a third.
   - **Midnight:** a run that crosses it stamps the date it **started**.
@@ -685,7 +685,7 @@ nothing left to judgement at audit time.
     written is edited or removed — which is why dates cited from before
     2026-09-12 are resolved through that file's old-slot map rather than by
     rewriting the sentences that cite them.
-  - **The old-slot map is terminal.** It is the last thing in the file; new
+  - **Map:** the old-slot map is terminal — the last thing in the file. New
     lessons go **above** it.
 
   (One-per-*day* plus a next-free-slot practice was a queue that a two-shift
@@ -1015,7 +1015,7 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   practice that grew around it was to take the next free date when today's was gone.
   That is a queue. A factory running **two** shifts puts more than one lesson a day
   into it, so it never drains: every overflow pushes every later entry one day
-  further from its work. #62 measured three days of drift on 2026-08-23. On
+  further from its work. #62, filed 2026-08-21, found the newest stamp already three days into the future. On
   2026-09-12 the figures, re-derived from the file rather than carried from the
   issue, are **43 entries stamped by slot**, a worst case of **ten days** (the
   day-045 noon shift ran 2026-09-08 and is stamped 2026-09-18), **six entries dated
@@ -1044,14 +1044,15 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   drifted entry names the shift that filed it, so its true date is recoverable —
   `the day-024 noon shift's lesson` against the dashboard's day→date index, or a
   bare `the 2026-08-21 evening shift's lesson` taken literally — and the file is then
-  stably re-sorted. Seventeen assertions were run over the result and are reproducible
-  from the file: dates non-decreasing; nothing dated after 2026-09-12; all 43 stamps equal
+  stably re-sorted. **Twenty-four assertions** were run over the result, every one of
+  them re-derivable from the repo and all twenty-four enumerated in the sign-off rather
+  than summarised as a number. The load-bearing ones: dates non-decreasing; nothing dated after 2026-09-12; all 43 stamps equal
   to their named shift's run date, row by row rather than sampled; all 60 pre-existing
   lesson **bodies** surviving byte-identical, which is what makes this a re-dating
   rather than an edit; exactly one body added, the day-048 lesson §9.9 owes, taking the
     count 60 → 61; and the citation check below. Two changes fall outside those
   assertions and are named rather than
-  left to the diff. Entry **separation was normalised** to one blank line throughout —
+  left to the diff. **Three** of them. Entry **separation was normalised** to one blank line throughout —
   the first **eighteen** entries ran together unseparated. The file's one-line header
   became a heading plus a paragraph. And two entries that were **not** re-stamped had
   their parentheticals annotated: the 2026-07-29 and 2026-08-04 carried-over lessons
@@ -1064,10 +1065,16 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   three critics said so and they were right.** The build's first pass counted *four*
   references and mitigated them by keeping the old slot in each rewritten parenthetical,
   so a search for the cited date would still find the entry. Both halves were wrong.
-  The count is **20**, by a rule stated so it can be re-run — *a slot date appearing
-  within 95 characters of `lesson`, `LESSONS` or `slot`*: **eight** inside lesson bodies
-  in `LESSONS.md` itself, and **twelve** in `HANDOFF.md` and the dashboard — seven citing
-  a lesson, five recording which slot a shift found spent. (Two further in-body matches
+  The count is **20**: **eight** inside lesson bodies in `LESSONS.md` itself, and
+  **twelve** in `HANDOFF.md` and the dashboard — seven citing a lesson, five recording
+  which slot a shift found spent. Counted by hand, and said so. A mechanical rule was
+  drafted for this — *a slot date within 95 characters of `lesson`, `LESSONS` or
+  `slot`* — offered in cycle 2 as the thing that made the count re-runnable, and
+  **scoped out under §7.4** when all three critics re-ran it and got three different
+  answers, none of them 20: the window is wrong for citations that name the lesson
+  paragraphs away, and after this build the rule counts its own 43 new `queue slot`
+  annotations. The twenty are enumerable — ten in-body slot-date occurrences less the
+  two named non-citations, and twelve external, listed row by row on #129. (Two further in-body matches
   the rule catches are not citations and must not be translated: a worked example of a
   mis-typed cell, `2026-8-27` for `2026-08-27`, and a JSON timestamp. One more reference
   is ambiguous without having moved — an entry now stamped 2026-08-09 opens "the sequel
@@ -1109,8 +1116,7 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   entry is otherwise about. The migration script is discarded but the result is not
   unreproducible: match
   `the day-(\d{3}) (noon|evening rescue|evening)` against a whole pre-1.10.0 parenthetical
-  rather than against `paren.split(';')[0]` and the same seven fall out. It is also
-  also this build's own lesson, `LESSONS.md`'s 2026-09-12 line. The dry run also
+  rather than against `paren.split(';')[0]` and the same seven fall out. It is also this build's own lesson, `LESSONS.md`'s 2026-09-12 line. The dry run also
   settled the sort: entries sharing a date are ordered noon-before-evening explicitly,
   rather than relying on the old queue's arrival order to have happened to agree.
 
@@ -1141,7 +1147,7 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   a lesson about *earlier* work goes at the end (append-only) or in date order (the
   ordering the same bullet asserts). Cycle 2 added two more the same scenario raises:
   whose one-per-shift slot a back-dated lesson spends, and where it sits among that
-  date's existing entries. §14 answers all eight, as a five-item sub-list rather than a
+  date's existing entries. §14 answers all eight, as a six-item sub-list rather than a
   seventeen-line paragraph — it was the longest bullet in the manual before cycle 3 —
   and the load-bearing answer is **append-only governs content, not position**. A ninth,
   found by the same pass: the old-slot map sits at the foot of `LESSONS.md`, so "append"
@@ -1150,7 +1156,9 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
   **What the canary's record does not show, said here because git will not say it.**
   The branch was fast-forwarded, so `main`'s history is linear and indistinguishable
-  from committing straight to it; `meta/62-day048` was local and is gone. The dry run
+  from committing straight to it, and the branch is local. Nor did the canary cover
+  everything it should have: `5a627b1`, the second fix cycle, edits §9's step 9 again
+  and went to `main` directly rather than through a branch. The dry run
   itself — a hypothetical day-049 ship with both shifts filing on 2026-09-13, checked
   for monotonicity, for two entries sharing a date in the right order, and for the map
   surviving — left no artifact in the repo either. A later `meta` edit touching §1–§3
@@ -1171,7 +1179,7 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   owed: under date-of-work stamping there is no arithmetic left to drift, so the
   linter would guard a failure mode the rule has removed rather than one it has left
   open — and §16's own standing caution is that a tool the factory grades itself with
-  is worse than none when it can be wrong in the generous direction. The seventeen
+  is worse than none when it can be wrong in the generous direction. The twenty-four
   assertions this build ran are listed in the sign-off; the migration script that
   applied the re-stamp is **discarded**, since a later shift re-running it against a
   correct file would re-derive stamps from parentheticals that now say `re-stamped`.
