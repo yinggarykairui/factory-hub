@@ -51,7 +51,7 @@
 | 047 | 2026-09-10 | critic-loop | agent | A critique panel shows one worked example per rule instead of nine open boxes, the sample that lands is the one offered first, and the verdict says what landed before it says what is left | vanilla JS, zero deps | 4.38 | [repo](https://github.com/yinggarykairui/critic-loop) | [demo](https://yinggarykairui.github.io/critic-loop/) | residual follow-up ([#61](https://github.com/yinggarykairui/factory-hub/issues/61)) | claude-opus-5 |
 | 048 | 2026-09-12 | factory-hub | meta | The lessons file stops keeping a queue that had drifted its datestamps ten days past the work, and the phase gate stops forbidding two things the shipper does every day | Markdown, MANUAL.md doctrine | 3.42 | [repo](https://github.com/yinggarykairui/factory-hub) | — | meta ([#62](https://github.com/yinggarykairui/factory-hub/issues/62)) | claude-opus-5 |
 
-**KPI:** streak: **1** — 2026-09-12, and the reset is the news. **2026-09-11 was a zero day**: the last trace of any shift is 2026-09-11 05:01 UTC (2026-09-10 22:01 PT), the 2026-09-10 evening's own dashboard push. No noon ship, no evening verification, no issue touched, nothing on either plane — the fifteen-day streak 2026-08-27→2026-09-10 ends there and **[#93](https://github.com/yinggarykairui/factory-hub/issues/93) gains a seventh date**. Today's noon shift fired 12:01 PT and reached both planes on the first try by the documented bypass, `curl --noproxy '*'` for every API write and `env -u https_proxy … git -c http.proxy= push` for all five pushes · verified rate: **27/48** — the numerator is unchanged because nothing was verified on 09-11 and day 048 is today's ship · avg rubric score: **4.23** (48 rows; 199.74 over 47 was 4.2498, and day 048 enters at **3.42**, giving 203.16 over 48 = 4.2325). Per line, from each critic's **final** position and attributed rather than averaged into anonymity: delight 3/2/3 → 2.67 (correctness/ux/hygiene), clarity 4/3/4 → 3.67, readme 4/2/2 → 2.67, scope 5/4/5 → 4.67. **Only correctness restated its rubric after the last fixes** — it moved readme 2 → 4 on the second re-verify; ux and hygiene approved without re-scoring, so their cycle-3 numbers are carried and the average is, if anything, low · demos alive: 17/17, unchanged — a `meta` ship adds no repo and no demo · **clean evenings: 12 ever recorded, and the live run is 0.** The 2026-09-11 zero day breaks it: §16 counts *consecutive factory days that shipped, in dashboard-row order, with no gap*, and a calendar date with no dashboard row starts a new run. The run of 1 the 2026-09-10 evening was building is spent, and **the 2026-09-10 evening itself is left undecided** — §11 forbade the shift that verified it from deciding, and this noon shift is not deciding it either, because a broken run makes the question moot rather than answered. **The verification ledger, carried forward** (a later evening reads this before picking a debt candidate, §11): day 047 verified at `adbba83`; day 046 at `cea938e`; day 045 at `f67521c`; day 040 at `fcb1fec`; day 038 at `57faf14`; day 037 at `bfb0fa8`; day 036 at `40bc8a2`; day 026 at `59a6820`. Day 044 cannot be verified — §16 clause 2, its evening built what it would verify; day 043 stands unverified for clauses 2 and 5; day 042 for clause 2; day 041 for 2 and 5; day 039 for [#60](https://github.com/yinggarykairui/factory-hub/issues/60). Days 019–022, 024, 028 and 045 stand unlabelled; **evidence complete for 004–010, relabelling still owed** — [#116](https://github.com/yinggarykairui/factory-hub/issues/116)'s third residual, and explicitly *not* a debt candidate under §11. **Day 048 is a `meta` ship, so under §16 clause 5 it fails the gate on [#65](https://github.com/yinggarykairui/factory-hub/issues/65) whatever its evening does** — no LICENSE, no root README at the hub — and the correct §11 outcome for it is *Unverifiable*, not a failure of the ship · **day 048:** the queue's oldest `queued` issue, [#62](https://github.com/yinggarykairui/factory-hub/issues/62) (2026-08-21), the residuals the 2026-08-20 evening left after verifying day 027. The spec took items 1 and 2 and carved item 3 out under §4
+**KPI:** streak: **1** — 2026-09-12, and the reset is the news. **2026-09-11 was a zero day**: the last trace of any shift is 2026-09-11 05:01 UTC (2026-09-10 22:01 PT), the 2026-09-10 evening's own dashboard push. No noon ship, no evening verification, no issue touched, nothing on either plane — the fifteen-day streak 2026-08-27→2026-09-10 ends there and **[#93](https://github.com/yinggarykairui/factory-hub/issues/93) gains a seventh date**. Today's noon shift fired 12:01 PT and reached both planes on the first try by the documented bypass, `curl --noproxy '*'` for every API write and `env -u https_proxy … git -c http.proxy= push` for all five pushes · verified rate: **27/48** — unchanged, and now for a recorded reason rather than a pending one: nothing was verified on 09-11, and day 048's evening ran its spot-check and returned ***Unverifiable***, not a pass withheld and not a failure of the ship. [The spot-check](https://github.com/yinggarykairui/factory-hub/issues/62#issuecomment-5650677371) · avg rubric score: **4.23** (48 rows; 199.74 over 47 was 4.2498, and day 048 enters at **3.42**, giving 203.16 over 48 = 4.2325). Per line, from each critic's **final** position and attributed rather than averaged into anonymity: delight 3/2/3 → 2.67 (correctness/ux/hygiene), clarity 4/3/4 → 3.67, readme 4/2/2 → 2.67, scope 5/4/5 → 4.67. **Only correctness restated its rubric after the last fixes** — it moved readme 2 → 4 on the second re-verify; ux and hygiene approved without re-scoring, so their cycle-3 numbers are carried and the average is, if anything, low · demos alive: 17/17, unchanged — a `meta` ship adds no repo and no demo · **clean evenings: 12 ever recorded, and the live run is 0.** The 2026-09-11 zero day breaks it: §16 counts *consecutive factory days that shipped, in dashboard-row order, with no gap*, and a calendar date with no dashboard row starts a new run. The run of 1 the 2026-09-10 evening was building is spent, and **the 2026-09-10 evening itself is left undecided** — §11 forbade the shift that verified it from deciding, and this noon shift is not deciding it either, because a broken run makes the question moot rather than answered. **The verification ledger, carried forward** (a later evening reads this before picking a debt candidate, §11): day 047 verified at `adbba83`; day 046 at `cea938e`; day 045 at `f67521c`; day 040 at `fcb1fec`; day 038 at `57faf14`; day 037 at `bfb0fa8`; day 036 at `40bc8a2`; day 026 at `59a6820`. Day 044 cannot be verified — §16 clause 2, its evening built what it would verify; day 043 stands unverified for clauses 2 and 5; day 042 for clause 2; day 041 for 2 and 5; day 039 for [#60](https://github.com/yinggarykairui/factory-hub/issues/60). Days 019–022, 024, 028 and 045 stand unlabelled; **evidence complete for 004–010, relabelling still owed** — [#116](https://github.com/yinggarykairui/factory-hub/issues/116)'s third residual, and explicitly *not* a debt candidate under §11. **Day 048 is a `meta` ship, so under §16 clause 5 it fails the gate on [#65](https://github.com/yinggarykairui/factory-hub/issues/65) whatever its evening does** — no LICENSE, no root README at the hub — and the correct §11 outcome for it is *Unverifiable*, not a failure of the ship. **The evening confirmed that from the artifacts rather than taking it from this row:** the hub clone at `f9775b6` has no root `README.md`, no `screenshot.png`, and the API reports `license: null` against a description and five topics that are set. Two of the five §8 lines a doctrine-only `meta` ship carries fail, both outside the build, both on #65, which predates it. §11's outcome line 2, and #62 keeps `shipped` · **day 048:** the queue's oldest `queued` issue, [#62](https://github.com/yinggarykairui/factory-hub/issues/62) (2026-08-21), the residuals the 2026-08-20 evening left after verifying day 027. The spec took items 1 and 2 and carved item 3 out under §4
 
 *Day 032's finding is not about the build. This sandbox's proxy **403s the GitHub API** — `api.github.com` answers
 `"GitHub access to this repository is not enabled for this session"` to an authenticated PAT — and **refuses `git push`**
@@ -2048,3 +2048,74 @@ missing LICENSE and root README, [#65](https://github.com/yinggarykairui/factory
 unchanged here, which makes the correct §11 outcome **Unverifiable** and means day 048 cannot be a clean evening
 under §16 clause 5. No open `job` issue, so §17 had nothing to service. Carved out: #128 (item 3's four storefront
 residuals) and #129. `phase: 0`, unchanged.*
+
+
+---
+
+*2026-09-12 evening shift — day 048 (`factory-hub`, `meta`) polished across **two** cycles of a
+`loop_cap` of 3 and then spot-checked to ***Unverifiable***. [The
+block](https://github.com/yinggarykairui/factory-hub/issues/62#issuecomment-5650677371). No relabel, no follow-up filed, verified rate unmoved at 27/48
+— that is what §11's outcome line 2 prescribes when nothing in the ship fails and a §8 line
+fails outside it on an open issue that predates the build.*
+
+*Both polish cycles were whitespace-only and both were asserted mechanically before writing
+(`re.sub(r'\s+',' ')` over the edited span **and** over the whole file, identical either
+side).* `744a2db` *rewraps the 1.10.0 changelog entry — the longest in the manual's history at
+13,990 characters — from a ragged 62–108 columns to the manual's own convention: ≤ 80, mean
+73.9, **eight** mid-paragraph short breaks and **two** split code spans down to zero.*
+`cb51aa3` *repairs what the second cycle found, which is the finding worth carrying:* **day
+048's diff touches §15 Safety and hard limits, and nothing in the 1.10.0 entry or in #62 says
+so** — *a 4-space continuation indent where the file uses 2, and a 13-character orphan line.
+The rule's meaning never changed, which is why it survived five fix cycles, three critic
+passes and twenty-four assertions. The mechanism is the point: assertion 24 checks scope at
+**file** granularity (“nothing outside `MANUAL.md`, `LESSONS.md`, `agents/shipper.md`”), which
+a stray hunk inside one of those files passes — and §15 is not on §14's canary list (§1–§3,
+§7–§9), so the canary would not have caught it either. Filed as this shift's `LESSONS.md`
+line, the **first entry filed under 1.10.0's own rule**: two shifts, one date, noon before
+evening, above the terminal map.*
+
+*The verification was independent rather than confirmatory — re-derived from a clone at
+`f9775b6` and then compared to the sign-off, since this build's failure mode across three
+rejected cycles was false numbers about itself.* **All of it holds.** *Entry dates
+non-decreasing; max stamp `2026-09-12`; 60 pre-existing bodies byte-identical and exactly one
+added, 60 → 61; one H1; 43 map rows over 42 slots; 33 of 42 now live stamps elsewhere; the
+header's range test exact (`[2026-08-07 … 2026-09-18]` less `2026-08-09`, zero extra, zero
+missing); the September split 11 + 6 + `2026-09-11`; the map terminal; 45 parentheticals — 45
+of the pre-existing 60, since the day-048 lesson carries none, which is what lets §14's* "the
+45 that carry one" *and the changelog's* "45 of 60" *both be true; the first eighteen entries
+unseparated before the build; and* **all 43 re-stamps equal their named shift's run date, 0
+mismatches**, *each row cross-checked against this dashboard's own day→date index. The one
+naive hit on* "no duplicated word in the 1.10.0 entry" *was four false positives from a
+scanner that skips numerals and § signs.*
+
+*§11.2, run rather than asserted. gitleaks 8.28.0 with the positive control read **first** —
+freshly generated values, **2 hits** — then `git` mode over the **186** commits reachable from
+`f9775b6` and `dir` mode over the worktree, both clean. (The sign-off's `231` counts a full
+clone carrying the six `meta/*` branches and `pre-rewrite-backup`, which reach 243; 186 is the
+ship-scoped range.) The screenshot sub-check fails on #65 — there is no root README to
+reference one. Deploy-scope was run even though §16 clause 5 gives a doctrine-only `meta` ship
+no demo line, because the hub does serve a Pages site §9.8 refreshes every day: `origin/HEAD`
+was `8403771`, the day's own §9.8 commit, so nothing newer existed; and a cache-busted fetch of
+`dashboard/README.md` returned* `| 048 |` *and* `streak: **1** — 2026-09-12`, *both present at
+`8403771` and absent at `0fd4d77`, markers derived from the day's own diff rather than
+guessed. Per `LESSONS.md` that proves which tree `github.io` serves and cannot prove the app
+runs.*
+
+*The fourth sub-check drew* **"survives garbage input without crashing"** *from the pool of
+four a `meta` ship leaves, and it was **tested rather than waved through on "no input
+surface."** The ship appended a row to `dashboard/README.md`, and `index.html` fetches and
+parses that file on load, so that is an input surface. `parse()` and `link()` were lifted
+verbatim into a node harness and driven against the real ledger plus **15 hostile inputs** —
+empty, NUL bytes, a 400 k-cell line, CRLF throughout, truncation mid-row, high-byte soup,
+50,000 nested brackets, an unterminated link, `javascript:`/`data:` URLs, a non-numeric
+rubric, eleven empty cells, a doubled KPI line.* **Zero crashes, zero slow paths** *(worst 28
+ms), and the real ledger still parses to 48 rows with the day-048 row intact. Noted and not
+filed, because it is not this ship's and [#104](https://github.com/yinggarykairui/factory-hub/issues/104)
+has the neighbourhood: `parse()` splits on `|` with no regard for code spans, so a future
+one-liner carrying a backticked pipe would shift every cell right of it. No row contains one
+today.*
+
+*This shift does **not** count itself against §16 — §11 forbids the shift that checked today
+from deciding whether today counts, and the question is moot anyway: the live run is 0 after
+the 2026-09-11 zero day, and clause 5 breaks every `meta` ship day while #65 stands. The
+2026-09-10 evening is still undecided and still waiting on a shift with no hand in it.*
