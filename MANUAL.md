@@ -345,12 +345,12 @@ shifts actually need.** `base..sha` is exactly the range §9.2's authorship chec
 covers. It is also close to the diff §11's *Deriving the marker* paragraph calls
 `git diff <previous ship's sha>..<sha>` — **close, not equal, and the difference
 runs the safe way.** On a revisit `base:` is the previous ship's sha only when
-nothing landed after that ship; where an evening polished, it is a descendant of
-it (day 046 shipped `tool-loop-viz` at `764e949` and its evening left the repo at
-`cea938e`, 22 commits later, which is what a day-050 revisit would take as its
-base). A literal absent at `base:` is therefore absent at the previous ship too,
-so a marker derived from `base..sha` is always sound and sometimes stricter than
-one derived from the ship sha. It is never the looser of the two, which is the
+nothing landed after that ship; where an evening polished, it is a descendant
+of it (day 046 shipped `tool-loop-viz` at `764e949` and its evening left the
+repo at `cea938e`, 22 commits later, which is what a day-050 revisit would take
+as its base). A literal absent at `base:` is therefore absent at the previous
+ship too, so a marker derived from `base..sha` is always sound and sometimes
+stricter than one derived from the ship sha. It is never the looser of the two, which is the
 only direction that would matter. Write both shas in full, 40 characters: the
 field exists to be resolved months later, and an abbreviation is an identifier
 that can stop being unique in the repo it names.
@@ -361,10 +361,10 @@ that can stop being unique in the repo it names.
   state is the dashboard row, and factory-private is named in the job issue.
   A `meta` ship's build repo *is* the hub, which is the one case where the two
   coincide.
-- **When it is read.** At the moment the sign-off is posted, which by §9's order
-  is step 7 — **before** step 8's dashboard row. So on a `meta` ship `sha:` names
-  the **doctrine tree** and cannot include that day's dashboard, KPI or
-  storefront commits, because they do not exist yet. Say so in the field rather
+- **When it is read.** At the moment the sign-off is posted, which by §9's
+  order is step 7 — **before** step 8's dashboard row. So on a `meta` ship
+  `sha:` names the **doctrine tree** and cannot include that day's dashboard,
+  KPI or storefront commits, because they do not exist yet. Say so in the field rather
   than leaving the next reader to work it out — the sha, then a parenthetical
   reading *doctrine tree; §9.8's dashboard commits follow this sign-off*. On a
   project ship the question does not arise: the dashboard is a different repo.
