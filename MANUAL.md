@@ -275,7 +275,11 @@ rises on purpose, not by drift.
    Verify **before every push**, over the run's whole range — `<base>` is the
    sha the repo was at when the run first took it (`git rev-parse HEAD` then),
    one per repo, carried into every copy the run makes of it, never re-taken
-   per copy; a repo this run created has no base, so drop `<base>..`:
+   per copy; a repo this run created has no base, so drop `<base>..`. **Its
+   recorded home is §10's `base:` field** — take it at the moment the run first
+   takes the repo, and write it down there rather than carrying it only in the
+   conducting run's head, which is what directive 3 forbids and what a run that
+   dies after a subagent has pushed leaves the next shift without:
 
    ```
    git log --format='%an <%ae>' <base>..HEAD | sort -u
@@ -354,9 +358,9 @@ is an identifier that can stop being unique in the repo it names.
   is step 7 — **before** step 8's dashboard row. So on a `meta` ship `sha:` names
   the **doctrine tree** and cannot include that day's dashboard, KPI or
   storefront commits, because they do not exist yet. Say so in the field rather
-  than leaving the next reader to work it out: `sha: <doctrine sha> (doctrine
-  tree; §9.8's dashboard commits follow this sign-off)`. On a project ship the
-  question does not arise — the dashboard is a different repo.
+  than leaving the next reader to work it out — the sha, then a parenthetical
+  reading *doctrine tree; §9.8's dashboard commits follow this sign-off*. On a
+  project ship the question does not arise: the dashboard is a different repo.
 - **A repo this run created** has no base (§9.2 says so, and drops `<base>..`
   from the range check). Write the literal `created`. Never write the empty
   string and never write the root commit: §9.2's repair distinguishes *no base*
@@ -464,7 +468,9 @@ this, and the permission would be dead on the page.
   later day's work, and a `verified` written against it permanently certifies
   the wrong tree. Check out the sha that day shipped, from its sign-off or its
   dashboard narrative. **No recoverable sha, no check:** skip. §10's sign-off
-  carries no sha field, which is why this skip will be common until it does.
+  carries a `sha:` field from `1.11.0` on; every ship that predates it does not,
+  which is why this skip stays the common outcome across the whole existing
+  backlog and stops being one only for ships from that version forward.
   *Deploy-scope*, below, states the same rule where it is used, and is the only
   other place it belongs.
 - Only a ship **this shift had no hand in** building or finishing, and never
@@ -634,7 +640,8 @@ leaves none.
 - **Skip** → an eligibility gate failed, or a sub-check that applies could not
   be run and nothing that did run failed. The common reasons, not an exhaustive
   list: the build issue cannot be identified unambiguously; the shipped sha is
-  not recoverable (which §10's missing sha field makes the usual one); the ship
+  not recoverable (which §10 carrying no `sha:` field before `1.11.0` makes the
+  usual one, for every ship up to day 048); the ship
   is one of the relabel-owed, days 004–010; the sha under test is no longer the
   repo's tip, so nothing can confirm what the deploy serves.
 
@@ -802,8 +809,9 @@ gate is audited, never argued:
    a question this clause asks; a shift that thinks an evening polished its way
    into authorship files that as a contest on the advancing issue rather than
    arguing it into the count.
-3. **Its artifact is in the required form**: the header `EVENING VERIFIED
-   day-<NNN>` (epics: `… (increment k/N)`), naming the sha it checked. A
+3. **Its artifact is in the required form**: the header
+   `EVENING VERIFIED day-<NNN>` (epics: `… (increment k/N)`), naming the sha it
+   checked. A
    verification whose header or sha is missing is not quotable.
 4. **No human fix was owed for it** — no `blocked` issue naming that evening's
    own output is open when the advancing issue is filed. An evening that ends by
