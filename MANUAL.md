@@ -325,6 +325,8 @@ SHIP day-<NNN> <slug>
 built:   <what shipped, one line>
 cut:     <what was scoped out and why, or "nothing">
 next:    <follow-up issue filed, or "none">
+sha:     <the sha this ship put on the build repo's default branch>
+base:    <the sha that repo was at when this run first took it, or "created">
 rubric:  must-pass 7/7 · delight 4 · clarity 4 · readme 5 · scope 5
 critics: correctness PASS · ux PASS · hygiene PASS
 lesson:  <one line, or "none">
@@ -333,6 +335,46 @@ manual_version: <version that built> · model: <model that built>
 
 The sign-off is the factory's memory. Foreman, retro, patrol, and any run
 resuming a dead shift all read these before acting.
+
+**`sha:` and `base:` are the two ends of one range, and the range is what later
+shifts actually need.** `base..sha` is the range §9.2's authorship check covers,
+and it is the diff §11's *Deriving the marker* paragraph calls
+`git diff <previous ship's sha>..<sha>` — on a maintenance revisit `base:` **is**
+that previous ship's sha, which no artifact carried before. Write both in full,
+40 characters: the field exists to be resolved months later, and an abbreviation
+is an identifier that can stop being unique in the repo it names.
+
+- **Which repo.** The **build repo** — the one the day's dashboard row links in
+  its `repo` column. A run that also writes the hub (every ship does, §9.8) or
+  factory-private (§17 steps 4–6) records neither of those here; the hub's own
+  state is the dashboard row, and factory-private is named in the job issue.
+  A `meta` ship's build repo *is* the hub, which is the one case where the two
+  coincide.
+- **When it is read.** At the moment the sign-off is posted, which by §9's order
+  is step 7 — **before** step 8's dashboard row. So on a `meta` ship `sha:` names
+  the **doctrine tree** and cannot include that day's dashboard, KPI or
+  storefront commits, because they do not exist yet. Say so in the field rather
+  than leaving the next reader to work it out: `sha: <doctrine sha> (doctrine
+  tree; §9.8's dashboard commits follow this sign-off)`. On a project ship the
+  question does not arise — the dashboard is a different repo.
+- **A repo this run created** has no base (§9.2 says so, and drops `<base>..`
+  from the range check). Write the literal `created`. Never write the empty
+  string and never write the root commit: §9.2's repair distinguishes *no base*
+  from *a base*, and a root sha in this field would send a later run down the
+  wrong branch of it.
+- **Nothing pushed to that repo this run** — possible on a rescue that only
+  finished the issue plane — is `base:` equal to `sha:`, written out, not
+  omitted.
+- **Epic increments** (§4) use the same two fields on the increment sign-off:
+  `base:` is the sha the repo was at when *this increment's* run took it, which
+  is normally the previous increment's `sha:`, and `sha:` is this increment's
+  tip. The pair is per increment, never per epic.
+
+**Not retroactive.** Sign-offs already posted sit on closed `shipped` or
+`verified` issues, which §3 makes immutable, so this field recovers nothing for
+the ships that predate it — §11's *no recoverable sha, no check* still governs
+the whole existing backlog. It ends the skip for ships from `1.11.0` on, and for
+nothing else.
 
 ---
 
