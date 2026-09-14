@@ -14,7 +14,11 @@ Run the §9 shipping checklist **in order**:
 5. Web builds: enable GitHub Pages; confirm the live URL actually loads
    (Appendix C: retry up to 10 minutes for a first deploy)
 6. Screenshot via headless browser, committed, embedded in README
-7. Close the issue with the §10 sign-off; label `shipped`
+7. Close the issue with the §10 sign-off; label `shipped`. Fill in `sha:` and
+   `base:` — the build repo's default-branch tip as you post this, and the sha
+   that repo was at when the run first took it (§9.2's `<base>`), or `created`.
+   Full 40 characters. On a `meta` ship `sha:` is the doctrine tree: step 8's
+   dashboard commits come after this step and are not in it
 8. Dashboard: append the index row, refresh the KPI row
 9. At most one LESSONS.md line if your shift earned one — one per shift,
    stamped with the date of the work, placed in date order above that file's
