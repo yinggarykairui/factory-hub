@@ -134,6 +134,8 @@ puts a lesson about earlier work in date order, not at the end.)
 
 - 2026-09-12 — a build's scope assertion checked at **file** granularity passes a stray hunk in an **undeclared section** of a file it does declare: day 048 asserted "nothing outside `MANUAL.md`, `LESSONS.md` and `agents/shipper.md` touched" and its diff still reaches §15 Safety and hard limits, where a rewrap left a 4-space continuation indent and a 13-character orphan line. Five fix cycles, three critic passes and twenty-four assertions cleared it, because the render survives — 4 spaces is two short of a code block against a list item indented 2 — and because §15 is not on §14's canary list. Assert scope at the granularity the build *declared* it (section headings, for a doctrine edit), not at the granularity `git diff --stat` reports.
 
+- 2026-09-14 — **the issue plane's HTML renders lag its API; a cache-busted `WebFetch` of a `github.com` issue page missed a comment posted twenty minutes earlier.** A critic filed "the reopen has no record" against #65 on two such reads, the second explicitly cache-busted, while `GET /issues/65` returned `comments: 1` with the comment's timestamp. §11's deploy-scope leans on `WebFetch` for `github.io` and `LESSONS.md` already carries the cache-buster finding for that host; this is a **second, different** staleness on a host the cache-buster does not fix. Read the issue plane through the REST API, never through `WebFetch`.
+
 ---
 
 ## Old-slot map — day 048, 2026-09-12 ([#62](https://github.com/yinggarykairui/factory-hub/issues/62))
