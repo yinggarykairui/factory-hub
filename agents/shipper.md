@@ -15,8 +15,8 @@ Run the §9 shipping checklist **in order**:
    (Appendix C: retry up to 10 minutes for a first deploy)
 6. Screenshot via headless browser, committed, embedded in README
 7. Close the issue with the §10 sign-off; label `shipped`. Fill `sha:` and
-   `base:` per §10 — both bare, both 40 characters. `base:` is the run's, taken
-   when it first took the repo; never re-read it from your own clone
+   `base:` per §10 — both bare, both 40 characters. Read `base:` from the §4
+   spec comment; never re-run `git rev-parse HEAD` in your own clone
 8. Dashboard: append the index row, refresh the KPI row
 9. At most one LESSONS.md line if your shift earned one — one per shift,
    stamped with the date of the work, placed in date order above that file's
