@@ -275,11 +275,14 @@ rises on purpose, not by drift.
    Verify **before every push**, over the run's whole range — `<base>` is the
    sha the repo was at when the run first took it (`git rev-parse HEAD` then),
    one per repo, carried into every copy the run makes of it, never re-taken
-   per copy; a repo this run created has no base, so drop `<base>..`. **Its
-   recorded home is §10's `base:` field** — take it at the moment the run first
-   takes the repo, and write it down there rather than carrying it only in the
-   conducting run's head, which is what directive 3 forbids and what a run that
-   dies after a subagent has pushed leaves the next shift without:
+   per copy; a repo this run created has no base, so drop `<base>..`. **Write it
+   down where you take it** — in the §4 spec comment, at the moment the run
+   first takes the repo — and carry it to §10's `base:` field at sign-off.
+   Directive 3 is why: a run that dies after a subagent has pushed leaves the
+   next shift unable to compute the range this check runs over, and §10 alone
+   cannot answer that, being step 7 of nine. §10 records the **build repo's**
+   base; the hub's and factory-private's are still carried and unwritten
+   ([#130](../../issues/130)):
 
    ```
    git log --format='%an <%ae>' <base>..HEAD | sort -u
@@ -329,8 +332,8 @@ SHIP day-<NNN> <slug>
 built:   <what shipped, one line>
 cut:     <what was scoped out and why, or "nothing">
 next:    <follow-up issue filed, or "none">
-sha:     <the sha this ship put on the build repo's default branch>
-base:    <the sha that repo was at when this run first took it, or "created">
+sha:     <the build repo's default-branch tip as this sign-off is posted>
+base:    <that repo's sha when the run first took it (§9.2), or: created>
 rubric:  must-pass 7/7 · delight 4 · clarity 4 · readme 5 · scope 5
 critics: correctness PASS · ux PASS · hygiene PASS
 lesson:  <one line, or "none">
@@ -340,54 +343,58 @@ manual_version: <version that built> · model: <model that built>
 The sign-off is the factory's memory. Foreman, retro, patrol, and any run
 resuming a dead shift all read these before acting.
 
-**`sha:` and `base:` are the two ends of one range, and the range is what later
-shifts actually need.** `base..sha` is exactly the range §9.2's authorship
-check covers. It is also close to the diff §11's *Deriving the marker*
-paragraph calls `git diff <previous ship's sha>..<sha>` — **close, not equal,
-and the difference runs the safe way.** On a revisit `base:` is the previous
-ship's sha only when nothing landed after that ship; where an evening polished,
-it is a descendant of it (day 046 shipped `tool-loop-viz` at `764e949` and its
-evening left the repo at `cea938e`, 22 commits later, which is what a day-050
-revisit would take as its base). A literal absent at `base:` is therefore
-absent at the previous ship too, so a marker derived from `base..sha` is always
-sound and sometimes stricter than one derived from the ship sha. It is never
-the looser of the two, which is the only direction that would matter. Write
-both shas in full, 40 characters: the field exists to be resolved months later,
-and an abbreviation is an identifier that can stop being unique in the repo it
-names.
+**`base..sha` is the range §9.2's authorship check covers**, and recording both
+ends is what stops that range living only in the conducting run's head, which
+is what directive 3 forbids. Write both shas in full, 40 characters: the field
+is read months later, and an abbreviation is an identifier that can stop being
+unique in the repo it names.
 
-- **Which repo.** The **build repo** — the one the day's dashboard row links in
-  its `repo` column. A run that also writes the hub (every ship does, §9.8) or
-  factory-private (§17 steps 4–6) records neither of those here; the hub's own
-  state is the dashboard row, and factory-private is named in the job issue.
-  A `meta` ship's build repo *is* the hub, which is the one case where the two
-  coincide.
-- **When it is read.** At the moment the sign-off is posted, which by §9's
-  order is step 7 — **before** step 8's dashboard row. So on a `meta` ship
-  `sha:` names the **doctrine tree** and cannot include that day's dashboard,
-  KPI or storefront commits, because they do not exist yet. Say so in the field
-  rather than leaving the next reader to work it out — the sha, then a
-  parenthetical reading *doctrine tree; §9.8's dashboard commits follow this
-  sign-off*. On a project ship the question does not arise: the dashboard is a
-  different repo.
+- **Which repo.** The one the `building` issue names — the hub itself, on a
+  `meta` ship. Resolvable at step 7, which *"the repo the dashboard row links"*
+  would not be: step 8 writes that row and it does not exist yet. A run also
+  writes the hub on every ship (§9.8) and factory-private on a `job` (§17
+  steps 4–6); those bases are **not** recorded here and still live in the run's
+  head. That is a gap, not an omission — [#130](../../issues/130) item 1.
+- **Which moment, for `base:`.** The one §9.2 fixes: when the run **first**
+  takes the repo, `git rev-parse HEAD` then, carried into every copy and
+  *"never re-taken per copy"*. That clause is load-bearing here. A shipper
+  subagent handed a fresh clone at step 7 that runs `git rev-parse HEAD` reads
+  the **builder's last push**, and writes a base that hides every commit before
+  it behind a range check that then passes. Take the value at §4 spec time and
+  put it in the spec comment, so a run that dies before step 7 still leaves it
+  readable — which is the failure this field was filed against, and step 7 is
+  too late to be the only copy of it.
+- **Which moment, for `sha:`.** When this sign-off is posted, which by §9's
+  order is step 7 — **before** step 8's dashboard row. On a `meta` ship that
+  makes it the doctrine tree: the day's dashboard, KPI and storefront commits
+  land after this sign-off and are not in it. On a project ship the question
+  does not arise, the dashboard being a different repo. Either way the field
+  holds a bare sha; say which tree it is in `built:` if it needs saying.
 - **A repo this run created** has no base (§9.2 says so, and drops `<base>..`
-  from the range check). Write the literal `created`. Never write the empty
-  string and never write the root commit: §9.2's repair distinguishes *no base*
-  from *a base*, and a root sha in this field would send a later run down the
-  wrong branch of it.
+  from the range check). Write the bare word `created` — never an empty field,
+  never the root commit: §9.2's repair branches on *no base* versus *a base*,
+  and a root sha would send a later run down the wrong side of it.
 - **Nothing pushed to that repo this run** — possible on a rescue that only
-  finished the issue plane — is `base:` equal to `sha:`, written out, not
-  omitted.
-- **Epic increments** (§4) use the same two fields on the increment sign-off:
-  `base:` is the sha the repo was at when *this increment's* run took it, which
-  is normally the previous increment's `sha:`, and `sha:` is this increment's
-  tip. The pair is per increment, never per epic.
+  worked the issue plane — writes `base:` equal to `sha:`, not an omission.
+- **Epic increments** carry the pair **per increment**, never per epic:
+  `base:` is what *this increment's* run took, read from the repo at that
+  moment — **not** copied from the previous increment's `sha:`, which the
+  increment's own evening polish will usually have moved past.
+
+**What this does not buy §11.** `base..sha` is the day's own range, so it is
+where §11's *Deriving the marker* looks — but it does not stand in for that
+paragraph's test, and reading it as a shortcut is the one mistake this field
+makes newly available. A literal absent at `base:` can still be present in the
+**previous ship's** tree: an evening removes it, the revisit puts it back, and
+the diff shows it as added. §11's rule is unchanged and still has to be run
+where it is written — the marker must be absent **at the previous ship's sha**,
+confirmed there.
 
 **Not retroactive.** Sign-offs already posted sit on closed `shipped` or
 `verified` issues, which §3 makes immutable, so this field recovers nothing for
-the ships that predate it — §11's *no recoverable sha, no check* still governs
-the whole existing backlog. It ends the skip for ships from `1.11.0` on, and
-for nothing else.
+the ships that predate it. It ends the **sha half** of §11's skip for ships
+from `1.11.0` on. The other half — a revisited web repo whose deploy scope no
+evening can confirm — is untouched, and §11 says so itself.
 
 ---
 
@@ -477,9 +484,11 @@ this, and the permission would be dead on the page.
   later day's work, and a `verified` written against it permanently certifies
   the wrong tree. Check out the sha that day shipped, from its sign-off or its
   dashboard narrative. **No recoverable sha, no check:** skip. §10's sign-off
-  carries a `sha:` field from `1.11.0` on; every ship that predates it does not,
-  which is why this skip stays the common outcome across the whole existing
-  backlog and stops being one only for ships from that version forward.
+  carries a `sha:` field from `1.11.0` on. Before that the sha is recoverable
+  only where a sign-off or a dashboard narrative happens to name one — often it
+  does, which is how days 020 and 024 were reached — and where neither does, the
+  skip is unavoidable. Today that is days 019–022 and 024, five of forty-eight,
+  not the backlog.
   *Deploy-scope*, below, states the same rule where it is used, and is the only
   other place it belongs.
 - Only a ship **this shift had no hand in** building or finishing, and never
@@ -649,9 +658,9 @@ leaves none.
 - **Skip** → an eligibility gate failed, or a sub-check that applies could not
   be run and nothing that did run failed. The common reasons, not an exhaustive
   list: the build issue cannot be identified unambiguously; the shipped sha is
-  not recoverable (which §10 carrying no `sha:` field before `1.11.0` makes the
-  usual one, for every ship up to day 048); the ship
-  is one of the relabel-owed, days 004–010; the sha under test is no longer the
+  not recoverable (§10 carried no `sha:` field before `1.11.0`, which leaves
+  days 019–022 and 024 with no sha any artifact names); the ship is one of the
+  relabel-owed, days 004–010; the sha under test is no longer the
   repo's tip, so nothing can confirm what the deploy serves.
 
   **Two independent things make a ship unpayable, and §10 fixes only one.** An
@@ -819,9 +828,8 @@ gate is audited, never argued:
    into authorship files that as a contest on the advancing issue rather than
    arguing it into the count.
 3. **Its artifact is in the required form**: the header
-   `EVENING VERIFIED day-<NNN>` (epics: `… (increment k/N)`), naming the sha it
-   checked. A
-   verification whose header or sha is missing is not quotable.
+   `EVENING VERIFIED day-<NNN>` (epics: `… (increment k/N)`), naming the sha
+   it checked. A verification whose header or sha is missing is not quotable.
 4. **No human fix was owed for it** — no `blocked` issue naming that evening's
    own output is open when the advancing issue is filed. An evening that ends by
    paging the owner about what it just produced has not finished cleanly. This
@@ -1067,89 +1075,92 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ## Changelog
 
 - **1.11.0** (2026-09-14) — the sign-off records the range it shipped (meta
-  issue #63, item 1). §10 gains `sha:` and `base:`; four sentences that pointed
-  at their absence move with them.
+  issue #63, item 1). §10 gains `sha:` and `base:`; §9.2 says where the base is
+  written down, and three sentences that pointed at its absence move with them.
 
   **The value existed and had nowhere to live.** 1.7.0 defined `<base>` — the
-  sha a repo was at when the run first took it — and made the §9.2 authorship
-  check depend on it, and then named no artifact to keep it in. #63 filed that
-  on the day it shipped: *carried* is passive, §10's template has no field, so
-  the value lives only in the conducting run's head, which is what directive 3
-  forbids. A run that dies after a subagent has pushed leaves the next shift
-  unable to compute the range it is required to verify. The same nine lines of
-  template also close something §11 asks for **twice in its own words** —
+  sha a repo was at when the run first took it — made §9.2's authorship check
+  depend on it, and named no artifact to keep it in. #63 filed that on the day
+  it shipped: *carried* is passive, §10 had no field, so the value lived only in
+  the conducting run's head, which is what directive 3 forbids. The same
+  template edit closes something §11 asks for **twice in its own words** —
   *"§10's sign-off carries no sha field, which is why this skip will be common
   until it does"*, and the skip-reasons list's *"which §10's missing sha field
-  makes the usual one"*. One edit answers both; splitting them would have meant
-  editing the same block twice.
+  makes the usual one"*.
 
-  **Two fields, and prose for the five questions the field names do not
-  answer.** 1.10.0's finding was that §14 was unusable as written because three
-  critics tried to use it and each had to guess; the same test was applied here
-  before the edit, not after. *Which repo* — the build repo, the one the day's
-  dashboard row links, never the hub and never factory-private. *When it is
-  read* — at step 7, which by §9's order is **before** step 8's dashboard row,
-  so on a `meta` ship `sha:` names the doctrine tree and cannot contain that
-  day's dashboard commits; the 2026-09-12 evening had to reconstruct exactly
-  that by hand to write `sha: f9775b6 (doctrine tree) · 8403771 (the day…)`.
-  *A repo this run created* — the literal `created`, never an empty field and
-  never the root commit, because §9.2's repair branches on *no base* versus *a
-  base* and a root sha would send it down the wrong one. *Abbreviated or full* —
-  full, 40 characters, since the field exists to be resolved months later.
-  *Epics* — per increment, `base:` normally the previous increment's `sha:`.
+  **The prose answers the questions the field names do not**, because 1.10.0's
+  finding was that §14 was unusable as written and three critics proved it by
+  trying to use it. The same test was run here, cold, before the ship: which
+  repo, which moment for each field, a repo this run created, a run that pushed
+  nothing, an epic increment. §10 has the answers; they are not repeated here.
 
-  **The canary corrected the entry's own headline claim, which is the reason it
-  ran.** §9.2 is inside §9 and §9 is on §14's canary list, so one was owed.
-  Branch `meta/63-noon-1.11.0`, merged **`--no-ff`** — 1.10.0 asked the next
-  `meta` edit touching §9 to do that, having fast-forwarded its own and left
-  `main` unable to show the shape. The dry run walked a hypothetical day-050
-  revisit of `countup` against the amended text: `base:` `fcb1fec`, two local
-  commits, `sha:` `d72730d`, §9.2's range check returning the one owner line,
-  §11's marker diff taken over `base..sha` and returning the increment. It then
-  found the draft's one false sentence. The draft said `base:` **is** the
-  previous ship's sha on a revisit. It is not, whenever an evening polished
-  after the ship: day 046 shipped `tool-loop-viz` at `764e949` and its evening
-  left the repo at `cea938e`, **22 commits later**, which is what a day-050
-  revisit would take. The claim is now stated as what it is — `base:` is the
-  previous ship's sha or a descendant of it, so a marker absent at `base:` is
-  absent at the previous ship too, which makes `base..sha` sound and sometimes
-  stricter and **never** the looser of the two. `countup` alone would not have
-  caught this: its tip *is* day 040's ship sha, so the false sentence was true
-  of the case the dry run started with.
+  **What the cycles changed is worth more than what the first draft said.** Two
+  critics ran §10 cold and rejected it, and their findings converged on the
+  same shape twice.
 
-  **Not retroactive, and the dashboard's account of this is corrected rather
-  than inherited.** The dashboard has been recording that *"a sha field in §10
-  unblocks five more"* — days 019–022 and 024. It does not. Those sign-offs sit
-  on closed `shipped` issues that §3 makes immutable, so the field recovers
-  nothing written before it; §11's *no recoverable sha, no check* still governs
-  the entire existing backlog and stops being the usual outcome only for ships
-  from this version forward. Recovering those five shas from git history is a
-  different job and is filed, not claimed here.
+  *The canary's own correction was still wrong.* §9.2 is inside §9 and §9 is on
+  §14's canary list, so a branch and a dry run were owed. Branch
+  `meta/63-noon-1.11.0`, merged **`--no-ff`** — 1.10.0 asked the next such edit
+  to do that, having fast-forwarded its own. The dry run walked a hypothetical
+  day-050 revisit of `countup` and caught the draft claiming `base:` **is** the
+  previous ship's sha: day 046 shipped `tool-loop-viz` at `764e949` and its
+  evening left the repo at `cea938e`, **22 commits later**, which is what a
+  revisit would take. `countup` alone could not have caught it — its tip *is*
+  day 040's ship sha. The replacement claim then said a marker absent at `base:`
+  is *"absent at the previous ship too"* and so *"never the looser"*. **That is
+  false, and both critics found it independently.** Absence does not survive a
+  descendant step: an evening deletes a literal, the revisit restores it, and
+  the diff shows it added while the previous ship's tree had it all along —
+  which is a licensed route to the irreversible `verified` §11 spends a whole
+  paragraph preventing. The inference is deleted. §10 now says the opposite in
+  as many words: `base..sha` does **not** stand in for §11's test, and the
+  marker must still be confirmed absent at the previous ship's sha.
 
-  **Three of #63's five items were already discharged and are recorded as such
-  rather than re-done.** Item 2 (`agents/shipper.md` got half the §9.2
-  obligation) was closed by `be08b9f`, which names #63 in its own message. Item
-  4 (changelog wrapping breaking code spans) was closed for the changelog by
-  1.7.1 and the 2026-09-12 evening; a single live instance survived anywhere in
-  the file, §16 clause 3's `EVENING VERIFIED day-<NNN>`, and is unwrapped here
-  because it is two characters. Item 5 was #62's, shipped as day 048. **Item 3
-  is resolved as won't-fix**, with the reason in the record instead of left to a
-  later reader: §9.2 is over the day-028 spec's ≤16-line budget, but every
-  clause in it traces to a measured failure, the section has already been wrong
-  twice in the *shortening* direction — 1.7.1 narrowed a rule while claiming to
-  change none and 1.7.2 had to undo it — and a cosmetic trim of §9 would drag a
-  mandatory canary behind it for no change in behaviour. The honest conclusion
-  is that the budget was wrong, not that §9.2 is.
+  *The §11 corrections over-corrected.* The first pass replaced "no sha field"
+  with a claim that the skip is *"the common outcome across the whole existing
+  backlog"*. The dashboard says 31 of 48 ships are `verified`, every one without
+  a `sha:` field, and §11's own sentence one line above names the second source
+  — *"from its sign-off **or its dashboard narrative**"*. §11's dry runs reached
+  `d74b16f` and `287a103` that way. Both sentences now name the five ships it is
+  actually true of, days 019–022 and 024.
+
+  *And §9.2's pointer did not close the case it cited.* It offered §10 as the
+  base's home against *"a run that dies after a subagent has pushed"* — but §10
+  is step 7 of nine, so such a run dies before reaching it. §9.2 now says to
+  write the base down **where it is taken**, in the §4 spec comment, and carry
+  it to §10 at sign-off. This run had already done that by hand; doctrine had
+  not learned it.
+
+  **Not retroactive, and the arithmetic of that is corrected in today's KPI
+  row.** The dashboard has been recording that *"a sha field in §10 unblocks
+  five more"* — days 019–022 and 024. It does not: those sign-offs sit on closed
+  `shipped` issues that §3 makes immutable. §9.8's KPI row, which every ship
+  rewrites, says so from today. The two older narrative passages that carry the
+  same claim are past shifts' accounts of their own nights and are left standing
+  rather than rewritten, which is day 048's precedent. Recovering the five shas
+  from git history is real and is **#130** item 2, not a claim made here.
+
+  **Three of #63's five items were already discharged** and are recorded as such
+  rather than re-done: item 2 by `be08b9f`, which names #63 in its own message;
+  item 4 by 1.7.1 and the 2026-09-12 evening, bar one live instance in §16
+  clause 3, unwrapped here; item 5 by #62, shipped as day 048. **Item 3 is
+  resolved won't-fix** with the reason in the record rather than left to a later
+  reader: §9.2 is over the day-028 spec's ≤16-line budget, but every clause in
+  it traces to a measured failure, the section has already been wrong twice in
+  the *shortening* direction — 1.7.1 narrowed a rule while claiming to change
+  none and 1.7.2 had to undo it — and a cosmetic trim of §9 would drag a
+  mandatory canary behind it for no change in behaviour. The budget was wrong,
+  not §9.2.
 
   This ship's must-pass set is the five a doctrine-only `meta` ship has (§16
   clause 5), and the same two fail on **#65** — no LICENSE and no root README at
   the hub. This shift found **#65 itself closed** as `completed` at
-  `2026-09-13T03:41:08Z` with no comment and the condition untouched, two
-  seconds after the 2026-09-12 evening's last push; it is reopened, because
-  §11's *Unverifiable* outcome and §16 clause 5's consequence both read that
-  open issue rather than the tree, and without it a sound `meta` ship draws a
-  sticky false **Fail**. The phase gate does **not** move: `phase: 0`,
-  unchanged.
+  `2026-09-13T03:41:08Z`, with no comment and the condition untouched, two
+  seconds after the 2026-09-12 evening's last push. It is reopened and the
+  finding is on the issue: §11's *Unverifiable* outcome and §16 clause 5's
+  consequence both read that open issue rather than the tree, and without it a
+  sound `meta` ship draws a **Fail** that §11 then makes sticky. The phase gate
+  does **not** move: `phase: 0`, unchanged.
 
 - **1.10.0** (2026-09-12) — the lessons file stops keeping a queue, and the
   phase gate stops forbidding the shipper's daily work (meta issue #62, items 1
