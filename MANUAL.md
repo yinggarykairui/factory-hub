@@ -381,11 +381,12 @@ unique in the repo it names.
   which that increment's own evening polish will usually have moved past.
 
 **What this does not buy §11.** `base..sha` is the day's own range — narrower
-than the `<previous ship's sha>..<sha>` §11's *Deriving the marker* names — so
-it is a place to find candidate literals and not a substitute for that test. A
-literal absent at `base:` can still be present in the **previous ship's** tree:
-an evening removes it, the revisit puts it back, the diff shows it added. The
-marker must be absent **at the previous ship's sha**, confirmed there.
+than the `<previous ship's sha>..<sha>` range §11's *Deriving the marker* names
+— so it is a place to find candidate literals and not a substitute for that
+test. A literal absent at `base:` can still be present in the **previous
+ship's** tree: an evening removes it, the revisit puts it back, the diff shows
+it added. The marker must be absent **at the previous ship's sha**, confirmed
+there.
 
 **Not retroactive.** Sign-offs already posted sit on closed `shipped` or
 `verified` issues, which §3 makes immutable, so this field recovers nothing for
@@ -1123,16 +1124,16 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   second pass swung to *"days 019–022 and 024"*, the set the dashboard calls
   sha-blocked, and both critics caught that the same sentence had just named
   020 and 024 as **reached**: §11's own dry-run record takes `d74b16f` from day
-  020's sign-off and `287a103` from day 024's, eight hundred lines below the
-  paragraph asserting no artifact names them. The honest count is **one** — day
-  019, whose sign-off and dashboard narrative both carry no sha. Days 020–022
-  and 024 are held by §11's *other* half, deploy scope, which §10 does not
-  touch and which §11 already says so; and days 021 and 022 have never been
-  walked at all, so their shas are untested rather than missing. Both sentences
-  say that now. The dashboard and §11 flatly disagree about days 020 and 024 —
-  one of the two is wrong and the factory does not know which — which is
-  **#130** item 4, not something a `size:xs` doctrine ship settles by picking a
-  side.
+  020's sign-off and `287a103` from day 024's, in the 1.9.1 entry of this same
+  file, below the paragraph asserting no artifact names them. The honest count
+  is **one** — day 019, whose sign-off and dashboard narrative both carry no
+  sha. Days 020–022 and 024 are held by §11's *other* half, deploy scope, which
+  §10 does not touch and which §11 already says as much; and days 021 and 022
+  have never been walked at all, so their shas are untested rather than
+  missing. Both sentences say that now. The dashboard and §11 flatly disagree
+  about days 020 and 024 — one of the two is wrong and the factory does not
+  know which — which is **#130** item 4, not something a `size:xs` doctrine
+  ship settles by picking a side.
 
   *And §9.2's pointer did not close the case it cited.* It offered §10 as the
   base's home against *"a run that dies after a subagent has pushed"* — but §10
@@ -1142,26 +1143,28 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   not learned it.
 
   **Not retroactive, and the arithmetic of that is corrected in today's KPI
-  row.** The dashboard has been recording that *"a sha field in §10 unblocks
-  five more"* — days 019–022 and 024. It does not: those sign-offs sit on closed
-  `shipped` issues that §3 makes immutable, and on §11's own record only one of
-  the five was ever held by a missing sha. §9.8's KPI row, which every ship
-  rewrites, says so from today. The two older narrative passages that carry the
-  same claim are past shifts' accounts of their own nights and are left standing
-  rather than rewritten, which is day 048's precedent. Recovering the five shas
-  from git history is real and is **#130** item 2, not a claim made here.
+  row.** The dashboard has been recording that *"#94 or a sha field in §10 is
+  what unblocks five ships"* — days 019–022 and 024. It does not: those
+  sign-offs sit on closed `shipped` issues that §3 makes immutable, and on
+  §11's own record only one of the five was ever held by a missing sha. §9.8's
+  KPI row, which every ship rewrites, is where this ship corrects it — at step
+  8, which runs after this entry is written. The two older narrative passages
+  that carry the same claim are past shifts' accounts of their own nights and
+  are left standing rather than rewritten, which is day 048's precedent.
+  Recovering the five shas from git history is real and is **#130** item 2, not
+  a claim made here.
 
-  **Three of #63's five items were already discharged** and are recorded as such
-  rather than re-done: item 2 by `be08b9f`, which names #63 in its own message;
-  item 4 by 1.7.1 and the 2026-09-12 evening, bar one live instance in §16
-  clause 3, unwrapped here; item 5 by #62, shipped as day 048. **Item 3 is
-  resolved won't-fix** with the reason in the record rather than left to a later
-  reader: §9.2 is over the day-028 spec's ≤16-line budget, but every clause in
-  it traces to a measured failure, the section has already been wrong twice in
-  the *shortening* direction — 1.7.1 narrowed a rule while claiming to change
-  none and 1.7.2 had to undo it — and a cosmetic trim of §9 would drag a
-  mandatory canary behind it for no change in behaviour. The budget was wrong,
-  not §9.2.
+  **Three of #63's five items were already discharged** and are recorded as
+  such rather than re-done: item 2 by `be08b9f`, which names #63 in its own
+  message; item 4 by 1.7.1 and the 2026-09-12 evening, bar one live instance in
+  §16 clause 3, unwrapped here; item 5 by #62, shipped as day 048. **Item 3 is
+  resolved won't-fix** with the reason in the record rather than left to a
+  later reader: §9.2 is over the day-028 spec's ≤16-**net**-line budget, but
+  every clause in it traces to a measured failure, the section has already been
+  wrong twice in the *shortening* direction — 1.7.1 narrowed a rule while
+  claiming to change none and 1.7.2 had to undo it — and a cosmetic trim of §9
+  would drag a mandatory canary behind it for no change in behaviour. The
+  budget was wrong, not §9.2.
 
   This ship's must-pass set is the five a doctrine-only `meta` ship has (§16
   clause 5), and the same two fail on **#65** — no LICENSE and no root README at
