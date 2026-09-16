@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.11.0
+manual_version: 1.12.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -1122,6 +1122,121 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.12.0** (2026-09-16) — the authorship check stops being a check on the
+  copy that runs it, and the repair stops destroying what it repairs (meta
+  issue #64, items 1–10).
+
+  **Six of the eight §9.2 items were reproduced again before they were fixed,
+  and two of #64's own candidate fixes turned out to be incomplete.** #64 was
+  filed by the 2026-08-21 evening against `454746b` with every item reproduced
+  in a throwaway repo — this build did not take that on trust, because the
+  factory's standing failure is the confident sentence whose premise is false
+  and a candidate fix is a candidate. All six reproduced exactly as filed.
+
+  **Item 1 is the one that let a grey commit onto `main` behind a PASS.**
+  `<base>..HEAD` reads the copy that runs it. A sibling clone that has already
+  pushed is invisible there, so the check passes, the push is rejected
+  non-fast-forward, and the reconcile §15 forces pulls the grey commit in after
+  the check has run — with nothing anywhere mandating a second one. Walked end
+  to end: the old form printed **one** identity line at the pre-push moment and
+  `origin/main` carried two. The fix adds `git fetch` and the
+  `<base>..origin/<default>` half, confirmed to print **two** at that same
+  moment, and one rule the command cannot carry — **re-run after any pull,
+  merge or rebase that reconciles with the remote**.
+
+  **The repair had three independent faults and each was reproduced failing.**
+  `--reset-author` resets the author *date* too, moving every contribution
+  square to the repair day, which is the exact thing §9.2 exists to control —
+  two commits dated 2026-09-02 and 2026-09-03 came out both dated today.
+  A plain `git rebase` **linearizes**: exit 0, "Successfully rebased", authors
+  correct, the merge commit gone, no warning. And an **empty commit aborts it
+  mid-flight** — a 3-commit range became 2, detached HEAD, exit 1, still grey.
+  The replacement carries `--rebase-merges --empty=keep` and
+  `--allow-empty --date="$(git log -1 --format=%aD)"`, run on a range holding a
+  merge *and* an empty commit: exit 0, 5 of 5 commits, topology intact, one
+  identity, dates preserved.
+
+  **One exception is stated rather than left to be discovered.** A merge commit
+  is *recreated* by `--rebase-merges`, so it takes a fresh author date that
+  `--date` cannot recover — at exec time the value it reads is already today's.
+  Every ordinary commit keeps its square; the merge's moves. #64's item 2
+  candidate did not say this and the manual now does, because §9.2 has been
+  wrong twice in the **shortening** direction (1.7.1 narrowed a rule while
+  claiming to change none; 1.7.2 undid it) and an unstated exception is how
+  that happens.
+
+  **"Zero lines is a failure" stops being prose** (item 6). The check is now a
+  shell assertion whose exit status is the verdict, so the unsubstituted
+  `<base>`, the empty shell variable and the empty range all fail on the
+  comparison instead of on a human noticing an empty list. All three were run
+  against it and all three returned non-zero; a clean range returned zero.
+  The `origin/<default>` half is dropped only while a repo has no remote branch
+  — there it *errors*, which fails in the safe direction rather than the quiet
+  one.
+
+  **The committer is read too** (item 5), and it was checked against this repo
+  before being adopted rather than after: author and committer agree on **208
+  of 209** commits in the hub's entire history, the exception being the single
+  already-pushed grey commit #98 records. So `%cn <%ce>` costs no square, can
+  retroactively fail no range inside a run, and closes a claim day 028's
+  dashboard made that the shipped command could not show.
+
+  **Item 7's dead end gets an exit.** Repair reaches back only to the last
+  push, so an already-pushed wrong author stays inside `<base>..HEAD`
+  permanently and every later push re-runs a check that hard-fails — while §9
+  items 3–8 all *require* pushes. A reader had to hold two readings at once.
+  Now: from the `needs-retry` label on, the check is recorded failed for the
+  day and stops gating that repo, and directive 1 decides what ships.
+
+  **Item 8 was fixed the second way, and the first way is refused on the
+  record.** §9's header says the shipper runs the nine items *in order* and
+  `agents/shipper.md` says *"Never reorders the checklist"*, so a literal
+  shipper checks at item 2 and then pushes at 5, 6, 7 and 8 unchecked —
+  including the dashboard commit the rule exists to green. #64's first
+  candidate was to promote the verify to its own numbered item. **Refused:**
+  `§9.1`, `§9.2`, `§9.3`, `§9.5`, `§9.8`, *"step 7 of nine"* and *"step 9"* are
+  cited across `MANUAL.md`, `dashboard/README.md`, `HANDOFF.md`, `LESSONS.md`
+  and four files under `agents/`; a renumber silently re-points every one of
+  them, which is the hazard §11 already names about numbered draws into
+  unnumbered lists. Item 2 gains an explicit "this one is not once-through"
+  clause instead, and `shipper.md`'s hard limit now says that repeating it is
+  not a reorder.
+
+  **`<base>` occurred zero times under `agents/`** (item 9) while
+  `builder.md` and `fixer.md` both ordered their agent to run "§9.2's range
+  check". A builder in a fresh clone could only re-take it — §9.2 forbids that
+  — or leave it unsubstituted, which is §9.2's own silent zero. Both briefs now
+  name it as a **received input**, and `fixer.md` says why the obvious
+  substitute is worse than nothing: in a fixer's clone `git rev-parse HEAD`
+  returns the builder's last push and hides every earlier commit behind a range
+  check that then passes.
+
+  **`agents/foreman.md` said it was inactive** (item 10) while §16 has made the
+  evening mandate a standing exception since the 20:00 trigger was created —
+  and that shift commits and pushes. Day 028's spec used the "inactive" header
+  to justify excluding the file from the authorship edit, so the evening was
+  covered by §2.2 reaching it through the manual rather than by its own brief.
+  The header now separates the mandate that runs now from the §11.1–.5 duties
+  that wait for phase 1, and names the §9.2 obligation.
+
+  **The canary ran and the dry run found something.** §9.2 is inside §9, which
+  is on §14's canary list: branch `meta/64-noon-1.12.0`, merged **`--no-ff`**,
+  continuing what 1.10.0 asked for and 1.11.0 first delivered. The dry run is
+  recorded on #64.
+
+  **Not fixed here, and named rather than left to be noticed.** The two
+  already-pushed grey ranges stay the owner's — #41's eight commits in
+  `tiny-synth` and the hub's own `c618909` (#98) — because §15 forbids the
+  force-push and 1.12.0 does not change that. No linter ships: §16's standing
+  caution about a tool that can be wrong in the generous direction applies most
+  sharply to a checker of the factory's own authorship, so item 6's fix is one
+  shell line inside the manual and not a program in `scripts/`.
+
+  This ship's must-pass set is the five a doctrine-only `meta` ship has (§16
+  clause 5), and the same two fail on **#65** — no LICENSE and no root README
+  at the hub. Pre-existing, untouched here, §11's *Unverifiable* rather than a
+  failure of the ship. The phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.11.0** (2026-09-14) — the sign-off records the range it shipped (meta
   issue #63, item 1). §10 gains `sha:` and `base:`; §9.2 says where the base is
