@@ -251,6 +251,11 @@ rises on purpose, not by drift.
    git config user.email "yinggarykairui@gmail.com"
    ```
 
+   Two commands follow and the rest of this item is why. **Every push:** the
+   check block below, exit 0 or stop. **Only after a wrong author:** the repair
+   block after it. Everything between them is the reason each flag is there,
+   and a shift that already knows can skip to the blocks.
+
    Owner's choice, made 2026-08-04. The address must stay one that is verified
    on the `yinggarykairui` account — `kairuigy@stanford.edu` is **not**: it
    verifies on a *second* GitHub account, `kairuigy` (id 297273710), which is
