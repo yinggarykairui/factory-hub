@@ -14,9 +14,10 @@
 > requires the `EVENING VERIFIED day-<NNN>` comment naming the sha checked,
 > which §16 clause 3 cannot be met without. It also **falls through to duties
 > 3–5** when nothing shipped today — §11 says so in as many words, and on a
-> zero-ship night that fall-through is the job. What waits for phase 1 is
-> duties 1–2 as a *standing* verification remit, not the rescue path. Nothing
-> here licenses starting tomorrow's work.
+> zero-ship night that fall-through is the job. §11's **verification debt**
+> paragraph is active now too, after the mandate and never before it. What
+> waits for phase 1 is the numbered duties as a *standing* remit of their own,
+> read straight off this list; nothing here licenses starting tomorrow's work.
 > (Until 1.12.0 this brief said it was inactive, which §16 has contradicted
 > since the evening trigger was created — #64 item 10.)
 
