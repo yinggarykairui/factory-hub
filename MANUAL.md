@@ -298,12 +298,12 @@ rises on purpose, not by drift.
    moment *it* first takes the repo — §9.2's range is the run's, not the day's.
 
    Both ends of the range belong to the **repo**, not to your copy. Substitute
-   two literals. `<base>` is the sha above. `<ref>` is the remote-tracking ref
-   for **the branch you are about to push** — `origin/main` normally, and
-   `origin/<branch>` when you are pushing a canary branch (§14), which every
-   edit to §1–§3 or §7–§9 is. Never leave it at `origin/main` while your
-   commits are going somewhere else: the check would then read a ref nobody is
-   pushing to and pass on it.
+   two literals. `<base>` is the sha above. `<ref>` is **the branch you are
+   about to push**, bare — `main` normally, and the canary branch's own name
+   when you are pushing a canary (§14), which every edit to §1–§3 or §7–§9 is.
+   The `origin/` prefix is already in the command, so `<ref>` never carries
+   one. Never leave it at `main` while your commits are going somewhere else:
+   the check would then read a ref nobody is pushing to and pass on it.
 
    ```
    git fetch -q origin \
@@ -1244,8 +1244,12 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   wrong ref.* `<default>` was fixed to `main`, so on a **canary branch** — which
   §14 requires for this very edit — the check reads a ref nobody is pushing to.
   Reproduced on a branch push: exit 0 with the grey commit on
-  `origin/<branch>`. The placeholder is now `<ref>`, defined as the
-  remote-tracking ref of the branch you are about to push.
+  `origin/<branch>`. The placeholder is now `<ref>`, the **bare** name of the
+  branch you are about to push — bare, because a draft that defined it *with*
+  the `origin/` prefix the command already supplies produced
+  `origin/origin/canary`, a `fatal: ambiguous argument`, and an assertion that
+  read it as an ordinary failure. Found by this build's own regression suite,
+  not by a critic.
 
   **One scope amendment, declared rather than slipped in.** The spec fenced
   this build to §9's **item 2**. A critic then found that item 8 — the

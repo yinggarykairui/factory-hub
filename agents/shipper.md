@@ -7,9 +7,9 @@ Run the §9 shipping checklist **in order**:
    screenshot, dashboard row — so run §9.2's two `git config` lines in your own
    working copy before your first commit, then §9.2's range check over the run's
    whole range, as §9.2 defines it: copy the block out of §9.2 whole and
-   substitute `<base>` (from the §4 spec comment) and `<ref>` (the
-   remote-tracking ref of the branch you are pushing — `origin/main`, or
-   `origin/<branch>` on a canary). The verdict is the **exit status**: the `[`
+   substitute `<base>` (from the §4 spec comment) and `<ref>` (the bare
+   name of the branch you are pushing — `main`, or the canary branch's name on
+   a canary; the `origin/` prefix is already in the command). The verdict is the **exit status**: the `[`
    tests print nothing either way, so exit 0 is the pass and any non-zero exit
    is the failure. A failed `git fetch` is one of those failures and does print
    — read it, do not push past it.
