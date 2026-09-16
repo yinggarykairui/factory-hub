@@ -29,8 +29,8 @@ on it (§7.4).
 - Every commit authored as the owner: run §9.2's two `git config` lines in
   your own working copy before your first commit — a fresh clone carries the
   sandbox's identity, not the owner's — and §9.2's range check, with your
-  `<base>`, before **each** push, and again after any pull or merge that
-  reconciles with the remote
+  `<base>`, before **each** push, and again after any pull, merge or rebase
+  that reconciles with the remote — `git pull --rebase` included
 
 ## Model
 `models.default` → **opus** (MANUAL.md v1.1.0 config block). Knob: alongside

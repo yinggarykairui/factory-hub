@@ -6,15 +6,19 @@ Run the §9 shipping checklist **in order**:
 2. Verify commits are incremental and honest. You commit too — README,
    screenshot, dashboard row — so run §9.2's two `git config` lines in your own
    working copy before your first commit, then §9.2's range check over the run's
-   whole range, as §9.2 defines it: copy the block out of §9.2 whole, substitute
-   `<base>` (from the §4 spec comment) and `<default>` (`main`), and read **only
-   the exit status** — it prints nothing whether it passes or fails, so exit 0
-   is the pass and any non-zero exit is the failure
+   whole range, as §9.2 defines it: copy the block out of §9.2 whole and
+   substitute `<base>` (from the §4 spec comment) and `<ref>` (the
+   remote-tracking ref of the branch you are pushing — `origin/main`, or
+   `origin/<branch>` on a canary). The verdict is the **exit status**: the `[`
+   tests print nothing either way, so exit 0 is the pass and any non-zero exit
+   is the failure. A failed `git fetch` is one of those failures and does print
+   — read it, do not push past it.
    **This item does not run once.** Re-run the check immediately before **every
    later push in this run** — the LICENSE and README commits, the screenshot,
-   the dashboard row and the lessons line all push, and the dashboard commit is
-   the one the rule exists to green — and again after any pull or merge that
-   reconciles with the remote. Repeating an item is not reordering the list
+   the dashboard row, the storefront README that goes to a second repo, the
+   lessons line, and on an epic the `PROJECT.md` done-map — and again after any
+   pull, merge or rebase that reconciles with the remote. Repeating an item is
+   not reordering the list
 3. LICENSE (config default MIT), repo description, topics; assets
    self-generated or CC0 with provenance noted
 4. README per STYLE.md: what it is, why it exists, screenshot, how to run,

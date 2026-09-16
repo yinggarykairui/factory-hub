@@ -251,10 +251,12 @@ rises on purpose, not by drift.
    git config user.email "yinggarykairui@gmail.com"
    ```
 
-   Two commands follow and the rest of this item is why. **Every push:** the
-   check block below, exit 0 or stop. **Only after a wrong author:** the repair
-   block after it. Everything between them is the reason each flag is there,
-   and a shift that already knows can skip to the blocks.
+   Below: the **check** block, run before every push, exit 0 or stop; then the
+   **repair** block, run only after a wrong author. Between and after them are
+   four rules, not commentary — how the check degrades on a repo with no base
+   or no remote branch, when to re-run it, what to do when the bad commits are
+   already pushed, and why the repair's `--exec` stays on one line. Read those;
+   the flag rationales are the only skippable part.
 
    Owner's choice, made 2026-08-04. The address must stay one that is verified
    on the `yinggarykairui` account — `kairuigy@stanford.edu` is **not**: it
@@ -280,8 +282,9 @@ rises on purpose, not by drift.
    Verify **before every push**, over the run's whole range — `<base>` is the
    sha the repo was at when the run first took it (`git rev-parse HEAD` then),
    one per repo, carried into every copy the run makes of it, never re-taken
-   per copy; a repo this run created has no base, so drop `<base>..` and the
-   `origin/` half with it. **Write it down where you take it** — in the §4 spec
+   per copy; a repo this run created has no base, so drop `<base>..` — and only
+   that, the remote operand being governed by a different fact, below.
+   **Write it down where you take it** — in the §4 spec
    comment, at the moment the run first takes the repo — and carry it to §10's
    `base:` field at sign-off. Directive 3 is why: a run that dies after a
    subagent has pushed leaves the next shift unable to compute the range this
@@ -295,13 +298,17 @@ rises on purpose, not by drift.
    moment *it* first takes the repo — §9.2's range is the run's, not the day's.
 
    Both ends of the range belong to the **repo**, not to your copy. Substitute
-   two literals: `<base>` is the sha above, `<default>` is the repo's default
-   branch — `main` for every factory repo.
+   two literals. `<base>` is the sha above. `<ref>` is the remote-tracking ref
+   for **the branch you are about to push** — `origin/main` normally, and
+   `origin/<branch>` when you are pushing a canary branch (§14), which every
+   edit to §1–§3 or §7–§9 is. Never leave it at `origin/main` while your
+   commits are going somewhere else: the check would then read a ref nobody is
+   pushing to and pass on it.
 
    ```
    git fetch -q origin \
    && [ -n "$(git log --format=%H <base>..HEAD)" ] \
-   && [ "$(git log --format='%an <%ae>%n%cn <%ce>' <base>..HEAD <base>..origin/<default> | sort -u)" = "Kairui Ying <yinggarykairui@gmail.com>" ]
+   && [ "$(git log --format='%an <%ae>%n%cn <%ce>' <base>..HEAD <base>..origin/<ref> | sort -u)" = "Kairui Ying <yinggarykairui@gmail.com>" ]
    ```
 
    Exit 0 is the pass. A `[` test prints nothing either way, so **the exit
@@ -309,32 +316,48 @@ rises on purpose, not by drift.
    exit is a failure to act on, never a quiet result to read past. The three
    links are chained with `&&` deliberately. A `git fetch` that fails would
    otherwise leave the verdict to be computed from a **stale**
-   `origin/<default>`, which is the blind spot this check exists to close. And
+   `origin/<ref>`, which is the blind spot this check exists to close. And
    the `-n` guard is there because **an empty `<base>` no longer prints zero
    lines**: it makes the first range `HEAD..HEAD` — empty — while the second
    still returns whatever the remote has, so one clean sibling commit can carry
    a grey local one past the comparison. Before a push, an empty
    `<base>..HEAD` means the substitution is wrong, not that there is nothing to
    check. An **unsubstituted** `<base>` never reaches the comparison at all:
-   the shell reads `<` as a redirection and the line dies with a syntax error,
-   which is loud, and loud is fine. Drop **both** the `git fetch` line and the
-   `<base>..origin/<default>` half only while the repo has no remote branch yet
-   — this run created it and has not pushed — where each errors rather than
-   returning nothing. The literal is the owner's address as fixed above; were
-   that ever to become the `<id>+<login>@` form, this string changes with it.
+   the shell reads `<` as a redirection, fails to open a file called `base`,
+   and exits 1 before `git log` runs. Not a syntax error — `bash -n` passes it
+   — but loud at runtime, and loud is fine. The literal is the owner's address
+   as fixed above; were that ever to become the `<id>+<login>@` form, this
+   string changes with it.
+
+   **Two degradations, keyed on two different facts, and they do not travel
+   together.** *No base* — this run created the repo — drops `<base>..` from
+   both operands and nothing else. *No remote branch yet* — created **and** not
+   yet pushed — drops the `<base>..origin/<ref>` operand, which would otherwise
+   name a ref that does not exist and exit 128. The `git fetch` line stays in
+   both cases: against a remote with no branches it exits 0 and costs nothing.
+   The case that matters is the one in between, and it is every project repo
+   from the builder's second push onward — **created, so no base; pushed, so a
+   remote branch exists**. There you drop `<base>..` and **keep** the remote
+   operand. Dropping both is the whole of item 1 handed back: a sibling's grey
+   commit sits on the remote and the check returns 0.
 
    **Re-run it before every later push in this run, and again after any pull,
    merge or rebase that reconciles with the remote.** That is the clause §9's
    *"in order"* header does not cover, and repeating an item is not reordering
    the list. §9's later items push — the LICENSE and README commits, the
-   screenshot, the dashboard row, the lessons line — and the dashboard commit
-   is the one this rule exists to green. Named rather than numbered, because an
-   insertion into §9 would silently re-map a numbered list.
+   screenshot, the dashboard row, **the storefront README, which goes to a
+   second repo**, the lessons line, and on an epic the `PROJECT.md` done-map —
+   and the dashboard commit is the one this rule exists to green. Named rather
+   than numbered, because an insertion into §9 would silently re-map a numbered
+   list. The storefront repo is one this run did not take: take its base when
+   you first clone it, like any other, and record it in the sign-off — #130
+   item 1 is that §10 has one `base:` field and a run touches more repos than
+   one.
 
-   `origin/<default>` is in the range because the **tip** used to belong to the
+   `origin/<ref>` is in the range because the **tip** used to belong to the
    actor: a sibling copy that has already pushed is invisible to
    `<base>..HEAD`, so the check passes, the push is rejected as
-   non-fast-forward, and the reconcile §15 forces pulls the grey commit onto
+   non-fast-forward, and the reconcile that rejection forces pulls it onto
    `main` behind a check that has already run. `%cn <%ce>` is there because the
    committer is an identity too; greening is author-driven, so it costs no
    square.
@@ -363,7 +386,7 @@ rises on purpose, not by drift.
    **The `--exec` string stays on one line.** A backslash-newline inside single
    quotes is a literal backslash, and a wrapped form gets
    `error: exec commands cannot contain newlines` — exit 1, nothing repaired.
-   Both flags were reproduced failing without them. `--date`, because
+   All three flags below were reproduced failing without them. `--date`, because
    `--reset-author` resets the author *date* too and would move every square to
    the repair day, the thing this section exists to control; it holds for
    merges as well, since `--rebase-merges` recreates them with `merge -C` and
@@ -371,10 +394,8 @@ rises on purpose, not by drift.
    rebase linearizes: exit 0, "Successfully rebased", authors correct, topology
    destroyed, no warning. `--allow-empty`, because a dropped empty commit
    leaves the `--exec` nothing to amend and the rebase aborts mid-flight with
-   the branch short and still grey. (`--empty=keep` was tried and is **not**
-   load-bearing: git keeps an already-empty commit anyway, and `--empty=`
-   governs commits that *become* empty, which this repair cannot produce. It is
-   left out rather than carried as decoration.)
+   the branch short and still grey. `--empty=keep` is deliberately absent; the
+   changelog says why.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
@@ -388,7 +409,8 @@ rises on purpose, not by drift.
    §9.8's dashboard row is pushed, so no crash window exists where neither
    label nor row records the day. Close as `shipped` only when the
    done-map completes.
-8. Dashboard: append the index row (day #, date, slug, type, one-liner, tech,
+8. Dashboard — re-run item 2's check first, here and before the storefront
+   push below. Append the index row (day #, date, slug, type, one-liner, tech,
    rubric average, repo + demo links, idea source, builder model), then refresh
    the KPI row: streak, verified rate, average rubric score, percent of demos
    alive. The hub Pages site renders this file client-side; pushing the update
@@ -1199,7 +1221,7 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   that repo and got exit 0. The check now carries a `-n` guard on
   `<base>..HEAD`, and the three links are chained with `&&` because an
   unchained `git fetch` that fails would leave the verdict to be computed from
-  a stale `origin/<default>` — the blind spot the whole item exists to close.
+  a stale `origin/<ref>` — the blind spot the whole item exists to close.
   Eight cases are now asserted against the block **as MANUAL.md prints it**:
   clean range, clean sibling, grey sibling, empty base, unsubstituted base,
   empty range, failed fetch, correct base with a local grey commit. The first
@@ -1209,13 +1231,38 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   `fatal: invalid --pretty format: x` and the clean case failed. It is
   `--format=%H`.
 
+  **Cycle 2 found the fix for item 1 handing item 1 back, twice.** Both were
+  in cycle 1's own text and both returned exit 0 on a sibling's grey commit.
+  *The degradations were coupled.* Cycle 1 wrote that a repo the run created
+  drops `<base>..` "and the `origin/` half with it" — but *created* and *has no
+  remote branch* are different facts that stop coinciding the moment the repo
+  is first pushed to, which is every project repo from the builder's second
+  push onward. Reproduced: with both halves dropped per that sentence, a
+  sibling's grey commit on `origin/main` returned 0. §9.2 now states the two
+  degradations separately, keyed on their own conditions, and names the
+  in-between case as the one that matters. *And the remote operand named the
+  wrong ref.* `<default>` was fixed to `main`, so on a **canary branch** — which
+  §14 requires for this very edit — the check reads a ref nobody is pushing to.
+  Reproduced on a branch push: exit 0 with the grey commit on
+  `origin/<branch>`. The placeholder is now `<ref>`, defined as the
+  remote-tracking ref of the branch you are about to push.
+
+  **One scope amendment, declared rather than slipped in.** The spec fenced
+  this build to §9's **item 2**. A critic then found that item 8 — the
+  dashboard push, the commit this whole rule exists to green — carries no
+  pointer to the rule, so a shipper working the checklist in order meets the
+  obligation 65 lines behind them and never looks back. Item 8 gains one clause
+  naming the re-run. That is outside the declared fence and inside #64 item 8's
+  own ask; adding four words is not the renumber that was refused, and saying
+  so here is cheaper than a reader finding an undeclared hunk.
+
   **Item 1 is the one that let a grey commit onto `main` behind a PASS.**
   `<base>..HEAD` reads the copy that runs it. A sibling clone that has already
   pushed is invisible there, so the check passes, the push is rejected
   non-fast-forward, and the reconcile §15 forces pulls the grey commit in after
   the check has run — with nothing anywhere mandating a second one. Walked end
   to end: the old form printed **one** identity line at the pre-push moment and
-  `origin/main` carried two. The fix adds the `<base>..origin/<default>` half
+  `origin/main` carried two. The fix adds the `<base>..origin/<ref>` half
   and one rule the command cannot carry — **re-run after any pull, merge or
   rebase that reconciles with the remote**.
 
@@ -1237,8 +1284,10 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   draft was wrong in the factory's own favourite direction. The draft said
   author and committer agree on *"208 of 209"* commits in the hub's history,
   "the exception being the single already-pushed grey commit #98 records". Two
-  critics re-derived it: they agree on **209 of 209**, and on all 262 commits
-  across every ref. `c618909` is not an author/committer disagreement — it is
+  critics re-derived it: they agree on **209 of 209**, and on every commit on
+  every ref — a total deliberately not written here, since it moves with this
+  build's own commits and the first draft's figure was two short by the time it
+  shipped. `c618909` is not an author/committer disagreement — it is
   `Claude <noreply@anthropic.com>` as **both**, a wrong identity in two fields.
   The conclusion (`%cn <%ce>` costs no square and can fail no range inside a
   run) was true and is in fact stronger than the premise offered for it. The
@@ -1261,11 +1310,18 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   verify to its own numbered item. **Refused:** `§9.1`, `§9.2`, `§9.3`, `§9.5`,
   `§9.8`, *"step 7 of nine"* and *"step 9"* are cited across `MANUAL.md`,
   `dashboard/README.md`, `HANDOFF.md`, `LESSONS.md` and five files under
-  `agents/`; a renumber silently re-points every one of them. Item 2 gains a
+  `agents/` — four before this build and five because this build's `foreman.md`
+  edit added one, which is worth saying rather than quoting the larger number
+  as if it were found; a renumber silently re-points every one of them. Item 2 gains a
   "this one is not once-through" clause instead — and the draft of that clause
   **enumerated the pushing items three different ways in one build**, "items 5,
-  6, 7 and 8", "items 3–8" and "items 5–9", none of them right: items 5 and 7
-  push nothing, and items 3, 4, 6, 8 and 9 all do. All three critics found it.
+  6, 7 and 8", "items 3–8" and "items 5–9", none of them right. All three
+  critics found it — and the corrected list was then wrong twice more. Item 5
+  pushes nothing, but item 7 **does** on an epic, checking off `PROJECT.md`'s
+  done-map; and item 8 pushes **twice**, the dashboard row and the storefront
+  README, the second to a different repo. Four wrong enumerations of one set,
+  in one build, inside the fix for the defect that a literal reader follows the
+  enumeration.
   The enumeration is now **by name, not by number** — the LICENSE and README
   commits, the screenshot, the dashboard row, the lessons line — which is also
   the only form that survives an insertion into §9.
@@ -1290,8 +1346,11 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   header now points at that paragraph rather than at the numbered list.
 
   **The canary ran and the dry run found the thing the fix was for.** §9.2 is
-  inside §9, which is on §14's canary list: branch `meta/64-noon-1.12.0`,
-  merged **`--no-ff`**. The dry run was executable rather than hypothetical — a
+  inside §9, which is on §14's canary list, so this entry ships on branch
+  `meta/64-noon-1.12.0` and reaches `main` only through a **`--no-ff`** merge.
+  Written forward: the merge is what this entry travels in, and two critics
+  flagged the past tense the first draft used for a gate that had not opened.
+  The dry run was executable rather than hypothetical — a
   day-051 build walked through the amended §9.2 with a builder subagent pushing
   from a second clone. Scenario A, builder grey: the **1.11.0** form returned
   PASS at the pre-push moment and the **1.12.0** form returned FAIL, which is
@@ -1317,15 +1376,20 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   clause 5). Two fail on **#65** — no LICENSE and no root README at the hub,
   pre-existing, untouched here, §11's *Unverifiable* rather than a failure of
   the ship. A third, the gitleaks line, is **unproven rather than green**:
-  `gitleaks` is not installed in this sandbox, so a critic built a nine-rule
-  scanner, proved it fires on six planted random secrets in both tree and
-  history modes, and read a clean result — no secret anywhere. But the hub's
-  own `HANDOFF.md` records `gitleaks 8.18.4` flagging AWS's published example
-  literal `<elided: AWS published example key id — see 1.12.0>`, and `.gitleaks.toml` allowlists that literal
-  only under `^HANDOFF\.md$` while it also sits in `LESSONS.md` and in
-  `.gitleaks.toml` itself. Three probable findings, none a secret, all
-  pre-existing. Filed, not fixed. The phase gate does **not** move:
-  `phase: 0`, unchanged.
+  `gitleaks` is not installed in this sandbox, so critics built their own
+  scanners, proved them firing on randomly generated values planted in both a
+  tree and a history, and only then read a clean result — no secret anywhere,
+  and no part of the run's PAT in the tree, the history, or any file the build
+  wrote. But the hub's own `HANDOFF.md` records `gitleaks 8.18.4` flagging
+  AWS's published, non-functional example access-key id, and `.gitleaks.toml`
+  allowlists that literal only under `^HANDOFF\.md$` while it also sits in
+  `LESSONS.md` and in `.gitleaks.toml` itself. Two probable findings, neither a
+  secret, both pre-existing — and a **third that was this build's own**: the
+  first draft of this very paragraph spelled the literal out, putting a fourth
+  unallowlisted copy into `MANUAL.md` and into a commit, inside the sentence
+  calling them all pre-existing. A critic caught it. The literal is described
+  here rather than written, and the allowlist question is filed, not fixed. The
+  phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.11.0** (2026-09-14) — the sign-off records the range it shipped (meta
   issue #63, item 1). §10 gains `sha:` and `base:`; §9.2 says where the base is

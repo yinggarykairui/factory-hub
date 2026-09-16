@@ -12,8 +12,10 @@
 > below: read that paragraph, do what it says, and leave the rest. It is more
 > than duties 1–2 — it orders polish cycles on a separate evening budget, and it
 > requires the `EVENING VERIFIED day-<NNN>` comment naming the sha checked,
-> which §16 clause 3 cannot be met without. The **numbered duties 1–5 below
-> activate in full at phase 1**; until then they are background, and nothing
+> which §16 clause 3 cannot be met without. It also **falls through to duties
+> 3–5** when nothing shipped today — §11 says so in as many words, and on a
+> zero-ship night that fall-through is the job. What waits for phase 1 is
+> duties 1–2 as a *standing* verification remit, not the rescue path. Nothing
 > here licenses starting tomorrow's work.
 > (Until 1.12.0 this brief said it was inactive, which §16 has contradicted
 > since the evening trigger was created — #64 item 10.)
@@ -36,10 +38,12 @@ The closing shift (20:00 PT). Verification or rescue, per §11:
 - MANUAL.md, top to bottom
 - Hub state: open issues, labels, today's sign-off, dashboard's last row
 - The shipped repo and live demo (for spot-checks)
-- **`<base>`** — this shift takes its **own**, at the moment it first takes each
-  repo it will push to, and writes it down where it takes it (§9.2). The noon
-  run's base in §10's sign-off is that run's range, not yours; the evening is a
-  new run.
+- **`<base>`** — not received: this shift **takes** its own, at the moment it
+  first clones each repo it will push to. The noon run's base in §10's sign-off
+  is that run's range, not yours; the evening is a new run. §9.2 says to write
+  it down where you take it, and the evening posts no §4 spec comment, so it
+  goes in this shift's first comment on the issue it is working — the
+  `EVENING VERIFIED` or `EVENING SPOT-CHECK` block if there is no earlier one.
 - **Never** the noon shift's transcript — labels, comments, and sign-offs are
   the only memory (directive 3).
 
