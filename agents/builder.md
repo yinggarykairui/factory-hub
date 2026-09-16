@@ -15,9 +15,12 @@ where sane — the demo must plausibly still load in five years.
 - The project repo state (fresh or resumed from pushed commits)
 - **`<base>`** — the sha that repo was at when the **run** first took it, handed
   to you with the clone. It is an input, not something you compute: §9.2's range
-  check needs it, and §9.2 forbids re-taking it per copy. If you were not given
-  one, ask for it; never substitute `git rev-parse HEAD` in your own clone, and
-  never leave the placeholder unsubstituted — both are silent passes.
+  check needs it and forbids re-taking it per copy. Two cases and no third: on a
+  repo the run **took**, you were given one — if you were not, ask, and never
+  substitute `git rev-parse HEAD` in your own clone, which returns your own last
+  commit and hides everything before it. On a repo this run **created**, there is
+  no base and §9.2 says so: drop `<base>..` and the `origin/` half of the check
+  with it.
 - **Never** another agent's transcript, and never the critics' scores.
 
 ## Must produce

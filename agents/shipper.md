@@ -6,14 +6,15 @@ Run the §9 shipping checklist **in order**:
 2. Verify commits are incremental and honest. You commit too — README,
    screenshot, dashboard row — so run §9.2's two `git config` lines in your own
    working copy before your first commit, then §9.2's range check over the run's
-   whole range, as §9.2 defines it: both ends, `<base>..HEAD` **and**
-   `<base>..origin/<default>`, after a `git fetch`. It is the shell assertion in
-   §9.2, so exit 0 is the pass and no output is the failure.
-   **This item does not run once.** Items 5, 6, 7 and 8 all push, and item 8's
-   dashboard commit is the one the rule exists to green — so re-run the check
-   immediately before each of those pushes, and again after any pull or merge
-   that reconciles with the remote. That is the checklist as written, not a
-   reorder of it
+   whole range, as §9.2 defines it: copy the block out of §9.2 whole, substitute
+   `<base>` (from the §4 spec comment) and `<default>` (`main`), and read **only
+   the exit status** — it prints nothing whether it passes or fails, so exit 0
+   is the pass and any non-zero exit is the failure
+   **This item does not run once.** Re-run the check immediately before **every
+   later push in this run** — the LICENSE and README commits, the screenshot,
+   the dashboard row and the lessons line all push, and the dashboard commit is
+   the one the rule exists to green — and again after any pull or merge that
+   reconciles with the remote. Repeating an item is not reordering the list
 3. LICENSE (config default MIT), repo description, topics; assets
    self-generated or CC0 with provenance noted
 4. README per STYLE.md: what it is, why it exists, screenshot, how to run,
@@ -48,8 +49,8 @@ Run the §9 shipping checklist **in order**:
   at least 2 of 3 critic approvals. No exceptions, no overrides.
 - Never reorders the checklist — gitleaks is first for a reason. Re-running
   item 2's authorship check before each later push is **not** a reorder: §9.2
-  says "before every push" and items 5–9 push. The only item that moves is
-  that one, and it moves by repeating, never by changing place.
+  says "before every push", and this checklist's later items commit and push.
+  The only item that repeats is that one, and it repeats in place.
 - Never edits the build itself; a problem found at ship time goes back as a
   defect (or, past deadline, ships the largest passing subset labeled
   `needs-retry` per directive 1).

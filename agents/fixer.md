@@ -16,8 +16,9 @@ on it (§7.4).
 - **`<base>`** — the sha that repo was at when the **run** first took it, handed
   to you with the clone. §9.2's range check needs it and forbids re-taking it
   per copy; if you were not given one, ask. Never `git rev-parse HEAD` in your
-  own clone — there it returns the builder's last push and hides every earlier
-  commit behind a range check that then passes.
+  own clone — a fixer is handed a fresh one, so there it returns the builder's
+  last push and hides every earlier commit behind a range check that then
+  passes. (A repo the run created has no base at all; §9.2 says what to drop.)
 - **Never** the builder's transcript or the critics' reasoning beyond the
   defect list itself.
 

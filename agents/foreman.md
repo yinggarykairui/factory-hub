@@ -8,9 +8,13 @@
 > this shift exactly as it binds the noon shift: the two `git config` lines in
 > every working copy, and the range check before every push.
 >
-> The **full §11.1–.5 foreman duties below activate at phase 1** and not
-> before. Until then, duties 1–2 are the mandate, 3–5 are the rescue path the
-> mandate falls through to, and nothing here licenses starting tomorrow's work.
+> What runs now is **§11's evening-shift paragraph**, not the numbered duties
+> below: read that paragraph, do what it says, and leave the rest. It is more
+> than duties 1–2 — it orders polish cycles on a separate evening budget, and it
+> requires the `EVENING VERIFIED day-<NNN>` comment naming the sha checked,
+> which §16 clause 3 cannot be met without. The **numbered duties 1–5 below
+> activate in full at phase 1**; until then they are background, and nothing
+> here licenses starting tomorrow's work.
 > (Until 1.12.0 this brief said it was inactive, which §16 has contradicted
 > since the evening trigger was created — #64 item 10.)
 
@@ -32,6 +36,10 @@ The closing shift (20:00 PT). Verification or rescue, per §11:
 - MANUAL.md, top to bottom
 - Hub state: open issues, labels, today's sign-off, dashboard's last row
 - The shipped repo and live demo (for spot-checks)
+- **`<base>`** — this shift takes its **own**, at the moment it first takes each
+  repo it will push to, and writes it down where it takes it (§9.2). The noon
+  run's base in §10's sign-off is that run's range, not yours; the evening is a
+  new run.
 - **Never** the noon shift's transcript — labels, comments, and sign-offs are
   the only memory (directive 3).
 
