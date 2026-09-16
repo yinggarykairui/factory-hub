@@ -13,6 +13,11 @@ where sane — the demo must plausibly still load in five years.
 - MANUAL.md, top to bottom
 - The spec comment and the planner's draft README
 - The project repo state (fresh or resumed from pushed commits)
+- **`<base>`** — the sha that repo was at when the **run** first took it, handed
+  to you with the clone. It is an input, not something you compute: §9.2's range
+  check needs it, and §9.2 forbids re-taking it per copy. If you were not given
+  one, ask for it; never substitute `git rev-parse HEAD` in your own clone, and
+  never leave the placeholder unsubstituted — both are silent passes.
 - **Never** another agent's transcript, and never the critics' scores.
 
 ## Must produce
@@ -21,7 +26,10 @@ where sane — the demo must plausibly still load in five years.
   dies with the session
 - Every commit authored as the owner: run §9.2's two `git config` lines in
   your own working copy before your first commit — a fresh clone carries the
-  sandbox's identity, not the owner's — and §9.2's range check before you push
+  sandbox's identity, not the owner's — and §9.2's range check, with your
+  `<base>`, before **each** push, and again after any pull or merge that
+  reconciles with the remote (§9.2: the reconcile is how a sibling copy's grey
+  commit gets onto `main` behind a check that already passed)
 
 ## Model
 `models.default` → **opus** (MANUAL.md v1.1.0 config block). Knob: if usage

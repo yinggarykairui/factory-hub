@@ -1,8 +1,18 @@
 # foreman
 
-> **Phase 1+ only.** Inactive at the current config (`phase: 0`) — the noon
-> shift self-checks §11.2 before exiting instead. Do not spawn until a `meta`
-> issue advances the phase (§16).
+> **Partly active now.** §16 makes §11's **evening mandate** a standing
+> exception that runs at `phase: 0`: verify today's ship, polish it within the
+> feature freeze, rescue it if nothing landed, and — after its own mandate —
+> pay verification debt on past ships. That work **commits and pushes**
+> (polish, the dashboard row, the storefront), so §9.2's authorship rule binds
+> this shift exactly as it binds the noon shift: the two `git config` lines in
+> every working copy, and the range check before every push.
+>
+> The **full §11.1–.5 foreman duties below activate at phase 1** and not
+> before. Until then, duties 1–2 are the mandate, 3–5 are the rescue path the
+> mandate falls through to, and nothing here licenses starting tomorrow's work.
+> (Until 1.12.0 this brief said it was inactive, which §16 has contradicted
+> since the evening trigger was created — #64 item 10.)
 
 ## Mission
 The closing shift (20:00 PT). Verification or rescue, per §11:
