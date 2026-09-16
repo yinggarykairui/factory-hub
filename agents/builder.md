@@ -13,6 +13,16 @@ where sane — the demo must plausibly still load in five years.
 - MANUAL.md, top to bottom
 - The spec comment and the planner's draft README
 - The project repo state (fresh or resumed from pushed commits)
+- **`<base>`** — the sha that repo was at when the **run** first took it, handed
+  to you with the clone. It is an input, not something you compute: §9.2's range
+  check needs it and forbids re-taking it per copy. Two cases and no third: on a
+  repo the run **took**, you were given one — if you were not, ask, and never
+  substitute `git rev-parse HEAD` in your own clone, which returns your own last
+  commit and hides everything before it. On a repo this run **created** there is
+  no base — but that drops `<base>..` and *only* that, and it does not drop the
+  remote half once the repo has been pushed to once, which is where the check
+  earns its keep. §9.2 states both degradations and their conditions; take the
+  form from there rather than from this brief.
 - **Never** another agent's transcript, and never the critics' scores.
 
 ## Must produce
@@ -21,7 +31,11 @@ where sane — the demo must plausibly still load in five years.
   dies with the session
 - Every commit authored as the owner: run §9.2's two `git config` lines in
   your own working copy before your first commit — a fresh clone carries the
-  sandbox's identity, not the owner's — and §9.2's range check before you push
+  sandbox's identity, not the owner's — and §9.2's range check, with your
+  `<base>`, before **each** push, and again after any pull, merge or rebase
+  that reconciles with the remote — `git pull --rebase` included, which is the
+  commonest one after a rejected push (§9.2: the reconcile is how a sibling
+  copy's grey commit gets onto `main` behind a check that already passed)
 
 ## Model
 `models.default` → **opus** (MANUAL.md v1.1.0 config block). Knob: if usage

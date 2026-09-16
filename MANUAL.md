@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.11.0
+manual_version: 1.12.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -251,6 +251,13 @@ rises on purpose, not by drift.
    git config user.email "yinggarykairui@gmail.com"
    ```
 
+   Below: the **check** block, run before every push, exit 0 or stop; then the
+   **repair** block, run only after a wrong author. Between and after them are
+   four rules, not commentary — how the check degrades on a repo with no base
+   or no remote branch, when to re-run it, what to do when the bad commits are
+   already pushed, and why the repair's `--exec` stays on one line. Read those;
+   the flag rationales are the only skippable part.
+
    Owner's choice, made 2026-08-04. The address must stay one that is verified
    on the `yinggarykairui` account — `kairuigy@stanford.edu` is **not**: it
    verifies on a *second* GitHub account, `kairuigy` (id 297273710), which is
@@ -275,30 +282,134 @@ rises on purpose, not by drift.
    Verify **before every push**, over the run's whole range — `<base>` is the
    sha the repo was at when the run first took it (`git rev-parse HEAD` then),
    one per repo, carried into every copy the run makes of it, never re-taken
-   per copy; a repo this run created has no base, so drop `<base>..`. **Write it
-   down where you take it** — in the §4 spec comment, at the moment the run
-   first takes the repo — and carry it to §10's `base:` field at sign-off.
-   Directive 3 is why: a run that dies after a subagent has pushed leaves the
-   next shift unable to compute the range this check runs over, and §10 alone
-   cannot answer that, being step 7 of nine. §10 records the **build repo's**
-   base; the hub's and factory-private's are still carried and unwritten
-   (#130):
+   per copy; a repo this run created has no base, so drop `<base>..` — and only
+   that, the remote operand being governed by a different fact, below.
+   **Write it down where you take it** — in the §4 spec
+   comment, at the moment the run first takes the repo — and carry it to §10's
+   `base:` field at sign-off. A run that posts no §4 spec comment writes it in
+   its own first comment on the issue it is working, the evening shift being
+   the standing case: the rule is *written down before you push*, not *written
+   down in §4*. Directive 3 is why: a run that dies after a
+   subagent has pushed leaves the next shift unable to compute the range this
+   check runs over, and §10 alone cannot answer that, being step 7 of nine. §10
+   records the **build repo's** base; the hub's and factory-private's are still
+   carried and unwritten (#130). **Hand it over with every clone you create**,
+   and name it as a received input where `agents/` does: a copy that was not
+   given one can only re-take it, which this paragraph forbids, or leave the
+   placeholder standing, which is a parse error at best and the silent pass
+   below at worst. A **later shift of the same day** takes its own base, at the
+   moment *it* first takes the repo — §9.2's range is the run's, not the day's.
+
+   Both ends of the range belong to the **repo**, not to your copy. Substitute
+   two literals. `<base>` is the sha above. `<ref>` is **the branch you are
+   about to push**, bare — `main` normally, and the canary branch's own name
+   when you are pushing a canary (§14), which every edit to §1–§3 or §7–§9 is.
+   The `origin/` prefix is already in the command, so `<ref>` never carries
+   one. Never leave it at `main` while your commits are going somewhere else:
+   the check would then read a ref nobody is pushing to and pass on it.
 
    ```
-   git log --format='%an <%ae>' <base>..HEAD | sort -u
+   git fetch -q origin \
+   && [ -n "$(git log --format=%H <base>..HEAD)" ] \
+   && [ "$(git log --format='%an <%ae>%n%cn <%ce>' <base>..HEAD <base>..origin/<ref> | sort -u)" = "Kairui Ying <yinggarykairui@gmail.com>" ]
    ```
 
-   Assert exactly one line: `Kairui Ying <yinggarykairui@gmail.com>`; **zero
-   lines is a failure, not a pass** — an unsubstituted `<base>` prints zero,
-   exit 0. Repair: set the two `git config` lines above first —
-   `--reset-author` reads *this copy's* config, so a rebase before that
-   rewrites the commits and still leaves the wrong author — then re-author
-   from `<start>`, the later of `<base>` and your last push; `--root` in its
-   place only when the repo has **neither** — this run created it and has not
-   pushed it yet:
-   `git rebase <start> --exec 'git commit --amend --reset-author --no-edit'`.
-   A wrong author already pushed is past repair: §15 forbids the force-push, so
-   label `needs-retry`, say so in the sign-off, and leave it to the owner.
+   Exit 0 is the pass. A `[` test prints nothing either way, so **the exit
+   status is the whole verdict** — there is no output to read, and a non-zero
+   exit is a failure to act on, never a quiet result to read past. The three
+   links are chained with `&&` deliberately. A `git fetch` that fails would
+   otherwise leave the verdict to be computed from a **stale**
+   `origin/<ref>`, which is the blind spot this check exists to close. And
+   the `-n` guard is there because **an empty `<base>` no longer prints zero
+   lines**: it makes the first range `HEAD..HEAD` — empty — while the second
+   still returns whatever the remote has, so one clean sibling commit can carry
+   a grey local one past the comparison. Before a push, an empty
+   `<base>..HEAD` means the substitution is wrong, not that there is nothing to
+   check. An **unsubstituted** `<base>` never reaches the comparison at all:
+   the shell reads `<` as a redirection, fails to open a file called `base`,
+   and exits 1 before `git log` runs. Leave `<ref>` unsubstituted too — the
+   likelier copy-paste miss — and it does not even parse: `bash -n` reports a
+   syntax error at the `|`. Either way it is loud, and loud is fine. The literal is the owner's address
+   as fixed above; were that ever to become the `<id>+<login>@` form, this
+   string changes with it.
+
+   **Two degradations, keyed on two different facts, and they do not travel
+   together.** *No base* — this run created the repo — drops `<base>..` from
+   both operands, and nothing else. *`origin/<ref>` does not exist yet* — the
+   branch you are about to push has never been pushed — drops the
+   `<base>..origin/<ref>` operand, which would otherwise name a ref that is not
+   there; git prints `fatal: ambiguous argument` and the block exits **1**, the
+   fatal being swallowed by the command substitution inside `[`.
+
+   **Key the second one on the ref, never on the repo.** They are not the same
+   condition and they come apart in both directions. A repo this run **took**,
+   pushing a **new branch**, has a base and no remote ref — and §14 makes a
+   canary branch mandatory for every edit to §1–§3 or §7–§9, so that is the
+   normal shape of a `meta` ship, not a corner. A repo this run **created and
+   has since pushed to** has no base and does have a remote ref — and that is
+   every project repo from the builder's second push onward. There you drop
+   `<base>..` and **keep** the remote operand; dropping both is the whole of
+   **#64's item 1** handed back (the hub issue's item, not §9's item 1), a
+   sibling's grey commit sitting on the remote while the block returns 0. The
+   `git fetch` line stays in every case: against a remote with no matching
+   branch it exits 0 and costs nothing.
+
+   **Re-run it before every later push in this run, and again after any pull,
+   merge or rebase that reconciles with the remote.** That is the clause §9's
+   *"in order"* header does not cover, and repeating an item is not reordering
+   the list. §9's later items push — the LICENSE and README commits, the
+   screenshot, the dashboard row, **the storefront README, which goes to a
+   second repo**, the lessons line, and on an epic the `PROJECT.md` done-map —
+   and the dashboard commit is the one this rule exists to green. Named rather
+   than numbered, because an insertion into §9 would silently re-map a numbered
+   list. The storefront repo is one this run did not take: take its base when
+   you first clone it, like any other, and record it in the sign-off — #130
+   item 1 is that §10 has one `base:` field and a run touches more repos than
+   one.
+
+   `origin/<ref>` is in the range because the **tip** used to belong to the
+   actor: a sibling copy that has already pushed is invisible to
+   `<base>..HEAD`, so the check passes, the push is rejected as
+   non-fast-forward, and the reconcile that rejection forces pulls it onto
+   `main` behind a check that has already run. `%cn <%ce>` is there because the
+   committer is an identity too; greening is author-driven, so it costs no
+   square.
+
+   **A wrong author already pushed is past repair.** §15 forbids the
+   force-push, so label `needs-retry`, say so in the sign-off, and leave those
+   commits to the owner. From that label on the check is **recorded failed for
+   the day and stops gating** that repo — it can never pass again, the pushed
+   commits staying inside `<base>..HEAD` forever, while §9's later items all
+   require pushes. Directive 1 still decides what ships: the largest working
+   subset, labelled, and said out loud. A **mixed** range is the common shape
+   and both halves apply — repair the unpushed tail, `needs-retry` the pushed
+   prefix, and the day's check is recorded failed either way.
+
+   Repair, for what is **not** yet pushed: set the two `git config` lines above
+   first — `--reset-author` reads *this copy's* config, so a rebase before that
+   rewrites the commits and still leaves the wrong author — then re-author from
+   `<start>`, the later of `<base>` and your last push; `--root` in its place
+   only when the repo has **neither** — this run created it and has not pushed
+   it yet:
+
+   ```
+   git rebase <start> --rebase-merges --exec 'git commit --amend --reset-author --no-edit --allow-empty --date="$(git log -1 --format=%aD)"'
+   ```
+
+   **The `--exec` string stays on one line.** A backslash-newline inside single
+   quotes is a literal backslash, and a wrapped form gets
+   `error: exec commands cannot contain newlines` — exit 1, nothing repaired.
+   All three flags below were reproduced failing without them. `--date`, because
+   `--reset-author` resets the author *date* too and would move every square to
+   the repair day, the thing this section exists to control; it holds for
+   merges as well, since `--rebase-merges` recreates them with `merge -C` and
+   so reuses the original author and date. `--rebase-merges`, because a plain
+   rebase linearizes: exit 0, "Successfully rebased", authors correct, topology
+   destroyed, no warning. `--allow-empty`, because `git commit --amend` refuses
+   an empty commit on its own — *"doing so would make it empty. You can repeat
+   your command with `--allow-empty`"* — so the `--exec` fails, the rebase stops
+   mid-flight, and the branch is left short and still grey. `--empty=keep` is deliberately absent; the
+   changelog says why.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
@@ -312,7 +423,8 @@ rises on purpose, not by drift.
    §9.8's dashboard row is pushed, so no crash window exists where neither
    label nor row records the day. Close as `shipped` only when the
    done-map completes.
-8. Dashboard: append the index row (day #, date, slug, type, one-liner, tech,
+8. Dashboard — re-run item 2's check first, here and before the storefront
+   push below. Append the index row (day #, date, slug, type, one-liner, tech,
    rubric average, repo + demo links, idea source, builder model), then refresh
    the KPI row: streak, verified rate, average rubric score, percent of demos
    alive. The hub Pages site renders this file client-side; pushing the update
@@ -1074,6 +1186,275 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.12.0** (2026-09-16) — the authorship check stops being a check on the
+  copy that runs it, the repair stops destroying what it repairs, and the first
+  draft of both shipped a command that could not execute (meta issue #64,
+  items 1–10).
+
+  **Every mechanical item was reproduced before it was fixed, and the build
+  still got four claims wrong.** #64 was filed by the 2026-08-21 evening with
+  each item reproduced in a throwaway repo; this build re-reproduced all six
+  rather than take them on trust. All six held. What did not hold was this
+  build's own first draft, and three critics on clean context found it — which
+  is the part of the day worth recording, because the errors were the exact
+  class the factory keeps filing against itself.
+
+  *The repair command it printed could not be run.* The draft pretty-printed
+  the `--exec` argument across three lines with backslash continuations. A
+  backslash-newline **inside single quotes** is a literal backslash, so git
+  received an embedded newline and answered
+  `error: exec commands cannot contain newlines` — exit 1, nothing repaired.
+  The single-line form had been tested; the wrapped form was shipped. All three
+  critics ran the manual's literal bytes and all three found it independently.
+  §9.2 now says the string stays on one line, and says why.
+
+  *The exception it was proudest of was false.* The draft claimed a merge
+  commit is recreated with a fresh author date that `--date` cannot recover,
+  and offered this as an exception "stated rather than discovered". It is not
+  an exception: `--rebase-merges` emits `merge -C <original>`, which reuses the
+  original author **and its date**. The draft's evidence was a test whose merge
+  had been created that same day, so a preserved date read as a moved one. Two
+  critics instrumented the exec and got the original date back; a third
+  reproduction here, with the merge dated 2026-09-04, came out 2026-09-04.
+  Deleted. Dates are preserved for merges like everything else.
+
+  *One flag was carried as decoration.* `--empty=keep` was dropped from the
+  command and the sentence claiming every flag was load-bearing was corrected:
+  git keeps an already-empty commit anyway, and `--empty=` governs commits that
+  *become* empty, which this repair cannot produce. Dropping it changes
+  nothing — exit 0, 5 of 5 commits, merge intact, dates preserved, verified
+  both ways. `--allow-empty` is what cures the abort, and `--rebase-merges` and
+  `--date` were each reproduced failing without them.
+
+  *And the tightened check reintroduced a silent zero on the way to closing
+  one.* With `<base>` an empty shell variable the first range collapses to
+  `HEAD..HEAD` while the second still returns whatever the remote has — so one
+  clean sibling commit could carry a grey local one past the comparison, a
+  **pass** where the old single-range form printed zero lines. A critic built
+  that repo and got exit 0. The check now carries a `-n` guard on
+  `<base>..HEAD`, and the three links are chained with `&&` because an
+  unchained `git fetch` that fails would leave the verdict to be computed from
+  a stale `origin/<ref>` — the blind spot the whole item exists to close.
+  Eight cases are now asserted against the block **as MANUAL.md prints it**:
+  clean range, clean sibling, grey sibling, empty base, unsubstituted base,
+  empty range, failed fetch, correct base with a local grey commit. The first
+  two pass, the other six fail. The suite also caught a fault no critic saw —
+  the guard was first written `git log --format=x`, and a `--pretty` string
+  with no `%` in it is read as a **builtin format name**, so git exited
+  `fatal: invalid --pretty format: x` and the clean case failed. It is
+  `--format=%H`.
+
+  **Cycle 2 found the fix for item 1 handing item 1 back, twice.** Both were
+  in cycle 1's own text and both returned exit 0 on a sibling's grey commit.
+  *The degradations were coupled.* Cycle 1 wrote that a repo the run created
+  drops `<base>..` "and the `origin/` half with it" — but *created* and *has no
+  remote branch* are different facts that stop coinciding the moment the repo
+  is first pushed to, which is every project repo from the builder's second
+  push onward. Reproduced: with both halves dropped per that sentence, a
+  sibling's grey commit on `origin/main` returned 0. §9.2 now states the two
+  degradations separately, keyed on their own conditions, and names the
+  in-between case as the one that matters. *And the remote operand named the
+  wrong ref.* `<default>` was fixed to `main`, so on a **canary branch** — which
+  §14 requires for this very edit — the check reads a ref nobody is pushing to.
+  Reproduced on a branch push: exit 0 with the grey commit on
+  `origin/<branch>`. The placeholder is now `<ref>`, the **bare** name of the
+  branch you are about to push — bare, because a draft that defined it *with*
+  the `origin/` prefix the command already supplies produced
+  `origin/origin/canary`, a `fatal: ambiguous argument`, and an assertion that
+  read it as an ordinary failure. Found by this build's own regression suite,
+  not by a critic.
+
+  **One scope amendment, declared rather than slipped in.** The spec fenced
+  this build to §9's **item 2**. A critic then found that item 8 — the
+  dashboard push, the commit this whole rule exists to green — carries no
+  pointer to the rule, so a shipper working the checklist in order meets the
+  obligation 65 lines behind them and never looks back. Item 8 gains one clause
+  naming the re-run — twelve words, counted rather than estimated, after a
+  draft of this sentence said four. That is outside the declared fence and
+  inside #64 item 8's own ask; a clause is not the renumber that was refused,
+  and saying so here is cheaper than a reader finding an undeclared hunk.
+  `agents/shipper.md`'s item 8 carries it too, which the first pass forgot —
+  the brief is what the shipper actually works.
+
+  **Item 1 is the one that let a grey commit onto `main` behind a PASS.**
+  `<base>..HEAD` reads the copy that runs it. A sibling clone that has already
+  pushed is invisible there, so the check passes, the push is rejected
+  non-fast-forward, and the reconcile §15 forces pulls the grey commit in after
+  the check has run — with nothing anywhere mandating a second one. Walked end
+  to end: the old form printed **one** identity line at the pre-push moment and
+  `origin/main` carried two. The fix adds the `<base>..origin/<ref>` half
+  and one rule the command cannot carry — **re-run after any pull, merge or
+  rebase that reconciles with the remote**.
+
+  **The repair had three independent faults, each reproduced failing.**
+  `--reset-author` resets the author *date* too, moving every contribution
+  square to the repair day, which is the exact thing §9.2 exists to control —
+  two commits dated 2026-09-02 and 2026-09-03 came out both dated today. A
+  plain `git rebase` **linearizes**: exit 0, "Successfully rebased", authors
+  correct, the merge commit gone, no warning. And an **empty commit aborts it
+  mid-flight** — a 3-commit range became 2, detached HEAD, exit 1, still grey.
+
+  **"Zero lines is a failure" stops being prose** (item 6). The check is a
+  shell assertion whose exit status is the verdict, and §9.2 now says outright
+  that it prints nothing **either way** — the draft's wording survived into
+  `agents/shipper.md` as *"no output is the failure"*, which told the shipper
+  to read every pass as a failure. Two critics caught it.
+
+  **The committer is read too** (item 5), and the claim made for it in the
+  draft was wrong in the factory's own favourite direction. The draft said
+  author and committer agree on *"208 of 209"* commits in the hub's history,
+  "the exception being the single already-pushed grey commit #98 records". Two
+  critics re-derived it: they agree on **209 of 209**, and on every commit on
+  every ref — a total deliberately not written here, since it moves with this
+  build's own commits and the first draft's figure was two short by the time it
+  shipped. `c618909` is not an author/committer disagreement — it is
+  `Claude <noreply@anthropic.com>` as **both**, a wrong identity in two fields.
+  The conclusion (`%cn <%ce>` costs no square and can fail no range inside a
+  run) was true and is in fact stronger than the premise offered for it. The
+  premise was a miscounted `uniq -c`.
+
+  **Item 7's dead end gets an exit.** Repair reaches back only to the last
+  push, so an already-pushed wrong author stays inside `<base>..HEAD`
+  permanently and every later push re-runs a check that hard-fails — while §9's
+  later items *require* pushes. From the `needs-retry` label on, the check is
+  recorded failed for the day and stops gating that repo, and directive 1
+  decides what ships. A critic then found the **mixed** range unaddressed —
+  some bad commits pushed, some not, with `<start>` and the past-repair
+  sentence both reading as governing. §9.2 now says both halves apply.
+
+  **Item 8 was fixed the second way, and the first way is refused on the
+  record.** §9's header says the shipper runs the nine items *in order* and
+  `agents/shipper.md` says *"Never reorders the checklist"*, so a literal
+  shipper checks at item 2 and then pushes unchecked — including the dashboard
+  commit the rule exists to green. #64's first candidate was to promote the
+  verify to its own numbered item. **Refused:** `§9.1`, `§9.2`, `§9.3`, `§9.5`,
+  `§9.8`, *"step 7 of nine"* and *"step 9"* are cited across `MANUAL.md`,
+  `dashboard/README.md`, `HANDOFF.md`, `LESSONS.md` and five files under
+  `agents/` — four before this build and five because this build's `foreman.md`
+  edit added one, which is worth saying rather than quoting the larger number
+  as if it were found; a renumber silently re-points every one of them. Item 2 gains a
+  "this one is not once-through" clause instead — and the draft of that clause
+  **enumerated the pushing items three different ways in one build**, "items 5,
+  6, 7 and 8", "items 3–8" and "items 5–9", none of them right. All three
+  critics found it — and the corrected list was then wrong twice more. Item 5
+  pushes nothing, but item 7 **does** on an epic, checking off `PROJECT.md`'s
+  done-map; and item 8 pushes **twice**, the dashboard row and the storefront
+  README, the second to a different repo. Four wrong enumerations of one set,
+  in one build, inside the fix for the defect that a literal reader follows the
+  enumeration.
+  The enumeration is now **by name, not by number** — the LICENSE and README
+  commits, the screenshot, the dashboard row, the storefront README that goes
+  to a second repo, the lessons line, and on an epic the `PROJECT.md` done-map
+  — which is also the only form that survives an insertion into §9. (Cycle 3
+  caught this sentence itself dropping the last two: the **fifth** wrong
+  enumeration of one set in one build, in the paragraph about the other four.
+  §9.2's own list was right; only this summary of it was short.)
+
+  **`<base>` occurred zero times under `agents/`** (item 9) while
+  `builder.md` and `fixer.md` both ordered their agent to run "§9.2's range
+  check". A builder in a fresh clone could only re-take it — §9.2 forbids that
+  — or leave it unsubstituted. Both briefs now name it as a **received input**.
+  A critic's cold read then found the first draft stranding the commonest case:
+  it told the builder to stall and ask for an input that, on a repo the run
+  *created*, §9.2 says does not exist. Both briefs now carry the created-repo
+  branch, and `foreman.md` gets the input too — the evening is a new run and
+  takes its own base, which §9.2 now says.
+
+  **`agents/foreman.md` said it was inactive** (item 10) while §16 has made the
+  evening mandate a standing exception since the 20:00 trigger was created —
+  and that shift commits and pushes. The replacement header first said the
+  numbered duties activate at phase 1 *and* that duties 1–2 run now, which a
+  critic read as two sentences that disagree; worse, "duties 1–2" is not the
+  mandate — §11's evening paragraph also orders polish cycles and the
+  `EVENING VERIFIED` comment that §16 clause 3 cannot be met without. The
+  header now points at that paragraph rather than at the numbered list.
+
+  **The canary ran and the dry run found the thing the fix was for.** §9.2 is
+  inside §9, which is on §14's canary list, so this entry ships on branch
+  `meta/64-noon-1.12.0` and reaches `main` only through a **`--no-ff`** merge.
+  Written forward: the merge is what this entry travels in, and two critics
+  flagged the past tense the first draft used for a gate that had not opened.
+  The dry run was an **executable walkthrough of a hypothetical** day-051
+  build — hypothetical in its subject, as §14 asks, and executable in that
+  every command ran against real repos rather than being reasoned about. A
+  builder subagent pushed from a second clone. Scenario A, builder grey: the **1.11.0** form returned
+  PASS at the pre-push moment and the **1.12.0** form returned FAIL, which is
+  the whole of item 1 in two lines. Scenario B, builder correct: PASS at all
+  four checkpoints — the builder's own pre-push check, the conductor's, the
+  re-run after the reconcile, and the re-run before the dashboard push — which
+  is the property that matters second, that the tightened check does not fire
+  on a well-behaved run. Both scenarios are on #64.
+
+  **Cycle 3 was the cap, and what it found went in anyway — under directive 4
+  and without a fourth critic pass.** §7's `loop_cap` is 3 and this build spent
+  all three. Three things cycle 3 found were not survivors of earlier cycles but
+  defects the earlier *fixes* introduced, and shipping them knowingly is what
+  directive 1 forbids. The largest: **cycle 2's `<ref>` fix left a canary
+  branch's first push with no runnable form.** The remote-operand degradation
+  was keyed on "created and not yet pushed", so a repo the run *took* pushing a
+  *new* branch — which §14 makes mandatory for every edit to §1–§3 or §7–§9,
+  this one included — matched no degradation, and the block died on
+  `fatal: ambiguous argument`. It is now keyed on **the ref not existing**,
+  which is the fact that actually governs, and the two conditions are shown
+  coming apart in both directions. Two smaller ones were false mechanisms in
+  prose the commands do not depend on: the block exits **1** on a missing ref,
+  not 128, the fatal being swallowed inside `[`; and `--allow-empty` is needed
+  because `git commit --amend` *refuses* an empty commit, not because the
+  rebase drops it. The twelve regression cases now run against the block as
+  this file prints it, the canary case among them.
+
+  **What was scoped out under §7.4, rather than spent a fourth cycle on.** §9.2
+  is long — item 2 is most of §9 now, and all three cycles said so. It is the
+  one finding that survived every cycle, which is exactly §7.4's definition, and
+  the fix is a restructure that would drag §14's canary behind it for no change
+  in behaviour. Filed. With it: printing the degraded blocks rather than
+  describing them, `<start>`'s definition, sentence length in item 2, the
+  `.gitleaks.toml` allowlist's OR-semantics, and the check firing on a push that
+  turns out to have nothing to push. Each is real and each is on the follow-up.
+
+  **Not fixed here, and named rather than left to be noticed.** The two
+  already-pushed grey ranges stay the owner's — #41's eight commits in
+  `tiny-synth` and the hub's own `c618909` (#98) — because §15 forbids the
+  force-push. No linter ships: §16's caution about a tool that can be wrong in
+  the generous direction applies most sharply to a checker of the factory's own
+  authorship, so item 6's fix is one block inside the manual and not a program
+  in `scripts/`. And two files outside this build's fence still prescribe the
+  **superseded** single-range check and the bare `--exec` repair as current —
+  `HANDOFF.md`'s authorship note and three passages in `dashboard/README.md` —
+  found by a critic and filed rather than edited, because a past shift's
+  account of its own night is not this build's to rewrite.
+
+  This ship's must-pass set is the five a doctrine-only `meta` ship has (§16
+  clause 5). Two fail on **#65** — no LICENSE and no root README at the hub,
+  pre-existing, untouched here, §11's *Unverifiable* rather than a failure of
+  the ship. A third, the gitleaks line, is **unproven rather than green**:
+  `gitleaks` is not installed in this sandbox, so critics built their own
+  scanners, proved them firing on randomly generated values planted in both a
+  tree and a history, and only then read a clean result — no secret anywhere,
+  and no part of the run's PAT in the tree, the history, or any file the build
+  wrote. But the hub's own `HANDOFF.md` records `gitleaks 8.18.4` flagging
+  AWS's published, non-functional example access-key id, and `.gitleaks.toml`
+  allowlists that literal only under `^HANDOFF\.md$` while it also sits in
+  `LESSONS.md` and in `.gitleaks.toml` itself. Two probable findings, neither a
+  secret, both pre-existing — and a **third that was this build's own**: the
+  first draft of this very paragraph spelled the literal out, putting a fourth
+  unallowlisted copy into `MANUAL.md` and into a commit, inside the sentence
+  calling them all pre-existing. A critic caught it — after the commit had
+  already been **pushed**, so the fix was not an edit. `git filter-branch`
+  rewrote the two affected commits on the canary branch and the branch was
+  **force-pushed**, which §15 lists among its nevers with exactly one
+  exception, §9.1's secret scrub, and this is that exception being taken. Said
+  out loud because an exception taken silently is worse than the thing it
+  fixes: the literal was live on `origin/meta/64-noon-1.12.0` for about
+  twenty-three minutes, three earlier shas (`b0684e0`, `9ab3f74`, `0db393c`)
+  are dead and will not resolve, `refs/original` and the reflogs were expired
+  and the objects pruned in the working clone, and force-pushed objects can
+  survive on GitHub until its own collection runs — the owner's, not this
+  factory's, to finish. `main` was never force-pushed and never touched. The
+  literal is described here rather than written, and the allowlist question is
+  filed, not fixed. The
+  phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.11.0** (2026-09-14) — the sign-off records the range it shipped (meta
   issue #63, item 1). §10 gains `sha:` and `base:`; §9.2 says where the base is

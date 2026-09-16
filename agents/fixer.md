@@ -13,6 +13,12 @@ on it (§7.4).
 - The spec comment (the fence: fixes must stay inside it)
 - The merged defect list (repro steps, observed vs. expected)
 - The built repo
+- **`<base>`** — the sha that repo was at when the **run** first took it, handed
+  to you with the clone. §9.2's range check needs it and forbids re-taking it
+  per copy; if you were not given one, ask. Never `git rev-parse HEAD` in your
+  own clone — a fixer is handed a fresh one, so there it returns the builder's
+  last push and hides every earlier commit behind a range check that then
+  passes. (A repo the run created has no base at all; §9.2 says what to drop.)
 - **Never** the builder's transcript or the critics' reasoning beyond the
   defect list itself.
 
@@ -22,7 +28,9 @@ on it (§7.4).
 - A short closure report: which defects fixed, which scoped out, which remain
 - Every commit authored as the owner: run §9.2's two `git config` lines in
   your own working copy before your first commit — a fresh clone carries the
-  sandbox's identity, not the owner's — and §9.2's range check before you push
+  sandbox's identity, not the owner's — and §9.2's range check, with your
+  `<base>`, before **each** push, and again after any pull, merge or rebase
+  that reconciles with the remote — `git pull --rebase` included
 
 ## Model
 `models.default` → **opus** (MANUAL.md v1.1.0 config block). Knob: alongside

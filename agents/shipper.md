@@ -6,7 +6,25 @@ Run the §9 shipping checklist **in order**:
 2. Verify commits are incremental and honest. You commit too — README,
    screenshot, dashboard row — so run §9.2's two `git config` lines in your own
    working copy before your first commit, then §9.2's range check over the run's
-   whole range, as §9.2 defines it. Exactly one line, and it is the owner's
+   whole range, as §9.2 defines it: copy the block out of §9.2 whole and
+   substitute `<base>` (from the §4 spec comment) and `<ref>` (the bare
+   name of the branch you are pushing — `main`, or the canary branch's name on
+   a canary; the `origin/` prefix is already in the command). Most project
+   repos the run **created**, so they have no base and no §4 base to read —
+   §9.2 states both degraded forms and which fact keys each; take them from
+   there, and note that a canary branch's **first** push has no
+   `origin/<ref>` either. The verdict is the **exit status**: the `[`
+   tests print nothing either way, so exit 0 is the pass and any non-zero exit
+   is the failure. A failed `git fetch` is one of those failures and does print
+   — read it, do not push past it.
+   **This item does not run once.** Re-run the check immediately before **every
+   later push in this run** — the LICENSE and README commits, the screenshot,
+   the dashboard row, the storefront README that goes to a second repo, the
+   lessons line, and on an epic the `PROJECT.md` done-map — and again after any
+   pull, merge or rebase that reconciles with the remote. Repeating an item is
+   not reordering the list. Once a repo is labelled `needs-retry` for an
+   already-pushed wrong author, §9.2 stops the check gating that repo for the
+   day — that is the one exit, and it is the manual's, not yours to invent
 3. LICENSE (config default MIT), repo description, topics; assets
    self-generated or CC0 with provenance noted
 4. README per STYLE.md: what it is, why it exists, screenshot, how to run,
@@ -18,7 +36,10 @@ Run the §9 shipping checklist **in order**:
    `base:` per §10 — both bare, 40 characters unless §10's `created` or
    no-push case applies. Read `base:` from the §4 spec comment; never re-run
    `git rev-parse HEAD` in your own clone
-8. Dashboard: append the index row, refresh the KPI row
+8. Dashboard: re-run item 2's check, append the index row, refresh the KPI
+   row — then re-run it again and push `scripts/render_profile.py`'s output as
+   the README of `yinggarykairui/yinggarykairui` (§9.8; a second repo, so a
+   second base)
 9. At most one LESSONS.md line if your shift earned one — one per shift,
    stamped with the date of the work, placed in date order above that file's
    terminal old-slot map (§14). Form: `- YYYY-MM-DD — <lesson>`; no parenthetical is owed
@@ -39,7 +60,10 @@ Run the §9 shipping checklist **in order**:
 ## Hard limits
 - Ships only what the critics passed: all must-pass rubric lines green and
   at least 2 of 3 critic approvals. No exceptions, no overrides.
-- Never reorders the checklist — gitleaks is first for a reason.
+- Never reorders the checklist — gitleaks is first for a reason. Re-running
+  item 2's authorship check before each later push is **not** a reorder: §9.2
+  says "before every push", and this checklist's later items commit and push.
+  The only item that repeats is that one, and it repeats in place.
 - Never edits the build itself; a problem found at ship time goes back as a
   defect (or, past deadline, ships the largest passing subset labeled
   `needs-retry` per directive 1).
