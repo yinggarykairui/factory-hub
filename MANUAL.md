@@ -282,23 +282,71 @@ rises on purpose, not by drift.
    next shift unable to compute the range this check runs over, and §10 alone
    cannot answer that, being step 7 of nine. §10 records the **build repo's**
    base; the hub's and factory-private's are still carried and unwritten
-   (#130):
+   (#130). **Hand `<base>` over with every clone you create**, and name it as a
+   received input where `agents/` does: a copy that was not given it can only
+   re-take it, which this paragraph forbids, or leave it unsubstituted, which
+   is the silent zero below.
+
+   Both ends of the range belong to the **repo**, not to your copy:
 
    ```
-   git log --format='%an <%ae>' <base>..HEAD | sort -u
+   git fetch -q origin
+   [ "$(git log --format='%an <%ae>%n%cn <%ce>' \
+        <base>..HEAD <base>..origin/<default> | sort -u)" \
+     = "Kairui Ying <yinggarykairui@gmail.com>" ]
    ```
 
-   Assert exactly one line: `Kairui Ying <yinggarykairui@gmail.com>`; **zero
-   lines is a failure, not a pass** — an unsubstituted `<base>` prints zero,
-   exit 0. Repair: set the two `git config` lines above first —
-   `--reset-author` reads *this copy's* config, so a rebase before that
-   rewrites the commits and still leaves the wrong author — then re-author
-   from `<start>`, the later of `<base>` and your last push; `--root` in its
-   place only when the repo has **neither** — this run created it and has not
-   pushed it yet:
-   `git rebase <start> --exec 'git commit --amend --reset-author --no-edit'`.
-   A wrong author already pushed is past repair: §15 forbids the force-push, so
-   label `needs-retry`, say so in the sign-off, and leave it to the owner.
+   Exit 0 is the pass, and there is no output to read: **zero lines is a
+   failure, not a pass**, and an unsubstituted `<base>`, an empty shell
+   variable and an empty range now all fail on the comparison rather than on a
+   human noticing an empty list. Drop the `<base>..origin/<default>` half only
+   while the repo has no remote branch yet — this run created it and has not
+   pushed — where it errors instead of returning nothing.
+
+   `origin/<default>` is there because the **tip** used to belong to the actor:
+   a sibling copy that has already pushed is invisible to `<base>..HEAD`, so
+   the check passes, the push is rejected as non-fast-forward, and the
+   reconcile §15 forces pulls the grey commit onto `main` behind a check that
+   has already run. `%cn <%ce>` is there because the committer is an identity
+   too — greening is author-driven, so this costs no square and closes a claim
+   day 028's dashboard made that the shipped command could not show. And this
+   check is **not a once-through checklist item**, whatever §9's header says
+   about order: re-run it immediately before **each later push in this run** —
+   items 5, 6, 7 and 8 all push, and item 8's dashboard commit is the one the
+   rule exists to green — and again after **any pull, merge or rebase that
+   reconciles with the remote**.
+
+   Repair: set the two `git config` lines above first — `--reset-author` reads
+   *this copy's* config, so a rebase before that rewrites the commits and still
+   leaves the wrong author — then re-author from `<start>`, the later of
+   `<base>` and your last push; `--root` in its place only when the repo has
+   **neither** — this run created it and has not pushed it yet:
+
+   ```
+   git rebase <start> --rebase-merges --empty=keep \
+     --exec 'git commit --amend --reset-author --no-edit --allow-empty \
+             --date="$(git log -1 --format=%aD)"'
+   ```
+
+   Every flag is load-bearing and each was reproduced failing without it.
+   `--date`, because `--reset-author` resets the author *date* too and moves
+   every square to the repair day — the exact thing this section exists to
+   control. `--rebase-merges`, because a plain rebase linearizes: exit 0,
+   "Successfully rebased", authors correct, topology destroyed, no warning.
+   `--empty=keep` with `--allow-empty`, because a dropped empty commit leaves
+   the `--exec` nothing to amend and the rebase aborts mid-flight, branch
+   short and still grey. **One exception, stated rather than discovered:** a
+   merge commit is *recreated*, so it takes a fresh author date that `--date`
+   cannot recover — every ordinary commit keeps its square and the merge's
+   moves to the repair day.
+
+   A wrong author **already pushed** is past repair: §15 forbids the
+   force-push, so label `needs-retry`, say so in the sign-off, and leave it to
+   the owner. From that label on the check is **recorded failed for the day and
+   stops gating** that repo's later pushes: it can never pass again — the
+   pushed commits stay inside `<base>..HEAD` forever — while §9 items 3–8 all
+   require pushes. Directive 1 still decides what ships: the largest working
+   subset, labelled, and said out loud.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
 4. README, following the `STYLE.md` template: what it is, why it exists,
