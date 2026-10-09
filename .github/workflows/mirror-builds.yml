@@ -39,7 +39,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # subtree split needs full history
+          fetch-depth: 0            # subtree split needs full history
+          persist-credentials: false  # else GITHUB_TOKEN overrides FACTORY_PAT on push
 
       - name: Work out which slugs changed
         id: slugs
