@@ -1,0 +1,1 @@
+{ "description": "mirror-builds canary — proves the hub→repo mirror end to end; delete after", "topics": ["canary"], "pages": true }

@@ -1,5 +1,16 @@
 # HANDOFF.md — 2026-07-29 and 2026-07-30 shifts → next API-capable shift
 
+> **RETIRED 2026-10-09 (manual 1.14.0, meta #135). Do not use anything in
+> this file that bypasses the sandbox proxy** — `--noproxy`, `env -u
+> HTTPS_PROXY`, `git -c http.proxy=`, popping proxy variables in Python, or
+> pushing a credential-bearing URL. Those tricks violated the sandbox's rules,
+> leaked a PAT (#68), and stopped working on 2026-09-21, which is how the
+> factory went dark for 18 days. The sanctioned routes now: GitHub API and
+> `git push` to `main` through the session's own GitHub App credentials on the
+> repos attached to the routine, and new projects built under `builds/<slug>/`
+> in the hub so the `mirror-builds` Action creates the project repo (§4). The
+> rest of this file is history, kept for the record.
+
 > **STATUS as of 2026-08-25 noon (day 032) — READ THIS FIRST. The wall this file
 > was written against is not a wall.**
 >

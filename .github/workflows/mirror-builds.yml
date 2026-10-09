@@ -1,0 +1,111 @@
+# mirror-builds.yml — lives in factory-hub. Turns each builds/<slug>/ folder
+# into its own repo github.com/<owner>/<slug>, keeps it in sync, and enables
+# Pages. The Claude session only ever pushes to factory-hub; this workflow does
+# the rest on GitHub's runners with FACTORY_PAT (an Actions secret, §12).
+#
+# Per-build metadata: builds/<slug>/factory.json
+#   { "description": "...", "topics": ["game","canvas"], "pages": true }
+#
+# Safety: the workflow only ever writes to repos it created itself, which it
+# marks with the topic `factory-mirror`. A folder whose slug names an existing
+# repo WITHOUT that topic is refused (job fails loudly), so it can never touch
+# git-mood or any other pre-existing repo. Pushes are never forced.
+
+name: mirror-builds
+
+on:
+  push:
+    branches: [main]
+    paths: ['builds/**']
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Mirror just this slug (blank = every folder under builds/)'
+        required: false
+
+concurrency:
+  group: mirror-builds
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.FACTORY_PAT }}
+      OWNER: ${{ github.repository_owner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # subtree split needs full history
+
+      - name: Work out which slugs changed
+        id: slugs
+        run: |
+          set -euo pipefail
+          if [ -n "${{ github.event.inputs.slug }}" ]; then
+            slugs="${{ github.event.inputs.slug }}"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            slugs=$(ls -1 builds 2>/dev/null || true)
+          else
+            before="${{ github.event.before }}"
+            if [ "$before" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$before" 2>/dev/null; then
+              slugs=$(ls -1 builds 2>/dev/null || true)
+            else
+              slugs=$(git diff --name-only "$before" "${{ github.sha }}" -- builds | cut -d/ -f2 | sort -u)
+            fi
+          fi
+          # keep only slugs that still exist as folders and are valid repo names
+          keep=""
+          for s in $slugs; do
+            if [ -d "builds/$s" ] && [[ "$s" =~ ^[a-z0-9][a-z0-9-]{0,99}$ ]]; then keep="$keep $s"; fi
+          done
+          echo "list=$(echo $keep)" >> "$GITHUB_OUTPUT"
+          echo "Slugs to mirror: ${keep:-none}"
+
+      - name: Mirror each slug
+        if: steps.slugs.outputs.list != ''
+        run: |
+          set -euo pipefail
+          git config user.name  "Kairui Ying"
+          git config user.email "yinggarykairui@gmail.com"
+          fail=0
+          for slug in ${{ steps.slugs.outputs.list }}; do
+            echo "::group::$slug"
+            meta="builds/$slug/factory.json"
+            desc=$(jq -r '.description // ""' "$meta" 2>/dev/null || echo "")
+            pages=$(jq -r '.pages // false' "$meta" 2>/dev/null || echo false)
+            topics=$(jq -c '[(.topics // [])[], "factory-mirror"] | unique' "$meta" 2>/dev/null || echo '["factory-mirror"]')
+
+            # 1. Create the repo if it does not exist; refuse if it exists and is not ours.
+            if gh api "repos/$OWNER/$slug" >/dev/null 2>&1; then
+              if ! gh api "repos/$OWNER/$slug/topics" --jq '.names[]' | grep -qx factory-mirror; then
+                echo "::error::$OWNER/$slug exists and is not a factory-mirror repo; refusing to touch it"
+                fail=1; echo "::endgroup::"; continue
+              fi
+            else
+              gh api user/repos -f name="$slug" -f description="$desc" -F has_issues=true -F auto_init=false >/dev/null
+              echo "created $OWNER/$slug"
+            fi
+
+            # 2. Push the folder's history (authors and dates preserved) as the repo's main.
+            split=$(git subtree split --prefix="builds/$slug")
+            if ! git push "https://x-access-token:${GH_TOKEN}@github.com/$OWNER/$slug.git" "$split:refs/heads/main"; then
+              echo "::error::push to $OWNER/$slug was rejected (diverged? someone committed there directly)"
+              fail=1; echo "::endgroup::"; continue
+            fi
+
+            # 3. Metadata: description, topics.
+            [ -n "$desc" ] && gh api -X PATCH "repos/$OWNER/$slug" -f description="$desc" >/dev/null
+            echo "{\"names\":$topics}" | gh api -X PUT "repos/$OWNER/$slug/topics" --input - >/dev/null
+
+            # 4. Pages from main / root, once.
+            if [ "$pages" = "true" ] && ! gh api "repos/$OWNER/$slug/pages" >/dev/null 2>&1; then
+              echo '{"source":{"branch":"main","path":"/"}}' | gh api -X POST "repos/$OWNER/$slug/pages" --input - >/dev/null
+              echo "pages enabled: https://$OWNER.github.io/$slug/"
+            fi
+            echo "::endgroup::"
+          done
+          exit $fail

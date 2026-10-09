@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.13.0
+manual_version: 1.14.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -119,9 +119,38 @@ brief gets followed faithfully — expand only what it leaves open. Relabel
 ship it, and file the follow-up issue yourself, linked both ways. Never ship a
 stub and call it part 1.
 
+**New builds live in the hub (1.14.0, meta #135).** A cloud run can push
+only to repos attached before it started, so a repo created mid-run can never
+receive its push. Every **new** project is therefore built in
+`builds/<slug>/` inside factory-hub — its own README, LICENSE, source,
+screenshot, and a `factory.json` (`{"description": "...", "topics": [...],
+"pages": true}`) — and pushed to the hub's `main` only. The
+`mirror-builds` Action then creates `github.com/<owner>/<slug>` if missing,
+pushes the folder's history there as `main` via `git subtree split`
+(authorship and dates preserved, squares stay green), applies description
+and topics from `factory.json`, and enables Pages from `main` / root when
+`pages` is true. The Action writes only to repos it created (topic
+`factory-mirror`), never force-pushes, and refuses any other repo. What
+this changes elsewhere: §9 items 3 and 5 are applied by the Action — the
+shipper waits for the `mirror-builds` run to go green, then confirms the
+live URL (Appendix C's Pages lag still applies); §9.2's authorship check
+runs over the hub range, the mirror carries the same commits; §10's `sha:`
+is the mirrored repo's tip after sync and `base:` is `created` on first
+ship; §11 verifies the mirrored repo (public clone plus WebFetch) and
+polish commits go to the folder in the hub. Later maintenance on a mirrored
+project edits `builds/<slug>/`; nobody commits to a mirrored repo directly,
+or the next sync is non-fast-forward and the Action fails loudly — a failed
+run is a shipping defect: fix it and re-run with `workflow_dispatch`, never
+push to the project repo around it. Pushes go straight to `main` in every
+attached repo — the owner has granted that explicitly in the routine prompt;
+there is no review branch to stage on. Routing around the sandbox proxy is
+forbidden; HANDOFF.md's bypass is retired.
+
 **Maintenance builds.** An issue naming an existing factory repo ("improve
 pixel-garden: add levels") means commit to that repo — no new repo. Same loop,
-same rubric, same sign-off.
+same rubric, same sign-off. Pre-existing repos (git-mood and everything
+shipped before 1.14.0) stay standalone and must be attached to the routine
+to be worked on; repos born under `builds/` are maintained in the folder.
 
 **PROJECT.md.** Every `size:m`+ build, every multi-part project, and every
 job build keeps a `PROJECT.md` at its repo root: the spec being converged
@@ -1183,6 +1212,11 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   for the run, resume next shift. Never hammer.
 - **Flaky screenshot ≠ broken app.** Retry the headless capture once; if the
   app itself errors, that's a defect — file it, don't reshoot around it.
+- **`mirror-builds` run fails.** A shipping defect, not a reason to push to
+  the project repo directly: read the run log, fix the folder or
+  `factory.json`, re-run with `workflow_dispatch` (input `slug`). A refusal
+  naming a repo without the `factory-mirror` topic means the slug collides
+  with a pre-existing repo — rename the folder.
 - **Session dies mid-build.** By design nothing is lost that was pushed (§2).
   The next shift resumes from labels and sign-offs. This is normal, not an
   emergency.
@@ -1196,6 +1230,15 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.14.0** (2026-10-09) — owner edit, meta #135: new builds ship from
+  `builds/<slug>/` in the hub and `.github/workflows/mirror-builds.yml`
+  creates and syncs each project repo with `FACTORY_PAT` from Actions
+  secrets (§4 block; Appendix C entry; SECRETS.md). Shifts push straight to
+  `main` in attached repos — the owner grants that in the routine prompt —
+  so nothing is staged on review branches. HANDOFF.md's proxy bypass is
+  retired. Day 054 (the first ship after the outage) was staged on three
+  review branches and merged by the owner by hand; it is the last one.
 
 - **1.13.0** (2026-10-09) — owner edit: §17 steps 4–7 (resume, ledger,
   pitch note, hard stop), standing resumes, and owner follow-ons are retired.
