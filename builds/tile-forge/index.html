@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tile-forge</title>
+<style>
+  :root {
+    --bg: #14161c;
+    --panel: #1e212b;
+    --panel-2: #262a37;
+    --ink: #e8eaf0;
+    --dim: #9aa0b0;
+    --line: #333845;
+    --accent: #6ad0a8;
+    --accent-ink: #0c1512;
+    --danger: #e06a6a;
+    --grid: #2a2f3b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 { font-size: 19px; margin: 0; letter-spacing: 0.3px; }
+  h1 small { color: var(--dim); font-weight: 400; font-size: 13px; letter-spacing: 0; }
+  main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px;
+    max-width: 1100px;
+  }
+  .stage { flex: 1 1 320px; min-width: 0; }
+  .side { flex: 0 0 230px; max-width: 100%; }
+  @media (max-width: 560px) { .side { flex-basis: 100%; } }
+
+  .canvas-wrap {
+    overflow: auto;
+    background:
+      linear-gradient(45deg, #1a1d25 25%, transparent 25%) 0 0 / 16px 16px,
+      linear-gradient(-45deg, #1a1d25 25%, transparent 25%) 0 0 / 16px 16px,
+      linear-gradient(45deg, transparent 75%, #1a1d25 75%) 0 0 / 16px 16px,
+      linear-gradient(-45deg, transparent 75%, #1a1d25 75%) 0 0 / 16px 16px,
+      #15171e;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    max-width: 100%;
+    padding: 0;
+    line-height: 0;
+  }
+  canvas { display: block; touch-action: none; cursor: crosshair; image-rendering: pixelated; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+  .group-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--dim); margin: 14px 0 6px; }
+
+  button, .btn {
+    font: inherit;
+    color: var(--ink);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 7px 11px;
+    cursor: pointer;
+  }
+  button:hover { border-color: #4a5160; }
+  button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px; }
+  .swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 6px 4px; background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 8px; cursor: pointer; font-size: 11px; color: var(--dim);
+  }
+  .swatch canvas { width: 36px; height: 36px; border-radius: 4px; border: 1px solid var(--line); }
+  .swatch[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; color: var(--ink); }
+  .swatch .key { font-variant-numeric: tabular-nums; }
+
+  label { color: var(--dim); font-size: 13px; }
+  input[type="number"] {
+    width: 62px; font: inherit; color: var(--ink); background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+  }
+  .status { min-height: 1.4em; margin: 8px 0 0; font-size: 13px; }
+  .status.err { color: var(--danger); }
+  .status.ok { color: var(--accent); }
+  .hint { color: var(--dim); font-size: 12.5px; margin-top: 8px; }
+  kbd {
+    font: 11px/1 ui-monospace, Menlo, Consolas, monospace; background: #0e1016;
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+    padding: 1px 5px; color: var(--ink);
+  }
+  footer { color: var(--dim); font-size: 12px; padding: 8px 16px 24px; }
+  a { color: var(--accent); }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>tile-forge <small>— paint a tilemap, export it as JSON</small></h1>
+</header>
+
+<main>
+  <section class="stage" aria-label="Map">
+    <div class="row" role="group" aria-label="Tools">
+      <button id="tool-brush" data-tool="brush" aria-pressed="true" title="Brush (b)">✏️ Brush</button>
+      <button id="tool-eraser" data-tool="eraser" aria-pressed="false" title="Eraser (e)">🩹 Eraser</button>
+      <button id="tool-fill" data-tool="fill" aria-pressed="false" title="Bucket fill (f)">🪣 Fill</button>
+      <button id="undo" title="Undo (Ctrl/Cmd+Z)" disabled>↶ Undo</button>
+      <button id="redo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled>↷ Redo</button>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="map" width="100" height="100" role="img" aria-label="Tilemap canvas. Use the palette to pick a tile and click to paint."></canvas>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p class="hint">
+      Keys: <kbd>b</kbd>/<kbd>e</kbd>/<kbd>f</kbd> tools · <kbd>0</kbd>–<kbd>9</kbd> palette · <kbd>g</kbd> grid ·
+      <kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd> undo
+    </p>
+  </section>
+
+  <aside class="side">
+    <div class="group-label">Palette</div>
+    <div id="palette" class="palette" role="group" aria-label="Tile palette"></div>
+
+    <div class="group-label">Map size</div>
+    <div class="row">
+      <label for="w">W</label><input type="number" id="w" min="1" max="64" value="16">
+      <label for="h">H</label><input type="number" id="h" min="1" max="64" value="12">
+      <button id="resize">Resize</button>
+    </div>
+    <div class="row">
+      <button id="grid" aria-pressed="true">Grid: on</button>
+      <button id="clear">Clear</button>
+    </div>
+
+    <div class="group-label">Map file</div>
+    <div class="row">
+      <button id="export" class="primary">⬇ Export JSON</button>
+      <button id="copy">⧉ Copy</button>
+    </div>
+    <div class="row">
+      <button id="import-btn">⬆ Import JSON</button>
+      <input type="file" id="import" accept="application/json,.json" class="sr-only" aria-label="Import a map JSON file">
+    </div>
+  </aside>
+</main>
+
+<footer>
+  Day 055 of an autonomous build factory — <a href="https://github.com/yinggarykairui/factory-hub">factory-hub</a>.
+  Tiles drawn from code; no external assets.
+</footer>
+
+<script>
+"use strict";
+(function () {
+  // ---- constants -------------------------------------------------------
+  var MIN = 1, MAX = 64;          // map dimension bounds
+  var MAX_FILE_BYTES = 2 * 1024 * 1024; // reject imports larger than 2 MB
+  var UNDO_LIMIT = 60;            // bounded history
+  var TILE_SRC = 32;             // cached tile resolution in device px
+  var SCHEMA = 1;
+
+  // Palette. index 0 is the empty tile (eraser target). Each tile knows how
+  // to draw itself into a TILE_SRC x TILE_SRC context, deterministically.
+  var PALETTE = [
+    { name: "empty",  draw: drawEmpty },
+    { name: "grass",  draw: tile("#4c9a52", function (c) { blades(c, "#3c7e42"); }) },
+    { name: "water",  draw: tile("#3f78c2", function (c) { waves(c, "#5b93d8"); }) },
+    { name: "sand",   draw: tile("#d8c18a", function (c) { speckle(c, "#c3a96d", 7); }) },
+    { name: "stone",  draw: tile("#8a909c", function (c) { speckle(c, "#767c88", 6); cracks(c, "#6d727d"); }) },
+    { name: "path",   draw: tile("#b08a5e", function (c) { bricks(c, "#9a7549", 8); }) },
+    { name: "tree",   draw: tile("#4c9a52", function (c) { tree(c); }) },
+    { name: "flower", draw: tile("#4c9a52", function (c) { flower(c); }) },
+    { name: "wall",   draw: tile("#5a5f6b", function (c) { bricks(c, "#474b55", 11); }) },
+    { name: "door",   draw: tile("#5a5f6b", function (c) { bricks(c, "#474b55", 11); door(c); }) }
+  ];
+
+  // ---- state -----------------------------------------------------------
+  var map = blank(16, 12);
+  var current = 1;                // selected palette index (default grass)
+  var tool = "brush";             // brush | eraser | fill
+  var showGrid = true;
+  var undoStack = [], redoStack = [];
+  var tileCache = [];             // offscreen canvas per palette tile
+  var painting = false, pendingSnapshot = null, lastCell = null;
+
+  // ---- dom -------------------------------------------------------------
+  var cv = document.getElementById("map");
+  var ctx = cv.getContext("2d");
+  var statusEl = document.getElementById("status");
+  var wIn = document.getElementById("w"), hIn = document.getElementById("h");
+
+  // ---- helpers ---------------------------------------------------------
+  function blank(w, h) {
+    var tiles = [];
+    for (var y = 0; y < h; y++) {
+      var row = [];
+      for (var x = 0; x < w; x++) row.push(0);
+      tiles.push(row);
+    }
+    return { version: SCHEMA, width: w, height: h, palette: PALETTE.map(function (t) { return t.name; }), tiles: tiles };
+  }
+
+  function clamp(n, lo, hi) { return n < lo ? lo : (n > hi ? hi : n); }
+
+  function cloneMap(m) {
+    return {
+      version: m.version, width: m.width, height: m.height,
+      palette: m.palette.slice(),
+      tiles: m.tiles.map(function (r) { return r.slice(); })
+    };
+  }
+
+  function setStatus(msg, kind) {
+    statusEl.textContent = msg || "";
+    statusEl.className = "status" + (kind ? " " + kind : "");
+  }
+
+  // ---- procedural tile drawing (deterministic) -------------------------
+  // A tiny seeded PRNG so speckle/blade positions never change between runs.
+  function rng(seed) {
+    var s = seed >>> 0;
+    return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  }
+  function tile(base, decorate) {
+    return function (c) {
+      c.fillStyle = base; c.fillRect(0, 0, TILE_SRC, TILE_SRC);
+      decorate(c);
+    };
+  }
+  function drawEmpty(c) {
+    // transparent in the map; a light checker in the palette swatch.
+    c.clearRect(0, 0, TILE_SRC, TILE_SRC);
+    c.fillStyle = "rgba(255,255,255,0.06)";
+    for (var y = 0; y < TILE_SRC; y += 8) for (var x = 0; x < TILE_SRC; x += 8)
+      if (((x + y) / 8) % 2 === 0) c.fillRect(x, y, 8, 8);
+  }
+  function speckle(c, color, n) {
+    var r = rng(n * 131 + 7); c.fillStyle = color;
+    for (var i = 0; i < n * 3; i++) c.fillRect((r() * TILE_SRC) | 0, (r() * TILE_SRC) | 0, 2, 2);
+  }
+  function blades(c, color) {
+    var r = rng(41); c.strokeStyle = color; c.lineWidth = 1.5;
+    for (var i = 0; i < 9; i++) {
+      var x = (r() * TILE_SRC) | 0, y = (r() * TILE_SRC) | 0;
+      c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 4); c.stroke();
+    }
+  }
+  function waves(c, color) {
+    c.strokeStyle = color; c.lineWidth = 1.5;
+    for (var y = 6; y < TILE_SRC; y += 9) {
+      c.beginPath();
+      for (var x = 0; x <= TILE_SRC; x += 4) c.lineTo(x, y + Math.sin(x / 4) * 1.6);
+      c.stroke();
+    }
+  }
+  function cracks(c, color) {
+    c.strokeStyle = color; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(6, 4); c.lineTo(12, 14); c.lineTo(9, 24); c.stroke();
+    c.beginPath(); c.moveTo(26, 8); c.lineTo(20, 18); c.stroke();
+  }
+  function bricks(c, color, rows) {
+    c.strokeStyle = color; c.lineWidth = 1.5;
+    var step = TILE_SRC / 4, off = 0;
+    for (var y = step; y < TILE_SRC; y += step) {
+      c.beginPath(); c.moveTo(0, y); c.lineTo(TILE_SRC, y); c.stroke();
+      off = off ? 0 : step / 2;
+      for (var x = off; x < TILE_SRC; x += step) {
+        c.beginPath(); c.moveTo(x, y - step); c.lineTo(x, y); c.stroke();
+      }
+    }
+  }
+  function tree(c) {
+    c.fillStyle = "#6b4a2b"; c.fillRect(14, 20, 4, 10);          // trunk
+    c.fillStyle = "#2f7a44";                                     // canopy
+    c.beginPath(); c.arc(16, 13, 9, 0, Math.PI * 2); c.fill();
+    c.fillStyle = "#3b9254"; c.beginPath(); c.arc(13, 11, 4, 0, Math.PI * 2); c.fill();
+  }
+  function flower(c) {
+    c.fillStyle = "#d85c7a";
+    [[16, 10], [12, 14], [20, 14], [13, 19], [19, 19]].forEach(function (p) {
+      c.beginPath(); c.arc(p[0], p[1], 3, 0, Math.PI * 2); c.fill();
+    });
+    c.fillStyle = "#f2d24b"; c.beginPath(); c.arc(16, 15, 2.2, 0, Math.PI * 2); c.fill();
+  }
+  function door(c) {
+    c.fillStyle = "#7a4a28"; c.fillRect(9, 10, 14, 22);
+    c.strokeStyle = "#5c3720"; c.lineWidth = 1; c.strokeRect(9, 10, 14, 22);
+    c.fillStyle = "#e9c94b"; c.beginPath(); c.arc(20, 21, 1.6, 0, Math.PI * 2); c.fill();
+  }
+
+  function buildTileCache() {
+    tileCache = PALETTE.map(function (t) {
+      var o = document.createElement("canvas");
+      o.width = TILE_SRC; o.height = TILE_SRC;
+      t.draw(o.getContext("2d"));
+      return o;
+    });
+  }
+
+  // ---- layout / rendering ---------------------------------------------
+  function tilePx() {
+    var wrap = cv.parentNode;
+    var avail = Math.max(120, wrap.clientWidth - 2); // minus border
+    var byW = Math.floor(avail / map.width);
+    var byH = Math.floor((window.innerHeight * 0.62) / map.height);
+    return clamp(Math.min(byW, byH), 6, 48);
+  }
+
+  function render() {
+    var px = tilePx();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2); // cap DPR at 2
+    var cssW = map.width * px, cssH = map.height * px;
+    cv.style.width = cssW + "px"; cv.style.height = cssH + "px";
+    cv.width = Math.round(cssW * dpr); cv.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    for (var y = 0; y < map.height; y++) {
+      for (var x = 0; x < map.width; x++) {
+        var idx = map.tiles[y][x];
+        if (idx > 0 && idx < tileCache.length) {
+          ctx.drawImage(tileCache[idx], x * px, y * px, px, px);
+        }
+      }
+    }
+    if (showGrid && px >= 8) {
+      ctx.strokeStyle = "rgba(255,255,255,0.10)"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (var gx = 0; gx <= map.width; gx++) { ctx.moveTo(gx * px + 0.5, 0); ctx.lineTo(gx * px + 0.5, cssH); }
+      for (var gy = 0; gy <= map.height; gy++) { ctx.moveTo(0, gy * px + 0.5); ctx.lineTo(cssW, gy * px + 0.5); }
+      ctx.stroke();
+    }
+  }
+
+  // ---- history ---------------------------------------------------------
+  function snapshot() { return cloneMap(map); }
+  function pushUndo(prev) {
+    undoStack.push(prev);
+    if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+    redoStack.length = 0;
+    refreshHistoryButtons();
+  }
+  function refreshHistoryButtons() {
+    document.getElementById("undo").disabled = undoStack.length === 0;
+    document.getElementById("redo").disabled = redoStack.length === 0;
+  }
+  function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(snapshot());
+    map = undoStack.pop();
+    syncSizeInputs(); render(); refreshHistoryButtons(); setStatus("Undid.", "");
+  }
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(snapshot());
+    map = redoStack.pop();
+    syncSizeInputs(); render(); refreshHistoryButtons(); setStatus("Redid.", "");
+  }
+
+  // ---- painting --------------------------------------------------------
+  function cellFromEvent(e) {
+    var r = cv.getBoundingClientRect();
+    var px = map.width ? r.width / map.width : 0;
+    var py = map.height ? r.height / map.height : 0;
+    var x = Math.floor((e.clientX - r.left) / px);
+    var y = Math.floor((e.clientY - r.top) / py);
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) return null;
+    return { x: x, y: y };
+  }
+  function paintValue() { return tool === "eraser" ? 0 : current; }
+
+  function applyAt(cell) {
+    if (tool === "fill") { floodFill(cell.x, cell.y, paintValue()); return; }
+    var v = paintValue();
+    if (map.tiles[cell.y][cell.x] !== v) { map.tiles[cell.y][cell.x] = v; render(); }
+  }
+
+  function floodFill(x, y, to) {
+    var from = map.tiles[y][x];
+    if (from === to) return;
+    var stack = [[x, y]], w = map.width, h = map.height, t = map.tiles;
+    while (stack.length) {
+      var p = stack.pop(), cx = p[0], cy = p[1];
+      if (cx < 0 || cy < 0 || cx >= w || cy >= h) continue;
+      if (t[cy][cx] !== from) continue;
+      t[cy][cx] = to;
+      stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+    }
+    render();
+  }
+
+  function onDown(e) {
+    var cell = cellFromEvent(e);
+    if (!cell) return;
+    e.preventDefault();
+    pendingSnapshot = snapshot();   // one undo step per stroke
+    painting = true; lastCell = null;
+    try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+    strokeTo(cell);
+  }
+  function onMove(e) {
+    if (!painting || tool === "fill") return;
+    var cell = cellFromEvent(e);
+    if (cell) { e.preventDefault(); strokeTo(cell); }
+  }
+  function strokeTo(cell) {
+    if (lastCell && lastCell.x === cell.x && lastCell.y === cell.y) return;
+    lastCell = cell;
+    applyAt(cell);
+  }
+  function onUp() {
+    if (!painting) return;
+    painting = false;
+    // commit the stroke to history only if it changed something
+    if (pendingSnapshot && !sameTiles(pendingSnapshot, map)) pushUndo(pendingSnapshot);
+    pendingSnapshot = null; lastCell = null;
+  }
+  function sameTiles(a, b) {
+    if (a.width !== b.width || a.height !== b.height) return false;
+    for (var y = 0; y < a.height; y++) for (var x = 0; x < a.width; x++)
+      if (a.tiles[y][x] !== b.tiles[y][x]) return false;
+    return true;
+  }
+
+  // ---- resize / clear --------------------------------------------------
+  function syncSizeInputs() { wIn.value = map.width; hIn.value = map.height; }
+
+  function doResize() {
+    var w = parseInt(wIn.value, 10), h = parseInt(hIn.value, 10);
+    if (!isFinite(w) || !isFinite(h) || String(wIn.value).trim() === "" || String(hIn.value).trim() === "") {
+      setStatus("Width and height must be whole numbers from " + MIN + " to " + MAX + ".", "err");
+      syncSizeInputs(); return;
+    }
+    if (w < MIN || w > MAX || h < MIN || h > MAX) {
+      setStatus("Size must be between " + MIN + " and " + MAX + " per side.", "err");
+      syncSizeInputs(); return;
+    }
+    if (w === map.width && h === map.height) { setStatus("Already " + w + "×" + h + ".", ""); return; }
+    var prev = snapshot();
+    var next = blank(w, h);
+    for (var y = 0; y < Math.min(h, map.height); y++)
+      for (var x = 0; x < Math.min(w, map.width); x++)
+        next.tiles[y][x] = map.tiles[y][x];
+    map = next;
+    pushUndo(prev); render(); setStatus("Resized to " + w + "×" + h + ".", "ok");
+  }
+
+  function doClear() {
+    if (sameTiles(map, blank(map.width, map.height))) { setStatus("Already empty.", ""); return; }
+    var prev = snapshot();
+    map = blank(map.width, map.height);
+    pushUndo(prev); render(); setStatus("Cleared (undo to restore).", "ok");
+  }
+
+  // ---- export / import -------------------------------------------------
+  function serialize() {
+    return JSON.stringify({
+      version: SCHEMA, width: map.width, height: map.height,
+      palette: map.palette, tiles: map.tiles
+    });
+  }
+  function doExport() {
+    var blob = new Blob([serialize()], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "map.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    setStatus("Exported map.json (" + map.width + "×" + map.height + ").", "ok");
+  }
+  function doCopy() {
+    var text = serialize();
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      var ok = false; try { ok = document.execCommand("copy"); } catch (_) {}
+      ta.remove();
+      setStatus(ok ? "Copied JSON to clipboard." : "Copy failed — use Export instead.", ok ? "ok" : "err");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { setStatus("Copied JSON to clipboard.", "ok"); },
+        fallback
+      );
+    } else fallback();
+  }
+
+  // Validate an untrusted parsed object into a map, or throw a readable error.
+  function validate(obj) {
+    if (typeof obj !== "object" || obj === null || Array.isArray(obj))
+      throw new Error("not a tile-forge map (expected a JSON object).");
+    var w = obj.width, h = obj.height;
+    if (!Number.isInteger(w) || !Number.isInteger(h))
+      throw new Error("width and height must be whole numbers.");
+    if (w < MIN || w > MAX || h < MIN || h > MAX)
+      throw new Error("map is " + w + "×" + h + "; the limit is " + MIN + "–" + MAX + " per side.");
+    if (!Array.isArray(obj.tiles) || obj.tiles.length !== h)
+      throw new Error("tiles must be an array of " + h + " rows.");
+    var max = PALETTE.length - 1, tiles = [];
+    for (var y = 0; y < h; y++) {
+      var row = obj.tiles[y];
+      if (!Array.isArray(row) || row.length !== w)
+        throw new Error("row " + y + " must have " + w + " tiles.");
+      var out = [];
+      for (var x = 0; x < w; x++) {
+        var v = row[x];
+        if (!Number.isInteger(v) || v < 0 || v > max)
+          throw new Error("tile at " + x + "," + y + " is out of range (0–" + max + ").");
+        out.push(v);
+      }
+      tiles.push(out);
+    }
+    return { version: SCHEMA, width: w, height: h, palette: PALETTE.map(function (t) { return t.name; }), tiles: tiles };
+  }
+
+  function doImport(file) {
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      setStatus("That file is too large (max 2 MB).", "err"); return;
+    }
+    var reader = new FileReader();
+    reader.onerror = function () { setStatus("Could not read that file.", "err"); };
+    reader.onload = function () {
+      var obj;
+      try { obj = JSON.parse(reader.result); }
+      catch (_) { setStatus("That file is not valid JSON — map left unchanged.", "err"); return; }
+      var next;
+      try { next = validate(obj); }
+      catch (err) { setStatus("Import failed: " + err.message + " Map left unchanged.", "err"); return; }
+      var prev = snapshot();
+      map = next;
+      pushUndo(prev); syncSizeInputs(); render();
+      setStatus("Imported a " + map.width + "×" + map.height + " map.", "ok");
+    };
+    reader.readAsText(file);
+  }
+
+  // ---- ui wiring -------------------------------------------------------
+  function selectTool(t) {
+    tool = t;
+    ["brush", "eraser", "fill"].forEach(function (name) {
+      document.getElementById("tool-" + name).setAttribute("aria-pressed", String(name === t));
+    });
+  }
+  function selectTile(i) {
+    current = i;
+    var sws = document.querySelectorAll(".swatch");
+    for (var k = 0; k < sws.length; k++)
+      sws[k].setAttribute("aria-pressed", String(Number(sws[k].dataset.idx) === i));
+    // picking a tile implies you want to paint it
+    if (tool === "eraser" && i !== 0) selectTool("brush");
+    if (i === 0) selectTool("eraser");
+  }
+
+  function buildPalette() {
+    var host = document.getElementById("palette");
+    host.innerHTML = "";
+    PALETTE.forEach(function (t, i) {
+      var b = document.createElement("button");
+      b.className = "swatch"; b.type = "button"; b.dataset.idx = String(i);
+      b.setAttribute("aria-pressed", String(i === current));
+      b.title = t.name + (i < 10 ? " (" + i + ")" : "");
+      var c = document.createElement("canvas"); c.width = TILE_SRC; c.height = TILE_SRC;
+      var cc = c.getContext("2d");
+      if (i === 0) { drawEmpty(cc); } else { cc.drawImage(tileCache[i], 0, 0); }
+      var label = document.createElement("span"); label.textContent = t.name;
+      var key = document.createElement("span"); key.className = "key";
+      key.textContent = i < 10 ? ("[" + i + "]") : "";
+      b.appendChild(c); b.appendChild(label); if (i < 10) b.appendChild(key);
+      b.addEventListener("click", function () { selectTile(i); });
+      host.appendChild(b);
+    });
+  }
+
+  function wire() {
+    cv.addEventListener("pointerdown", onDown);
+    cv.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    cv.addEventListener("pointercancel", onUp);
+
+    document.querySelectorAll("[data-tool]").forEach(function (b) {
+      b.addEventListener("click", function () { selectTool(b.dataset.tool); });
+    });
+    document.getElementById("undo").addEventListener("click", undo);
+    document.getElementById("redo").addEventListener("click", redo);
+    document.getElementById("resize").addEventListener("click", doResize);
+    wIn.addEventListener("keydown", function (e) { if (e.key === "Enter") doResize(); });
+    hIn.addEventListener("keydown", function (e) { if (e.key === "Enter") doResize(); });
+    document.getElementById("clear").addEventListener("click", doClear);
+    document.getElementById("grid").addEventListener("click", function () {
+      showGrid = !showGrid;
+      this.setAttribute("aria-pressed", String(showGrid));
+      this.textContent = "Grid: " + (showGrid ? "on" : "off");
+      render();
+    });
+    document.getElementById("export").addEventListener("click", doExport);
+    document.getElementById("copy").addEventListener("click", doCopy);
+    document.getElementById("import-btn").addEventListener("click", function () {
+      document.getElementById("import").click();
+    });
+    document.getElementById("import").addEventListener("change", function (e) {
+      doImport(e.target.files && e.target.files[0]);
+      e.target.value = ""; // allow re-importing the same file
+    });
+
+    document.addEventListener("keydown", function (e) {
+      var tag = (e.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+      var mod = e.ctrlKey || e.metaKey;
+      if (mod && (e.key === "z" || e.key === "Z")) { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+      if (mod && (e.key === "y" || e.key === "Y")) { e.preventDefault(); redo(); return; }
+      if (mod) return;
+      if (e.key === "b") selectTool("brush");
+      else if (e.key === "e") selectTool("eraser");
+      else if (e.key === "f") selectTool("fill");
+      else if (e.key === "g") document.getElementById("grid").click();
+      else if (e.key >= "0" && e.key <= "9") {
+        var i = Number(e.key);
+        if (i < PALETTE.length) selectTile(i);
+      }
+    });
+
+    var resizeTimer = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(render, 80);
+    });
+  }
+
+  // ---- boot ------------------------------------------------------------
+  buildTileCache();
+  buildPalette();
+  wire();
+  syncSizeInputs();
+  render();
+  setStatus("Pick a tile and paint. " + map.width + "×" + map.height + " map ready.", "");
+})();
+</script>
+</body>
+</html>
