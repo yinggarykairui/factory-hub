@@ -1,0 +1,5 @@
+{
+  "description": "Paint a tilemap in your browser, then export it as JSON — a keyboard-and-touch editor for the grids RPGs are built on.",
+  "topics": ["tilemap", "map-editor", "canvas", "gamedev", "rpg", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
