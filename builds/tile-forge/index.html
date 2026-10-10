@@ -68,7 +68,7 @@
     background: var(--panel-2);
     border: 1px solid var(--line);
     border-radius: 7px;
-    padding: 7px 11px;
+    padding: 10px 12px;
     cursor: pointer;
   }
   button:hover { border-color: #4a5160; }
@@ -118,7 +118,7 @@
   <section class="stage" aria-label="Map">
     <div class="row" role="group" aria-label="Tools">
       <button id="tool-brush" data-tool="brush" aria-pressed="true" title="Brush (b)">✏️ Brush</button>
-      <button id="tool-eraser" data-tool="eraser" aria-pressed="false" title="Eraser (e)">🩹 Eraser</button>
+      <button id="tool-eraser" data-tool="eraser" aria-pressed="false" title="Eraser (e)">🧽 Eraser</button>
       <button id="tool-fill" data-tool="fill" aria-pressed="false" title="Bucket fill (f)">🪣 Fill</button>
       <button id="undo" title="Undo (Ctrl/Cmd+Z)" disabled>↶ Undo</button>
       <button id="redo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled>↷ Redo</button>
@@ -385,10 +385,32 @@
   }
   function paintValue() { return tool === "eraser" ? 0 : current; }
 
+  function setCell(x, y, v) {
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
+    if (map.tiles[y][x] === v) return false;
+    map.tiles[y][x] = v; return true;
+  }
+
   function applyAt(cell) {
     if (tool === "fill") { floodFill(cell.x, cell.y, paintValue()); return; }
-    var v = paintValue();
-    if (map.tiles[cell.y][cell.x] !== v) { map.tiles[cell.y][cell.x] = v; render(); }
+    if (setCell(cell.x, cell.y, paintValue())) render();
+  }
+
+  // Paint every cell on the line between two drag samples (Bresenham), so a
+  // fast flick leaves a solid trail instead of a dotted one.
+  function lineCells(a, b) {
+    var v = paintValue(), changed = false;
+    var x0 = a.x, y0 = a.y, x1 = b.x, y1 = b.y;
+    var dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+    var sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx - dy;
+    while (true) {
+      if (setCell(x0, y0, v)) changed = true;
+      if (x0 === x1 && y0 === y1) break;
+      var e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x0 += sx; }
+      if (e2 < dx) { err += dx; y0 += sy; }
+    }
+    if (changed) render();
   }
 
   function floodFill(x, y, to) {
@@ -406,6 +428,7 @@
   }
 
   function onDown(e) {
+    if (e.pointerType === "mouse" && e.button !== 0) return; // primary button only
     var cell = cellFromEvent(e);
     if (!cell) return;
     e.preventDefault();
@@ -421,14 +444,20 @@
   }
   function strokeTo(cell) {
     if (lastCell && lastCell.x === cell.x && lastCell.y === cell.y) return;
+    if (tool === "fill" || !lastCell) applyAt(cell);
+    else lineCells(lastCell, cell);
     lastCell = cell;
-    applyAt(cell);
   }
   function onUp() {
     if (!painting) return;
     painting = false;
     // commit the stroke to history only if it changed something
-    if (pendingSnapshot && !sameTiles(pendingSnapshot, map)) pushUndo(pendingSnapshot);
+    if (pendingSnapshot && !sameTiles(pendingSnapshot, map)) {
+      pushUndo(pendingSnapshot);
+      if (tool === "fill") setStatus("Filled with " + PALETTE[current].name + ".", "");
+      else if (tool === "eraser") setStatus("Erased.", "");
+      else setStatus("Painted with " + PALETTE[current].name + ".", "");
+    }
     pendingSnapshot = null; lastCell = null;
   }
   function sameTiles(a, b) {
@@ -442,8 +471,9 @@
   function syncSizeInputs() { wIn.value = map.width; hIn.value = map.height; }
 
   function doResize() {
-    var w = parseInt(wIn.value, 10), h = parseInt(hIn.value, 10);
-    if (!isFinite(w) || !isFinite(h) || String(wIn.value).trim() === "" || String(hIn.value).trim() === "") {
+    var wRaw = String(wIn.value).trim(), hRaw = String(hIn.value).trim();
+    var w = Number(wRaw), h = Number(hRaw);
+    if (wRaw === "" || hRaw === "" || !Number.isInteger(w) || !Number.isInteger(h)) {
       setStatus("Width and height must be whole numbers from " + MIN + " to " + MAX + ".", "err");
       syncSizeInputs(); return;
     }
@@ -451,14 +481,14 @@
       setStatus("Size must be between " + MIN + " and " + MAX + " per side.", "err");
       syncSizeInputs(); return;
     }
-    if (w === map.width && h === map.height) { setStatus("Already " + w + "×" + h + ".", ""); return; }
+    if (w === map.width && h === map.height) { setStatus("Already " + w + "×" + h + ".", ""); syncSizeInputs(); return; }
     var prev = snapshot();
     var next = blank(w, h);
     for (var y = 0; y < Math.min(h, map.height); y++)
       for (var x = 0; x < Math.min(w, map.width); x++)
         next.tiles[y][x] = map.tiles[y][x];
     map = next;
-    pushUndo(prev); render(); setStatus("Resized to " + w + "×" + h + ".", "ok");
+    pushUndo(prev); syncSizeInputs(); render(); setStatus("Resized to " + w + "×" + h + ".", "ok");
   }
 
   function doClear() {
@@ -594,6 +624,7 @@
     cv.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     cv.addEventListener("pointercancel", onUp);
+    cv.addEventListener("contextmenu", function (e) { e.preventDefault(); });
 
     document.querySelectorAll("[data-tool]").forEach(function (b) {
       b.addEventListener("click", function () { selectTool(b.dataset.tool); });
