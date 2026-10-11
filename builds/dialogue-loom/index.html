@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dialogue-loom</title>
+<meta name="description" content="Build a branching conversation — nodes, choices, flags, procedural portraits — then play it and export it as JSON.">
+<style>
+  :root{
+    --bg:#1b1a24; --panel:#26253311; --card:#2b2a38; --card2:#323142;
+    --ink:#ece9f5; --dim:#a7a2bd; --line:#413f55;
+    --accent:#c9a7ff; --accent-ink:#1b1a24; --good:#8fe0a8; --bad:#ff9a8c;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    padding:14px 16px; border-bottom:1px solid var(--line);
+    display:flex; flex-wrap:wrap; gap:10px 14px; align-items:baseline;
+    position:sticky; top:0; background:var(--bg); z-index:5;
+  }
+  header h1{font-size:18px; margin:0; letter-spacing:.2px}
+  header h1 b{color:var(--accent); font-weight:700}
+  header .sub{color:var(--dim); font-size:13px}
+  main{max-width:860px; margin:0 auto; padding:16px; padding-bottom:64px}
+
+  .bar{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px}
+  button{
+    font:inherit; color:var(--ink); background:var(--card2);
+    border:1px solid var(--line); border-radius:10px; padding:8px 12px;
+    cursor:pointer; min-height:40px;
+  }
+  button:hover{border-color:var(--accent)}
+  button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  button.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
+  button.ghost{background:transparent}
+  button.tiny{min-height:0; padding:4px 8px; font-size:13px; border-radius:8px}
+  button[disabled]{opacity:.4; cursor:not-allowed}
+
+  label{display:block; font-size:12px; color:var(--dim); margin:0 0 3px}
+  input[type=text], textarea, select{
+    font:inherit; width:100%; color:var(--ink); background:var(--card);
+    border:1px solid var(--line); border-radius:8px; padding:7px 9px;
+  }
+  input:focus, textarea:focus, select:focus{outline:none; border-color:var(--accent)}
+  textarea{resize:vertical; min-height:58px}
+  select{appearance:none; background-image:none}
+
+  /* ---- flags panel ---- */
+  .flags{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px; margin-bottom:16px;
+  }
+  .flags h2, .nodes h2{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:0 0 10px}
+  .chiprow{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .chip{
+    display:inline-flex; align-items:center; gap:7px; background:var(--card);
+    border:1px solid var(--line); border-radius:999px; padding:4px 6px 4px 12px; font-size:13px;
+  }
+  .chip code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--accent)}
+  .chip .x{border:none; background:none; color:var(--dim); font-size:16px; line-height:1; padding:0 4px; min-height:0; cursor:pointer}
+  .chip .x:hover{color:var(--bad)}
+  .addflag{display:flex; gap:6px; flex:1 1 180px; min-width:140px}
+
+  /* ---- node cards ---- */
+  .node{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:14px;
+  }
+  .node.is-start{border-color:var(--accent)}
+  .node-head{display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap}
+  .node-head .port{flex:0 0 auto}
+  .node-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:var(--dim)}
+  .starttag{font-size:11px; color:var(--accent-ink); background:var(--accent); border-radius:999px; padding:2px 8px; font-weight:600}
+  .node-head .spk{flex:1 1 160px; min-width:120px}
+  .node-grid{display:grid; grid-template-columns:1fr; gap:12px}
+  .portpick{display:flex; gap:6px; flex-wrap:wrap}
+  .portpick button{padding:3px; min-height:0; border-radius:10px; line-height:0; background:var(--card)}
+  .portpick button.sel{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset}
+  .port svg{display:block; border-radius:8px}
+
+  .choices{margin-top:4px}
+  .choice{
+    background:var(--card2); border:1px solid var(--line); border-radius:10px;
+    padding:10px; margin-bottom:8px;
+  }
+  .choice .row{display:grid; grid-template-columns:1fr; gap:8px}
+  .choice .meta{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .choice .ctrls{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap}
+  .node-foot{display:flex; gap:6px; margin-top:12px; flex-wrap:wrap}
+  .muted{color:var(--dim); font-size:13px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* ---- toast / error ---- */
+  #toast{
+    position:fixed; left:50%; bottom:20px; transform:translateX(-50%);
+    background:var(--card2); border:1px solid var(--line); border-radius:10px;
+    padding:10px 16px; max-width:92vw; box-shadow:0 8px 30px #0008; z-index:40;
+    opacity:0; pointer-events:none; transition:opacity .18s; font-size:14px;
+  }
+  #toast.show{opacity:1}
+  #toast.err{border-color:var(--bad); color:var(--bad)}
+  #toast.ok{border-color:var(--good)}
+
+  /* ---- play overlay ---- */
+  #play{
+    position:fixed; inset:0; background:#13121c; z-index:30;
+    display:none; flex-direction:column;
+  }
+  #play.open{display:flex}
+  .play-top{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line)}
+  .play-top .t{font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:.08em}
+  .play-wrap{flex:1; overflow:auto; display:flex; justify-content:center}
+  .stage{width:100%; max-width:720px; padding:20px 16px; display:flex; flex-direction:column; gap:18px}
+  .speaker{display:flex; gap:14px; align-items:center}
+  .speaker .port svg{width:72px; height:72px}
+  .speaker .name{font-size:19px; font-weight:600}
+  .speaker .name small{display:block; font-size:12px; color:var(--dim); font-weight:400; text-transform:uppercase; letter-spacing:.08em}
+  .say{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; font-size:17px; line-height:1.55; white-space:pre-wrap;
+  }
+  .opts{display:flex; flex-direction:column; gap:10px}
+  .opt{
+    text-align:left; background:var(--card2); border:1px solid var(--line);
+    border-radius:12px; padding:13px 15px; font-size:16px; display:flex; gap:10px; align-items:baseline;
+  }
+  .opt:hover{border-color:var(--accent); background:#3a3850}
+  .opt .k{font-family:ui-monospace,monospace; color:var(--accent); font-size:13px; flex:0 0 auto}
+  .opt .setf{margin-left:auto; font-size:12px; color:var(--dim)}
+  .endcard{text-align:center; color:var(--dim); padding:10px}
+  .endcard .big{font-size:15px; letter-spacing:.3em; text-transform:uppercase; margin-bottom:14px}
+  .flagbar{border-top:1px solid var(--line); padding:12px 16px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:13px; color:var(--dim)}
+  .flagbar .chip{padding:3px 11px; font-size:12px}
+
+  @media (min-width:620px){
+    .node-grid{grid-template-columns:1fr}
+    .choice .row{grid-template-columns:1fr 200px}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>dialogue</b>-loom</h1>
+  <span class="sub">branching conversations · nodes, choices, flags</span>
+</header>
+
+<main>
+  <div class="bar">
+    <button class="primary" id="btnPlay">▶ Play</button>
+    <button id="btnExport">Export JSON</button>
+    <button id="btnCopy">Copy JSON</button>
+    <button id="btnImport">Import</button>
+    <button class="ghost" id="btnSample">Load sample</button>
+    <button class="ghost" id="btnClear">New</button>
+    <input type="file" id="file" accept="application/json,.json" hidden>
+  </div>
+
+  <section class="flags">
+    <h2>Flags <span class="muted" style="text-transform:none;letter-spacing:0">— named booleans a choice can set or require</span></h2>
+    <div class="chiprow" id="flagRow"></div>
+  </section>
+
+  <section class="nodes">
+    <h2>Nodes</h2>
+    <div id="nodeList"></div>
+    <button id="btnAddNode">+ Add node</button>
+  </section>
+</main>
+
+<div id="play" aria-hidden="true" role="dialog" aria-label="Play dialogue">
+  <div class="play-top">
+    <span class="t">Playing</span>
+    <div style="display:flex;gap:8px">
+      <button class="tiny" id="btnReplay">↺ Restart</button>
+      <button class="tiny" id="btnClose">✕ Close</button>
+    </div>
+  </div>
+  <div class="play-wrap"><div class="stage" id="stage"></div></div>
+  <div class="flagbar" id="flagbar"></div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+(function(){
+  const SCHEMA = 1;
+  const PORTRAITS = ["rose","sage","amber","slate","teal","plum"]; // procedural keys
+  const MAXLEN = {speaker:60, text:2000, label:120, flag:40, nodes:500};
+
+  /* ---------- procedural portraits (inline SVG, drawn from code) ---------- */
+  const PAL = {
+    rose:["#3a2740","#e58fb0","#ffd9c9"], sage:["#243a2e","#8fd6a0","#e7f6d9"],
+    amber:["#3a3020","#eac36a","#fff0cf"], slate:["#222a3a","#8fb4e0","#dce7f6"],
+    teal:["#1f3a3a","#6fd6d0","#d6f6f2"], plum:["#2e2440","#c49bf0","#eaddff"],
+  };
+  function portraitSVG(key, size){
+    const p = PAL[key] || PAL.slate, s = size||48;
+    // deterministic tiny face: back circle, head, eyes, mouth — varies by key
+    const i = PORTRAITS.indexOf(key); const browY = 19 + (i%3); const mouthW = 8 + (i%3)*2;
+    return `<svg class="pf" width="${s}" height="${s}" viewBox="0 0 48 48" role="img" aria-label="portrait">`
+      + `<rect width="48" height="48" rx="10" fill="${p[0]}"/>`
+      + `<circle cx="24" cy="26" r="13" fill="${p[1]}"/>`
+      + `<circle cx="24" cy="18" r="8.5" fill="${p[2]}"/>`
+      + `<circle cx="21" cy="${browY}" r="1.4" fill="#2b2733"/><circle cx="27" cy="${browY}" r="1.4" fill="#2b2733"/>`
+      + `<path d="M${24-mouthW/2} 23 q ${mouthW/2} 3 ${mouthW} 0" stroke="#2b2733" stroke-width="1.4" fill="none" stroke-linecap="round"/>`
+      + `</svg>`;
+  }
+
+  /* ---------- state ---------- */
+  let state = null;        // {version, start, flags:[], nodes:[]}
+  let seq = 0;             // id counter for new nodes
+  const LS_KEY = "dialogue-loom.v1";
+
+  function sampleDialogue(){
+    return {
+      version:SCHEMA, start:"start",
+      flags:["knowsName","paidToll"],
+      nodes:[
+        {id:"start", speaker:"Bridge-keeper", portrait:"slate",
+         text:"You there. The Ember Bridge is mine to keep, and it is not free to cross.",
+         choices:[
+           {label:"\"And who are you to charge me?\"", target:"intro", set:null, require:null},
+           {label:"\"Here is a coin. Let me pass.\"", target:"paid", set:"paidToll", require:null},
+         ]},
+        {id:"intro", speaker:"Bridge-keeper", portrait:"slate",
+         text:"Aldric. I have kept this crossing since the vale still had a king.",
+         choices:[
+           {label:"\"Well met, Aldric.\"", target:"named", set:"knowsName", require:null},
+           {label:"\"I didn't ask for your life story.\"", target:"grumble", set:null, require:null},
+         ]},
+        {id:"grumble", speaker:"Aldric", portrait:"slate",
+         text:"Hmph. Rude. The toll stands either way.",
+         choices:[
+           {label:"\"Fine. A coin, then.\"", target:"paid", set:"paidToll", require:null},
+         ]},
+        {id:"named", speaker:"Aldric", portrait:"slate",
+         text:"Courtesy! Rare on this road. For that, cross for half — or free, if you'll trade a tale.",
+         choices:[
+           {label:"\"A tale it is.\"", target:"tale", set:null, require:null},
+           {label:"\"Half is fair. A coin.\"", target:"paid", set:"paidToll", require:null},
+         ]},
+        {id:"tale", speaker:"Aldric", portrait:"amber",
+         text:"Then we are square. Mind the third plank — it remembers every boot that ever lied to me.",
+         choices:[]},
+        {id:"paid", speaker:"Aldric", portrait:"amber",
+         text:"The toll is paid. Walk on — and should you pass back this way, Aldric will know your face.",
+         choices:[
+           {label:"(Aldric nods you across.)", target:"cross", set:null, require:"knowsName"},
+           {label:"Cross the bridge.", target:"cross", set:null, require:null},
+         ]},
+        {id:"cross", speaker:"", portrait:"teal",
+         text:"The planks hold. On the far bank, the vale opens green beneath you.",
+         choices:[]},
+      ],
+    };
+  }
+
+  /* ---------- validation ---------- */
+  function validate(obj){
+    const fail = m => { throw new Error(m); };
+    if(obj===null || typeof obj!=="object" || Array.isArray(obj)) fail("not a dialogue object");
+    if(typeof obj.version!=="number") fail("missing numeric “version”");
+    if(obj.version>SCHEMA) fail("version "+obj.version+" is newer than this app (v"+SCHEMA+")");
+    if(!Array.isArray(obj.flags) || !obj.flags.every(f=>typeof f==="string")) fail("“flags” must be a list of strings");
+    const flags = new Set(obj.flags);
+    if(flags.size!==obj.flags.length) fail("duplicate flag names");
+    if(!Array.isArray(obj.nodes)) fail("“nodes” must be a list");
+    if(obj.nodes.length===0) fail("a dialogue needs at least one node");
+    if(obj.nodes.length>MAXLEN.nodes) fail("too many nodes (max "+MAXLEN.nodes+")");
+    const ids = new Set();
+    obj.nodes.forEach((n,idx)=>{
+      const at = "node "+(idx+1);
+      if(n===null || typeof n!=="object" || Array.isArray(n)) fail(at+" is not an object");
+      if(typeof n.id!=="string" || !n.id) fail(at+" has no id");
+      if(ids.has(n.id)) fail("duplicate node id “"+n.id+"”");
+      ids.add(n.id);
+      if(typeof n.speaker!=="string") fail(at+" speaker must be text");
+      if(typeof n.text!=="string") fail(at+" text must be text");
+      if(typeof n.portrait!=="string" || PORTRAITS.indexOf(n.portrait)<0) fail(at+" has an unknown portrait");
+      if(!Array.isArray(n.choices)) fail(at+" choices must be a list");
+    });
+    if(typeof obj.start!=="string" || !ids.has(obj.start)) fail("“start” must name an existing node");
+    obj.nodes.forEach((n,idx)=>{
+      n.choices.forEach((c,ci)=>{
+        const at = "node “"+n.id+"” choice "+(ci+1);
+        if(c===null || typeof c!=="object" || Array.isArray(c)) fail(at+" is not an object");
+        if(typeof c.label!=="string") fail(at+" label must be text");
+        if(typeof c.target!=="string" || !ids.has(c.target)) fail(at+" points at a node that does not exist");
+        if(c.set!==null && !flags.has(c.set)) fail(at+" sets an undeclared flag");
+        if(c.require!==null && !flags.has(c.require)) fail(at+" requires an undeclared flag");
+      });
+    });
+    return true;
+  }
+
+  // Normalize a validated object into our canonical shape (fills optional fields).
+  function adopt(obj){
+    validate(obj);
+    state = {
+      version:SCHEMA, start:obj.start, flags:obj.flags.slice(),
+      nodes:obj.nodes.map(n=>({
+        id:n.id, speaker:n.speaker, portrait:n.portrait, text:n.text,
+        choices:n.choices.map(c=>({label:c.label, target:c.target,
+          set:(c.set===undefined?null:c.set), require:(c.require===undefined?null:c.require)})),
+      })),
+    };
+    // keep the id counter ahead of any numeric nNN ids
+    seq = 0;
+    state.nodes.forEach(n=>{ const m=/^n(\d+)$/.exec(n.id); if(m) seq=Math.max(seq, +m[1]); });
+  }
+
+  /* ---------- persistence ---------- */
+  function save(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){/* private mode etc. */}
+  }
+  function load(){
+    let raw=null;
+    try{ raw = localStorage.getItem(LS_KEY); }catch(e){}
+    if(raw){ try{ adopt(JSON.parse(raw)); return; }catch(e){/* fall through to sample */} }
+    adopt(sampleDialogue());
+  }
+
+  /* ---------- editor helpers ---------- */
+  function newId(){ return "n"+(++seq); }
+  function nodeById(id){ return state.nodes.find(n=>n.id===id); }
+  function clip(s,n){ s=String(s==null?"":s); return s.length>n ? s.slice(0,n) : s; }
+
+  function addNode(){
+    const n = {id:newId(), speaker:"", portrait:PORTRAITS[state.nodes.length%PORTRAITS.length], text:"", choices:[]};
+    state.nodes.push(n); save(); render();
+    const el = document.querySelector('[data-node="'+n.id+'"] textarea'); if(el) el.focus();
+  }
+  function deleteNode(id){
+    if(state.nodes.length<=1){ toast("A dialogue needs at least one node.","err"); return; }
+    state.nodes = state.nodes.filter(n=>n.id!==id);
+    // drop any choices that pointed at the removed node — keeps the model always valid
+    state.nodes.forEach(n=>{ n.choices = n.choices.filter(c=>c.target!==id); });
+    if(state.start===id) state.start = state.nodes[0].id;
+    save(); render();
+  }
+  function addChoice(nid){
+    const n = nodeById(nid); if(!n) return;
+    n.choices.push({label:"", target:n.id, set:null, require:null});
+    save(); render();
+  }
+  function moveChoice(nid, ci, dir){
+    const n=nodeById(nid); const j=ci+dir;
+    if(j<0||j>=n.choices.length) return;
+    const t=n.choices[ci]; n.choices[ci]=n.choices[j]; n.choices[j]=t;
+    save(); render();
+  }
+  function addFlag(name){
+    name = clip(name,MAXLEN.flag).trim().replace(/\s+/g,"_");
+    if(!name){ return; }
+    if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)){ toast("Flag names are letters, digits and _ (not starting with a digit).","err"); return; }
+    if(state.flags.indexOf(name)>=0){ toast("That flag already exists.","err"); return; }
+    state.flags.push(name); save(); render();
+  }
+  function removeFlag(name){
+    state.flags = state.flags.filter(f=>f!==name);
+    state.nodes.forEach(n=>n.choices.forEach(c=>{
+      if(c.set===name) c.set=null; if(c.require===name) c.require=null;
+    }));
+    save(); render();
+  }
+
+  /* ---------- rendering the editor ---------- */
+  const $ = s => document.querySelector(s);
+  function el(tag, props, kids){
+    const e=document.createElement(tag);
+    if(props) for(const k in props){
+      if(k==="class") e.className=props[k];
+      else if(k==="html") e.innerHTML=props[k];
+      else if(k.slice(0,2)==="on") e.addEventListener(k.slice(2), props[k]);
+      else if(k in e) e[k]=props[k]; else e.setAttribute(k,props[k]);
+    }
+    (kids||[]).forEach(c=>{ if(c!=null) e.appendChild(typeof c==="string"?document.createTextNode(c):c); });
+    return e;
+  }
+
+  function flagSelect(value, onchange){
+    const sel = el("select", {onchange});
+    sel.appendChild(el("option",{value:""},["—"]));
+    state.flags.forEach(f=> sel.appendChild(el("option",{value:f, selected:(f===value)},[f])) );
+    sel.value = value || "";
+    return sel;
+  }
+
+  function renderFlags(){
+    const row = $("#flagRow"); row.innerHTML="";
+    if(state.flags.length===0) row.appendChild(el("span",{class:"muted"},["No flags yet. Add one to gate a choice."]));
+    state.flags.forEach(f=>{
+      row.appendChild(el("span",{class:"chip"},[
+        el("code",null,[f]),
+        el("button",{class:"x", title:"remove flag", "aria-label":"remove flag "+f, onclick:()=>removeFlag(f)},["×"]),
+      ]));
+    });
+    const inp = el("input",{type:"text", placeholder:"newFlag", maxLength:MAXLEN.flag, "aria-label":"new flag name"});
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ addFlag(inp.value); } });
+    const add = el("button",{class:"tiny", onclick:()=>addFlag(inp.value)},["+ flag"]);
+    row.appendChild(el("span",{class:"addflag"},[inp, add]));
+  }
+
+  function renderNode(n, idx){
+    const isStart = state.start===n.id;
+    const card = el("div",{class:"node"+(isStart?" is-start":""), "data-node":n.id});
+
+    // portrait picker
+    const pick = el("div",{class:"portpick", role:"group", "aria-label":"portrait"});
+    PORTRAITS.forEach(k=>{
+      pick.appendChild(el("button",{class:(k===n.portrait?"sel":""), title:k, "aria-label":"portrait "+k, "aria-pressed":String(k===n.portrait),
+        html:portraitSVG(k,32), onclick:()=>{ n.portrait=k; save(); render(); }}));
+    });
+
+    const spk = el("input",{type:"text", value:n.speaker, maxLength:MAXLEN.speaker, placeholder:"Speaker (blank = narration)", "aria-label":"speaker"});
+    spk.addEventListener("input",()=>{ n.speaker=clip(spk.value,MAXLEN.speaker); save(); });
+
+    const head = el("div",{class:"node-head"},[
+      el("span",{class:"port", html:portraitSVG(n.portrait,40)}),
+      el("span",{class:"spk"},[spk]),
+      el("span",{class:"node-id"},[n.id]),
+      isStart? el("span",{class:"starttag"},["START"]) : null,
+    ]);
+
+    const text = el("textarea",{maxLength:MAXLEN.text, placeholder:"What they say…", "aria-label":"text"}); text.value=n.text;
+    text.addEventListener("input",()=>{ n.text=clip(text.value,MAXLEN.text); save(); });
+
+    // choices
+    const choicesWrap = el("div",{class:"choices"});
+    n.choices.forEach((c,ci)=>{
+      const lab = el("input",{type:"text", value:c.label, maxLength:MAXLEN.label, placeholder:"Choice text", "aria-label":"choice label"});
+      lab.addEventListener("input",()=>{ c.label=clip(lab.value,MAXLEN.label); save(); });
+
+      const tgt = el("select",{"aria-label":"goes to"});
+      state.nodes.forEach(m=> tgt.appendChild(el("option",{value:m.id, selected:(m.id===c.target)},[(m.speaker||"(narration)")+" · "+m.id])) );
+      tgt.value=c.target;
+      tgt.addEventListener("change",()=>{ c.target=tgt.value; save(); });
+
+      const setSel = flagSelect(c.set, ()=>{ c.set=setSel.value||null; save(); });
+      const reqSel = flagSelect(c.require, ()=>{ c.require=reqSel.value||null; save(); });
+
+      choicesWrap.appendChild(el("div",{class:"choice"},[
+        el("div",{class:"row"},[
+          el("div",null,[el("label",null,["Choice "+(ci+1)]), lab]),
+          el("div",null,[el("label",null,["goes to"]), tgt]),
+        ]),
+        el("div",{class:"meta"},[
+          el("div",null,[el("label",null,["sets flag"]), setSel]),
+          el("div",null,[el("label",null,["requires flag"]), reqSel]),
+        ]),
+        el("div",{class:"ctrls"},[
+          el("button",{class:"tiny ghost", title:"move up", disabled:ci===0, onclick:()=>moveChoice(n.id,ci,-1)},["↑"]),
+          el("button",{class:"tiny ghost", title:"move down", disabled:ci===n.choices.length-1, onclick:()=>moveChoice(n.id,ci,1)},["↓"]),
+          el("button",{class:"tiny ghost", onclick:()=>{ n.choices.splice(ci,1); save(); render(); }},["Delete choice"]),
+        ]),
+      ]));
+    });
+    if(n.choices.length===0) choicesWrap.appendChild(el("div",{class:"muted"},["No choices — this is an ending."]));
+
+    const foot = el("div",{class:"node-foot"},[
+      el("button",{class:"tiny", onclick:()=>addChoice(n.id)},["+ choice"]),
+      isStart? null : el("button",{class:"tiny ghost", onclick:()=>{ state.start=n.id; save(); render(); }},["Make start"]),
+      el("button",{class:"tiny ghost", onclick:()=>deleteNode(n.id)},["Delete node"]),
+    ]);
+
+    card.appendChild(head);
+    card.appendChild(el("div",{class:"node-grid"},[text, choicesWrap]));
+    card.appendChild(foot);
+    return card;
+  }
+
+  function renderNodes(){
+    const list = $("#nodeList"); list.innerHTML="";
+    state.nodes.forEach((n,i)=> list.appendChild(renderNode(n,i)));
+  }
+
+  function render(){ renderFlags(); renderNodes(); }
+
+  /* ---------- play mode ---------- */
+  let play = null; // {node, flags:Set}
+  function startPlay(){
+    play = {node:state.start, flags:new Set()};
+    $("#play").classList.add("open"); $("#play").setAttribute("aria-hidden","false");
+    drawPlay();
+  }
+  function closePlay(){
+    $("#play").classList.remove("open"); $("#play").setAttribute("aria-hidden","true"); play=null;
+  }
+  function availableChoices(n){
+    return n.choices.filter(c=> c.require===null || play.flags.has(c.require));
+  }
+  function take(c){
+    if(c.set) play.flags.add(c.set);
+    play.node = c.target;
+    drawPlay();
+  }
+  function drawPlay(){
+    const stage=$("#stage"); stage.innerHTML="";
+    const n = nodeById(play.node);
+    if(!n){ stage.appendChild(el("div",{class:"say"},["(This conversation points nowhere — broken link.)"])); return; }
+    stage.appendChild(el("div",{class:"speaker"},[
+      el("span",{class:"port", html:portraitSVG(n.portrait,72)}),
+      el("span",{class:"name"},[ el("small",null,[n.speaker?"speaking":"narration"]), (n.speaker||"—") ]),
+    ]));
+    stage.appendChild(el("div",{class:"say"},[n.text || "…"]));
+
+    const opts = availableChoices(n);
+    const box = el("div",{class:"opts"});
+    if(opts.length===0){
+      box.appendChild(el("div",{class:"endcard"},[
+        el("div",{class:"big"},["· End ·"]),
+        el("button",{class:"primary", onclick:()=>startPlay()},["↺ Restart"]),
+      ]));
+    }else{
+      opts.forEach((c,i)=>{
+        box.appendChild(el("button",{class:"opt", onclick:()=>take(c)},[
+          el("span",{class:"k"},[String(i+1)]),
+          el("span",null,[c.label || "(continue)"]),
+          c.set? el("span",{class:"setf"},["sets "+c.set]) : null,
+        ]));
+      });
+    }
+    stage.appendChild(box);
+
+    // flags collected
+    const fb=$("#flagbar"); fb.innerHTML="";
+    fb.appendChild(el("span",null,["flags:"]));
+    if(play.flags.size===0) fb.appendChild(el("span",{class:"muted"},["none yet"]));
+    else Array.from(play.flags).forEach(f=> fb.appendChild(el("span",{class:"chip"},[el("code",null,[f])])) );
+  }
+
+  /* ---------- export / import ---------- */
+  function exportObj(){ return JSON.parse(JSON.stringify(state)); }
+  function download(){
+    const blob=new Blob([JSON.stringify(exportObj(),null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=el("a",{href:url, download:"dialogue.json"}); document.body.appendChild(a); a.click();
+    a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast("Downloaded dialogue.json","ok");
+  }
+  async function copyJSON(){
+    const txt=JSON.stringify(exportObj(),null,2);
+    try{ await navigator.clipboard.writeText(txt); toast("JSON copied to clipboard","ok"); }
+    catch(e){
+      // fallback for browsers / contexts without clipboard API
+      const ta=el("textarea",{}); ta.value=txt; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); toast("JSON copied to clipboard","ok"); }
+      catch(_){ toast("Copy failed — use Export instead","err"); }
+      ta.remove();
+    }
+  }
+  function importFile(file){
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onerror=()=>toast("Could not read that file.","err");
+    reader.onload=()=>{
+      let obj;
+      try{ obj=JSON.parse(reader.result); }
+      catch(e){ toast("Not valid JSON: "+e.message,"err"); return; }
+      const backup = state;
+      try{ adopt(obj); }
+      catch(e){ state=backup; toast("Invalid dialogue: "+e.message,"err"); return; }
+      save(); render(); toast("Imported — "+state.nodes.length+" nodes","ok");
+    };
+    reader.readAsText(file);
+  }
+
+  /* ---------- toast ---------- */
+  let toastT=null;
+  function toast(msg, kind){
+    const t=$("#toast"); t.textContent=msg; t.className="show "+(kind||"");
+    clearTimeout(toastT); toastT=setTimeout(()=>{ t.className=t.className.replace("show","").trim(); }, 2600);
+  }
+
+  /* ---------- wire up ---------- */
+  function newDialogue(){
+    state={version:SCHEMA, start:"start", flags:[], nodes:[{id:"start", speaker:"", portrait:"slate", text:"", choices:[]}]};
+    seq=0; save(); render();
+  }
+  function init(){
+    load();
+    render();
+    $("#btnPlay").onclick=startPlay;
+    $("#btnClose").onclick=closePlay;
+    $("#btnReplay").onclick=startPlay;
+    $("#btnAddNode").onclick=addNode;
+    $("#btnExport").onclick=download;
+    $("#btnCopy").onclick=copyJSON;
+    $("#btnSample").onclick=()=>{ adopt(sampleDialogue()); save(); render(); toast("Sample loaded","ok"); };
+    $("#btnClear").onclick=()=>{ if(confirm("Start a new, empty dialogue? Your current one will be replaced.")) newDialogue(); };
+    $("#btnImport").onclick=()=>$("#file").click();
+    $("#file").onchange=e=>{ importFile(e.target.files[0]); e.target.value=""; };
+    document.addEventListener("keydown",e=>{
+      if(!play) return;
+      if(e.key==="Escape"){ closePlay(); return; }
+      if(e.key==="r"||e.key==="R"){ startPlay(); return; }
+      const d=parseInt(e.key,10);
+      if(d>=1 && d<=9){
+        const n=nodeById(play.node); if(!n) return;
+        const opts=availableChoices(n); if(opts[d-1]) take(opts[d-1]);
+      }
+    });
+    // expose for headless tests
+    window.__loom = {get state(){return state;}, adopt, validate, sampleDialogue, availableChoices:(id)=>{
+      const prev=play; play={node:id,flags:new Set()}; const r=availableChoices(nodeById(id)).length; play=prev; return r;
+    }};
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init); else init();
+})();
+</script>
+</body>
+</html>
