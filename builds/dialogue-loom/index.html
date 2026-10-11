@@ -204,12 +204,12 @@
   function portraitSVG(key, size){
     const p = PAL[key] || PAL.slate, s = size||48;
     // deterministic tiny face: back circle, head, eyes, mouth — varies by key
-    const i = PORTRAITS.indexOf(key); const browY = 19 + (i%3); const mouthW = 8 + (i%3)*2;
+    const i = PORTRAITS.indexOf(key); const eyeY = 17 + (i%2); const mouthW = 8 + (i%3)*2;
     return `<svg class="pf" width="${s}" height="${s}" viewBox="0 0 48 48" role="img" aria-label="portrait">`
       + `<rect width="48" height="48" rx="10" fill="${p[0]}"/>`
       + `<circle cx="24" cy="26" r="13" fill="${p[1]}"/>`
       + `<circle cx="24" cy="18" r="8.5" fill="${p[2]}"/>`
-      + `<circle cx="21" cy="${browY}" r="1.4" fill="#2b2733"/><circle cx="27" cy="${browY}" r="1.4" fill="#2b2733"/>`
+      + `<circle cx="21" cy="${eyeY}" r="1.4" fill="#2b2733"/><circle cx="27" cy="${eyeY}" r="1.4" fill="#2b2733"/>`
       + `<path d="M${24-mouthW/2} 23 q ${mouthW/2} 3 ${mouthW} 0" stroke="#2b2733" stroke-width="1.4" fill="none" stroke-linecap="round"/>`
       + `</svg>`;
   }
@@ -294,8 +294,9 @@
         if(c===null || typeof c!=="object" || Array.isArray(c)) fail(at+" is not an object");
         if(typeof c.label!=="string") fail(at+" label must be text");
         if(typeof c.target!=="string" || !ids.has(c.target)) fail(at+" points at a node that does not exist");
-        if(c.set!==null && !flags.has(c.set)) fail(at+" sets an undeclared flag");
-        if(c.require!==null && !flags.has(c.require)) fail(at+" requires an undeclared flag");
+        // set/require are optional: absent (undefined) or null both mean "no flag". != null catches both.
+        if(c.set!=null && !flags.has(c.set)) fail(at+" sets an undeclared flag");
+        if(c.require!=null && !flags.has(c.require)) fail(at+" requires an undeclared flag");
       });
     });
     return true;
@@ -334,6 +335,8 @@
   function clip(s,n){ s=String(s==null?"":s); return s.length>n ? s.slice(0,n) : s; }
 
   function addNode(){
+    // cap matches the import limit (MAXLEN.nodes) so you can never build a file you can't re-import
+    if(state.nodes.length>=MAXLEN.nodes){ toast("Node limit reached ("+MAXLEN.nodes+").","err"); return; }
     const n = {id:newId(), speaker:"", portrait:PORTRAITS[state.nodes.length%PORTRAITS.length], text:"", choices:[]};
     state.nodes.push(n); save(); render();
     const el = document.querySelector('[data-node="'+n.id+'"] textarea'); if(el) el.focus();
@@ -342,9 +345,11 @@
     if(state.nodes.length<=1){ toast("A dialogue needs at least one node.","err"); return; }
     state.nodes = state.nodes.filter(n=>n.id!==id);
     // drop any choices that pointed at the removed node — keeps the model always valid
-    state.nodes.forEach(n=>{ n.choices = n.choices.filter(c=>c.target!==id); });
+    let removed = 0;
+    state.nodes.forEach(n=>{ const before=n.choices.length; n.choices = n.choices.filter(c=>c.target!==id); removed += before-n.choices.length; });
     if(state.start===id) state.start = state.nodes[0].id;
     save(); render();
+    if(removed>0) toast("Deleted the node and "+removed+" choice"+(removed>1?"s":"")+" that pointed to it.");
   }
   function addChoice(nid){
     const n = nodeById(nid); if(!n) return;

@@ -12,7 +12,7 @@ Write a conversation as a set of nodes. Each node has a speaker, a portrait draw
 
 All six portraits are drawn as inline SVG from code at load — no image files, no fonts, nothing to download.
 
-Keyboard: in Play, `1`–`9` take the matching choice and `R` restarts at the end.
+Keyboard: in Play, `1`–`9` take the matching choice, `R` restarts the conversation, and `Esc` closes Play.
 
 ## How to run
 
