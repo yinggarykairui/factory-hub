@@ -129,7 +129,7 @@
     <p id="status" class="status" role="status" aria-live="polite"></p>
     <p class="hint">
       Keys: <kbd>b</kbd>/<kbd>e</kbd>/<kbd>f</kbd> tools · <kbd>0</kbd>–<kbd>9</kbd> palette · <kbd>g</kbd> grid ·
-      <kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd> undo
+      <kbd>Ctrl/Cmd</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo
     </p>
   </section>
 
@@ -339,7 +339,7 @@
         }
       }
     }
-    if (showGrid && px >= 8) {
+    if (showGrid && px >= 4) {
       ctx.strokeStyle = "rgba(255,255,255,0.10)"; ctx.lineWidth = 1;
       ctx.beginPath();
       for (var gx = 0; gx <= map.width; gx++) { ctx.moveTo(gx * px + 0.5, 0); ctx.lineTo(gx * px + 0.5, cssH); }
@@ -441,6 +441,7 @@
     if (!painting || tool === "fill") return;
     var cell = cellFromEvent(e);
     if (cell) { e.preventDefault(); strokeTo(cell); }
+    else lastCell = null; // pointer left the canvas: start a fresh dab on re-entry, don't bridge the gap
   }
   function strokeTo(cell) {
     if (lastCell && lastCell.x === cell.x && lastCell.y === cell.y) return;

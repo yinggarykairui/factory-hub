@@ -12,6 +12,8 @@ Pick a tile from a procedural palette and paint it onto a grid with a brush, an 
 
 All ten tiles are drawn from code at load — no image files, no fonts, nothing to download.
 
+Keyboard: `b`/`e`/`f` pick the brush, eraser, and fill; `0`–`9` select a palette slot (`0` is empty, which switches to the eraser); `g` toggles grid lines; `Ctrl`/`Cmd`+`Z` undoes and `Ctrl`/`Cmd`+`Shift`+`Z` (or `Ctrl`+`Y`) redoes.
+
 ## How to run
 
 Open `index.html` in any modern browser. There is no build step and no server.
