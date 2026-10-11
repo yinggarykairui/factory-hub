@@ -1,0 +1,5 @@
+{
+  "description": "Build a branching conversation in your browser — nodes, choices, flags, procedural portraits — then play it and export it as JSON.",
+  "topics": ["dialogue", "branching-narrative", "interactive-fiction", "gamedev", "rpg", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
