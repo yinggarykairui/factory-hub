@@ -1,0 +1,5 @@
+{
+  "description": "A tiny turn-based combat arena — read the turn order, pick a target, and attack into the element it fears.",
+  "topics": ["turn-based", "combat", "rpg", "gamedev", "canvas", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
