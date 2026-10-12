@@ -523,7 +523,7 @@
   document.getElementById("keys").innerHTML =
     "Keys: <b>1</b> <b>2</b> <b>3</b> pick a target · " +
     "<b>F</b> Fire · <b>W</b> Water · <b>N</b> Nature · " +
-    "<b>G</b> Guard · <b>R</b> new fight (after a result). " +
+    "<b>G</b> or <b>Space</b> Guard · <b>R</b> new fight (after a result). " +
     "Click an enemy to target it. Inputs are ignored during the enemy's turn.";
 
   function overlay(show){
@@ -564,13 +564,18 @@
     draw();
   }
 
-  // layout positions in CSS px, recomputed every draw so resize is always safe
+  // layout positions in CSS px, recomputed every draw so resize is always safe.
+  // The three enemies stack vertically in the right column, each carrying a name
+  // above it and an HP bar + readout below; the radius is capped by the per-slot
+  // height (not just width) so those labels never collide with the next enemy.
   function layout(){
-    const r = Math.max(20, Math.min(36, view.w * 0.085));
-    const hero = { c:S.hero, x:view.w * 0.22, y:view.h * 0.5, r:r };
+    const pad = 4;
+    const slotH = (view.h - pad * 2) / 3;
+    const rVert = (slotH - 72) / 2;            // 72px reserved for the labels above+below
+    const r = Math.max(16, Math.min(36, view.w * 0.085, rVert));
+    const hero = { c:S.hero, x:view.w * 0.23, y:view.h * 0.5, r:r };
     const ex = view.w * 0.74;
-    const ys = [0.22, 0.5, 0.78];
-    const enemies = S.enemies.map((e, i) => ({ c:e, x:ex, y:view.h * ys[i], r:r }));
+    const enemies = S.enemies.map((e, i) => ({ c:e, x:ex, y: pad + slotH * (i + 0.5), r:r }));
     return { hero, enemies };
   }
 
