@@ -191,7 +191,7 @@
 
   const THRESH = 100;        // action-gauge threshold
   const HEAL   = 16;         // Thorn Sprite heal amount
-  const STEP_MS = 650;       // delay between turns so the log is readable
+  let   stepMs = 650;        // delay between turns so the log is readable (test hook can lower it)
 
   /* ========= combatant definitions (fixed stats => always winnable with good play) ========= */
   function buildCombatants(){
@@ -297,7 +297,7 @@
       S.timer = 0;
       if (gen !== S.gen) return;     // stale timer from a previous fight
       fn();
-    }, STEP_MS);
+    }, stepMs);
   }
 
   function ensureTarget(){
@@ -676,7 +676,7 @@
 
   let flashRaf = 0;
   function draw(){
-    if (!ctx || !view.w) return;
+    if (!ctx || !view.w || !S.hero) return;   // nothing to draw before the first fight is built
     ctx.clearRect(0, 0, view.w, view.h);
     // faint divider between hero side and enemy side
     ctx.strokeStyle = "#ffffff0c"; ctx.lineWidth = 1;
@@ -736,7 +736,7 @@
   startFight();
 
   // expose a tiny hook for headless testing (no effect on normal play)
-  window.__turnclash = { S, multiplier };
+  window.__turnclash = { S, multiplier, setStep:(ms)=>{ stepMs = ms; } };
 })();
 </script>
 </body>
