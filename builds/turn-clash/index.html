@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>turn-clash</title>
+<meta name="description" content="A tiny turn-based combat arena — read the turn order, pick a target, and attack into the element it fears.">
+<style>
+  :root{
+    --bg:#15161d; --panel:#1e2029; --card:#242733; --card2:#2c303e;
+    --ink:#eceef6; --dim:#9aa0b4; --line:#363a4a;
+    --accent:#ffcf6b; --accent-ink:#15161d;
+    --good:#8fe0a8; --bad:#ff9a8c;
+    --fire:#ff8a5c; --water:#5cc8ff; --nature:#8fe0a8;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    padding:14px 16px; border-bottom:1px solid var(--line);
+    display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline;
+  }
+  header h1{font-size:18px; margin:0; letter-spacing:.3px; font-weight:700}
+  header h1 b{color:var(--accent)}
+  header .sub{color:var(--dim); font-size:13px}
+  main{max-width:760px; margin:0 auto; padding:16px; padding-bottom:48px}
+
+  h2.sec{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:0 0 8px}
+
+  /* ---- turn queue ---- */
+  .queue{margin-bottom:16px}
+  .qrow{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+  .qchip{
+    display:inline-flex; align-items:center; gap:6px; background:var(--card);
+    border:1px solid var(--line); border-radius:999px; padding:4px 11px 4px 7px; font-size:13px; white-space:nowrap;
+  }
+  .qchip.now{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset}
+  .qchip .dot{width:14px; height:14px; border-radius:4px; display:inline-grid; place-items:center;
+    font-size:10px; font-weight:700; color:#10131a}
+  .qnow-label{font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; margin-right:2px}
+
+  /* ---- arena ---- */
+  .arena-wrap{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; margin-bottom:16px;
+  }
+  canvas#arena{display:block; width:100%; height:320px; touch-action:manipulation; cursor:pointer}
+
+  /* ---- controls ---- */
+  .controls{margin-bottom:16px}
+  .targets{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px}
+  .tbtn{
+    display:flex; align-items:center; gap:8px; background:var(--card); color:var(--ink);
+    border:1px solid var(--line); border-radius:10px; padding:7px 11px; cursor:pointer;
+    font:inherit; min-height:42px;
+  }
+  .tbtn:hover{border-color:var(--accent)}
+  .tbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .tbtn.sel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset}
+  .tbtn[disabled]{opacity:.35; cursor:not-allowed; text-decoration:line-through}
+  .tbtn .num{color:var(--dim); font-size:12px; font-variant-numeric:tabular-nums}
+  .tbtn .el{width:16px; height:16px; border-radius:4px; display:inline-grid; place-items:center;
+    font-size:11px; font-weight:700; color:#10131a; flex:0 0 auto}
+  .tbtn .hp{font-size:12px; color:var(--dim); font-variant-numeric:tabular-nums}
+
+  .actions{display:flex; flex-wrap:wrap; gap:8px}
+  button.act{
+    font:inherit; color:var(--ink); background:var(--card2); border:1px solid var(--line);
+    border-radius:10px; padding:9px 13px; cursor:pointer; min-height:46px; flex:1 1 auto;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  button.act:hover{border-color:var(--accent)}
+  button.act:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  button.act[disabled]{opacity:.4; cursor:not-allowed}
+  button.act .el{width:16px; height:16px; border-radius:4px; display:inline-grid; place-items:center;
+    font-size:11px; font-weight:700; color:#10131a}
+  button.act .k{color:var(--dim); font-size:11px; border:1px solid var(--line); border-radius:4px; padding:0 4px}
+  button.act.guard{background:var(--card)}
+
+  .keys{color:var(--dim); font-size:12px; margin:10px 0 0; line-height:1.6}
+  .keys b{color:var(--ink); font-weight:600; font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* ---- log ---- */
+  .log{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:10px 12px; max-height:220px; overflow-y:auto; font-size:13.5px; line-height:1.5;
+  }
+  .log .line{padding:3px 0; border-bottom:1px solid #ffffff08}
+  .log .line:last-child{border-bottom:none}
+  .log .line.sys{color:var(--dim)}
+  .log .line.hero{color:var(--ink)}
+  .log .line.enemy{color:#ffc6bc}
+  .log .line.heal{color:var(--good)}
+  .log .line.dead{color:var(--accent); font-weight:600}
+  .log em{font-style:normal; font-weight:600}
+
+  /* ---- win / lose overlay ---- */
+  .overlay{
+    position:fixed; inset:0; background:#0d0e13d9; z-index:30;
+    display:none; align-items:center; justify-content:center; padding:24px;
+  }
+  .overlay.open{display:flex}
+  .panel{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:28px 26px; max-width:380px; width:100%; text-align:center;
+    box-shadow:0 20px 60px #0009;
+  }
+  .panel h2{margin:0 0 6px; font-size:26px}
+  .panel.win h2{color:var(--good)}
+  .panel.lose h2{color:var(--bad)}
+  .panel p{color:var(--dim); margin:0 0 20px; font-size:14px}
+  .panel button{
+    font:inherit; font-weight:600; background:var(--accent); color:var(--accent-ink);
+    border:none; border-radius:10px; padding:11px 20px; cursor:pointer; min-height:46px; width:100%;
+  }
+  .panel button:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+
+  @media (max-width:480px){
+    header h1{font-size:17px}
+    button.act{flex:1 1 44%}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>turn<b>-</b>clash</h1>
+  <span class="sub">one hero, three enemies, one element triangle</span>
+</header>
+
+<main>
+  <section class="queue" aria-label="Turn order">
+    <h2 class="sec">Turn order</h2>
+    <div class="qrow" id="queue"></div>
+  </section>
+
+  <div class="arena-wrap">
+    <canvas id="arena" aria-label="Combat arena"></canvas>
+  </div>
+
+  <section class="controls">
+    <h2 class="sec">Your turn</h2>
+    <div class="targets" id="targets"></div>
+    <div class="actions" id="actions"></div>
+    <p class="keys" id="keys"></p>
+  </section>
+
+  <section class="log" aria-label="Combat log" aria-live="polite" id="log"></section>
+</main>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Fight result">
+  <div class="panel" id="panel">
+    <h2 id="over-title"></h2>
+    <p id="over-text"></p>
+    <button id="restart">New fight</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+  /* ========= element triangle =========
+     Fire -> Nature -> Water -> Fire  (each BEATS the one it points to).
+     Attacking into a target's weakness = x1.5; into its resistance = x0.5; else x1. */
+  const ELEMENTS = {
+    Fire:   {letter:"F", color:"#ff8a5c"},
+    Nature: {letter:"N", color:"#8fe0a8"},
+    Water:  {letter:"W", color:"#5cc8ff"},
+  };
+  const BEATS = { Fire:"Nature", Nature:"Water", Water:"Fire" };
+
+  // multiplier for attacker element ATK striking a defender of element DEF
+  function multiplier(atk, def){
+    if (BEATS[atk] === def) return 1.5;   // defender is weak to atk
+    if (BEATS[def] === atk) return 0.5;   // defender resists atk (it beats atk)
+    return 1.0;
+  }
+  // human phrase for the log, from the defender's point of view
+  function matchupPhrase(atk, def){
+    const m = multiplier(atk, def);
+    if (m === 1.5) return "weak to " + atk;
+    if (m === 0.5) return "resists " + atk;
+    return "neutral to " + atk;
+  }
+  // format 1 -> "1", 1.5 -> "1.5"
+  function fmtMult(m){ return m === 1 ? "1" : String(m); }
+
+  const THRESH = 100;        // action-gauge threshold
+  const HEAL   = 16;         // Thorn Sprite heal amount
+  const STEP_MS = 650;       // delay between turns so the log is readable
+
+  /* ========= combatant definitions (fixed stats => always winnable with good play) ========= */
+  function buildCombatants(){
+    // index order is also the deterministic tie-break order for the gauge model
+    return [
+      { id:"hero",   kind:"hero",   name:"Hero",         element:"Water",  maxHp:120, hp:120, speed:20, atk:14,
+        side:"hero",  shape:"rrect" },
+      { id:"imp",    kind:"imp",    name:"Ember Imp",    element:"Fire",   maxHp:26,  hp:26,  speed:18, atk:12,
+        side:"enemy", shape:"tri" },
+      { id:"golem",  kind:"golem",  name:"Tide Golem",   element:"Water",  maxHp:60,  hp:60,  speed:8,  atk:9,
+        side:"enemy", shape:"square" },
+      { id:"sprite", kind:"sprite", name:"Thorn Sprite", element:"Nature", maxHp:40,  hp:40,  speed:12, atk:9,
+        side:"enemy", shape:"diamond", healed:false },
+    ].map(c => Object.assign(c, { gauge:0, guarding:false, alive:true, flashUntil:0 }));
+  }
+
+  /* ========= game state ========= */
+  const S = {
+    list:[], hero:null, enemies:[],
+    current:null,
+    target:0,         // index into S.enemies of the selected attack target
+    phase:"init",     // "hero" (awaiting input) | "busy" (resolving/enemy turn) | "over"
+    result:null,      // "win" | "lose"
+    gen:0,            // bumped on restart so stale timers are ignored
+    timer:0,
+  };
+
+  /* ---------- gauge / initiative ---------- */
+  // Advance the REAL gauges until one living combatant crosses THRESH; that one acts.
+  // Ties break by list index (strict > keeps the earlier combatant).
+  function pickNextActor(){
+    const alive = S.list.filter(c => c.alive);
+    if (!alive.length) return null;
+    let safety = 0;
+    while (safety++ < 100000){
+      for (const c of alive) c.gauge += c.speed;
+      let best = null;
+      for (const c of alive){
+        if (c.gauge >= THRESH && (best === null || c.gauge > best.gauge)) best = c;
+      }
+      if (best){ best.gauge -= THRESH; return best; }
+    }
+    return alive[0];
+  }
+
+  // Pure forward simulation on a COPY of the current gauges: the next N actors.
+  // Uses only currently-living combatants, so it is correct as combatants die.
+  function previewQueue(n){
+    const alive = S.list.filter(c => c.alive);
+    if (!alive.length) return [];
+    const g  = alive.map(c => c.gauge);
+    const sp = alive.map(c => c.speed);
+    const out = [];
+    let safety = 0;
+    while (out.length < n && safety++ < 100000){
+      for (let i=0;i<alive.length;i++) g[i] += sp[i];
+      let bi = -1;
+      for (let i=0;i<alive.length;i++){
+        if (g[i] >= THRESH && (bi < 0 || g[i] > g[bi])) bi = i;
+      }
+      if (bi >= 0){ g[bi] -= THRESH; out.push(alive[bi]); }
+    }
+    return out;
+  }
+
+  /* ---------- turn engine ---------- */
+  function startFight(){
+    if (S.timer){ clearTimeout(S.timer); S.timer = 0; }
+    S.gen++;
+    S.list    = buildCombatants();
+    S.hero    = S.list.find(c => c.kind === "hero");
+    S.enemies = S.list.filter(c => c.side === "enemy");
+    S.current = null;
+    S.target  = 0;
+    S.result  = null;
+    clearLog();
+    log("sys", "A fresh fight. " + S.hero.name + " (Water) faces three foes.");
+    overlay(false);
+    nextTurn();
+  }
+
+  function nextTurn(){
+    if (checkEnd()) return;
+    const actor = pickNextActor();
+    if (!actor){ return; }           // no living combatants (already handled by checkEnd)
+    S.current = actor;
+    actor.guarding = false;          // a combatant's own guard expires when its next turn arrives
+    if (actor.side === "hero"){
+      S.phase = "hero";
+      ensureTarget();
+      render();
+    } else {
+      S.phase = "busy";
+      render();
+      schedule(() => enemyAct(actor));
+    }
+  }
+
+  // run fn after STEP_MS unless the fight was restarted meanwhile
+  function schedule(fn){
+    const gen = S.gen;
+    S.timer = setTimeout(() => {
+      S.timer = 0;
+      if (gen !== S.gen) return;     // stale timer from a previous fight
+      fn();
+    }, STEP_MS);
+  }
+
+  function ensureTarget(){
+    // keep the selected target pointing at a living enemy
+    if (!S.enemies[S.target] || !S.enemies[S.target].alive){
+      const i = S.enemies.findIndex(e => e.alive);
+      S.target = i < 0 ? 0 : i;
+    }
+  }
+
+  function selectTarget(i){
+    if (S.phase !== "hero") return;
+    if (!S.enemies[i] || !S.enemies[i].alive) return;
+    S.target = i;
+    render();
+  }
+
+  /* ----- hero actions ----- */
+  function heroAttack(element){
+    if (S.phase !== "hero") return;        // ignore input during enemy/busy/over
+    ensureTarget();
+    const tgt = S.enemies[S.target];
+    if (!tgt || !tgt.alive) return;
+    S.phase = "busy";                      // lock out a second action this turn
+    const m = multiplier(element, tgt.element);
+    const dmg = Math.round(S.hero.atk * m * (tgt.guarding ? 0.5 : 1));
+    tgt.hp = Math.max(0, tgt.hp - dmg);
+    tgt.flashUntil = performance.now() + 280;
+    const guardNote = tgt.guarding ? " (guarding, halved)" : "";
+    log("hero",
+      S.hero.name + "'s <em>" + element + "</em> hits " + tgt.name +
+      " — " + matchupPhrase(element, tgt.element) + ", ×" + fmtMult(m) +
+      guardNote + " → " + dmg + " dmg.");
+    if (tgt.hp === 0){ tgt.alive = false; log("dead", tgt.name + " is defeated."); }
+    afterAction();
+  }
+
+  function heroGuard(){
+    if (S.phase !== "hero") return;
+    S.phase = "busy";
+    S.hero.guarding = true;
+    log("hero", S.hero.name + " guards — incoming damage halved until next turn.");
+    afterAction();
+  }
+
+  function afterAction(){
+    render();
+    if (checkEnd()) return;
+    schedule(nextTurn);
+  }
+
+  /* ----- enemy AI (deterministic, legible from the log) ----- */
+  function enemyAct(actor){
+    if (S.phase !== "busy" || !actor.alive){ return; }
+    switch (actor.kind){
+      case "imp":                              // fast, fragile, aggressive — always Fire at the hero
+        attackHero(actor, "Fire");
+        break;
+      case "golem":                            // guards when below a third of max HP, else Water at the hero
+        if (actor.hp < actor.maxHp / 3){
+          actor.guarding = true;
+          log("enemy", actor.name + " guards (HP low) — incoming damage halved.");
+        } else {
+          attackHero(actor, "Water");
+        }
+        break;
+      case "sprite": {                         // heals the lowest-HP ally once, otherwise Nature at the hero
+        const wounded = S.enemies.filter(e => e.alive && e.hp < e.maxHp);
+        if (!actor.healed && wounded.length){
+          wounded.sort((a,b) => a.hp - b.hp);  // lowest HP first; stable enough, index ties don't matter for heal
+          const patient = wounded[0];
+          const before = patient.hp;
+          patient.hp = Math.min(patient.maxHp, patient.hp + HEAL);
+          patient.flashUntil = performance.now() + 280;
+          actor.healed = true;
+          const who = patient === actor ? "itself" : patient.name;
+          log("heal", actor.name + " channels Nature — heals " + who +
+            " +" + (patient.hp - before) + " HP (" + before + "→" + patient.hp + ").");
+        } else {
+          attackHero(actor, "Nature");
+        }
+        break;
+      }
+    }
+    afterEnemyAction();
+  }
+
+  function attackHero(actor, element){
+    const hero = S.hero;
+    const m = multiplier(element, hero.element);
+    const dmg = Math.round(actor.atk * m * (hero.guarding ? 0.5 : 1));
+    hero.hp = Math.max(0, hero.hp - dmg);
+    hero.flashUntil = performance.now() + 280;
+    const guardNote = hero.guarding ? " (guarding, halved)" : "";
+    log("enemy",
+      actor.name + "'s <em>" + element + "</em> hits " + hero.name +
+      " — " + matchupPhrase(element, hero.element) + ", ×" + fmtMult(m) +
+      guardNote + " → " + dmg + " dmg.");
+    if (hero.hp === 0){ hero.alive = false; }
+  }
+
+  function afterEnemyAction(){
+    render();
+    if (checkEnd()) return;
+    schedule(nextTurn);
+  }
+
+  function checkEnd(){
+    if (!S.hero.alive){
+      S.phase = "over"; S.result = "lose"; S.current = null;
+      log("dead", S.hero.name + " has fallen.");
+      render(); overlay(true);
+      return true;
+    }
+    if (S.enemies.every(e => !e.alive)){
+      S.phase = "over"; S.result = "win"; S.current = null;
+      log("dead", "All enemies defeated. Victory.");
+      render(); overlay(true);
+      return true;
+    }
+    return false;
+  }
+
+  /* ========= logging ========= */
+  const logEl = document.getElementById("log");
+  function clearLog(){ logEl.textContent = ""; }
+  function log(kind, html){
+    const div = document.createElement("div");
+    div.className = "line " + kind;
+    div.innerHTML = html;
+    logEl.appendChild(div);
+    while (logEl.childNodes.length > 200) logEl.removeChild(logEl.firstChild);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  /* ========= rendering: queue, targets, actions ========= */
+  const queueEl   = document.getElementById("queue");
+  const targetsEl = document.getElementById("targets");
+  const actionsEl = document.getElementById("actions");
+
+  function elDot(element){
+    const d = document.createElement("span");
+    d.className = "dot";
+    d.style.background = ELEMENTS[element].color;
+    d.textContent = ELEMENTS[element].letter;
+    return d;
+  }
+
+  function renderQueue(){
+    queueEl.textContent = "";
+    if (S.phase === "over"){
+      const chip = document.createElement("span");
+      chip.className = "qchip";
+      chip.textContent = "— fight over —";
+      queueEl.appendChild(chip);
+      return;
+    }
+    const seq = [];
+    if (S.current) seq.push({ c:S.current, now:true });
+    for (const c of previewQueue(6)) seq.push({ c:c, now:false });
+    for (const item of seq){
+      const chip = document.createElement("span");
+      chip.className = "qchip" + (item.now ? " now" : "");
+      if (item.now){
+        const lab = document.createElement("span");
+        lab.className = "qnow-label"; lab.textContent = "now";
+        chip.appendChild(lab);
+      }
+      chip.appendChild(elDot(item.c.element));
+      chip.appendChild(document.createTextNode(item.c.name));
+      queueEl.appendChild(chip);
+    }
+  }
+
+  function renderTargets(){
+    targetsEl.textContent = "";
+    S.enemies.forEach((e, i) => {
+      const b = document.createElement("button");
+      b.className = "tbtn" + (i === S.target && e.alive ? " sel" : "");
+      b.type = "button";
+      b.disabled = !e.alive || S.phase !== "hero";
+      b.setAttribute("aria-pressed", String(i === S.target && e.alive));
+      const num = document.createElement("span"); num.className = "num"; num.textContent = (i+1);
+      const el = document.createElement("span");
+      el.className = "el"; el.style.background = ELEMENTS[e.element].color;
+      el.textContent = ELEMENTS[e.element].letter;
+      const nm = document.createElement("span"); nm.textContent = e.name;
+      const hp = document.createElement("span"); hp.className = "hp";
+      hp.textContent = e.alive ? (e.hp + "/" + e.maxHp) : "down";
+      b.append(num, el, nm, hp);
+      b.addEventListener("click", () => selectTarget(i));
+      targetsEl.appendChild(b);
+    });
+  }
+
+  const ATTACKS = [
+    { element:"Fire",   key:"F" },
+    { element:"Water",  key:"W" },
+    { element:"Nature", key:"N" },
+  ];
+  function renderActions(){
+    actionsEl.textContent = "";
+    const canAct = S.phase === "hero";
+    for (const a of ATTACKS){
+      const b = document.createElement("button");
+      b.className = "act"; b.type = "button"; b.disabled = !canAct;
+      const el = document.createElement("span");
+      el.className = "el"; el.style.background = ELEMENTS[a.element].color;
+      el.textContent = ELEMENTS[a.element].letter;
+      const k = document.createElement("span"); k.className = "k"; k.textContent = a.key;
+      b.append(el, document.createTextNode(a.element), k);
+      b.addEventListener("click", () => heroAttack(a.element));
+      actionsEl.appendChild(b);
+    }
+    const g = document.createElement("button");
+    g.className = "act guard"; g.type = "button"; g.disabled = !canAct;
+    const gk = document.createElement("span"); gk.className = "k"; gk.textContent = "G";
+    g.append(document.createTextNode("Guard"), gk);
+    g.addEventListener("click", heroGuard);
+    actionsEl.appendChild(g);
+  }
+
+  document.getElementById("keys").innerHTML =
+    "Keys: <b>1</b> <b>2</b> <b>3</b> pick a target · " +
+    "<b>F</b> Fire · <b>W</b> Water · <b>N</b> Nature · " +
+    "<b>G</b> Guard · <b>R</b> new fight (after a result). " +
+    "Click an enemy to target it. Inputs are ignored during the enemy's turn.";
+
+  function overlay(show){
+    const ov = document.getElementById("overlay");
+    const panel = document.getElementById("panel");
+    if (!show){ ov.classList.remove("open"); return; }
+    const win = S.result === "win";
+    panel.className = "panel " + (win ? "win" : "lose");
+    document.getElementById("over-title").textContent = win ? "Victory" : "Defeated";
+    document.getElementById("over-text").textContent = win
+      ? "Every enemy is down. Same rules, fresh fight?"
+      : "The hero has fallen. Read the queue and try again.";
+    ov.classList.add("open");
+    document.getElementById("restart").focus();
+  }
+
+  function render(){
+    renderQueue();
+    renderTargets();
+    renderActions();
+    draw();
+  }
+
+  /* ========= rendering: canvas arena ========= */
+  const canvas = document.getElementById("arena");
+  const ctx = canvas.getContext("2d");
+  const view = { w:0, h:0 };
+
+  function sizeCanvas(){
+    const cssW = canvas.clientWidth || 320;
+    const cssH = Math.max(320, Math.min(Math.round(cssW * 0.6), 420));
+    const dpr = Math.min(2, window.devicePixelRatio || 1);   // cap DPR at 2
+    canvas.style.height = cssH + "px";
+    canvas.width  = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    view.w = cssW; view.h = cssH;
+    draw();
+  }
+
+  // layout positions in CSS px, recomputed every draw so resize is always safe
+  function layout(){
+    const r = Math.max(20, Math.min(36, view.w * 0.085));
+    const hero = { c:S.hero, x:view.w * 0.22, y:view.h * 0.5, r:r };
+    const ex = view.w * 0.74;
+    const ys = [0.22, 0.5, 0.78];
+    const enemies = S.enemies.map((e, i) => ({ c:e, x:ex, y:view.h * ys[i], r:r }));
+    return { hero, enemies };
+  }
+
+  function hpColor(ratio){
+    if (ratio > 0.5) return "#8fe0a8";
+    if (ratio > 0.25) return "#ffcf6b";
+    return "#ff9a8c";
+  }
+
+  function drawShape(x, y, r, shape){
+    ctx.beginPath();
+    if (shape === "rrect"){
+      const rr = r * 0.35, w = r * 1.7, h = r * 1.9;
+      roundRect(x - w/2, y - h/2, w, h, rr);
+    } else if (shape === "tri"){
+      ctx.moveTo(x, y - r); ctx.lineTo(x + r*0.95, y + r*0.8); ctx.lineTo(x - r*0.95, y + r*0.8); ctx.closePath();
+    } else if (shape === "square"){
+      const s = r * 1.55; roundRect(x - s/2, y - s/2, s, s, r*0.2);
+    } else { // diamond
+      ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath();
+    }
+  }
+  function roundRect(x, y, w, h, r){
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawCombatant(p, isTarget, isCurrent){
+    const c = p.c, now = performance.now();
+    c._hit = { x:p.x, y:p.y, r:p.r };     // stored for click hit-testing
+    const dead = !c.alive;
+    const col = ELEMENTS[c.element].color;
+
+    // current-actor halo
+    if (isCurrent && !dead){
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 1.5, 0, Math.PI*2);
+      ctx.fillStyle = "#ffcf6b22"; ctx.fill();
+    }
+
+    // body
+    ctx.save();
+    ctx.globalAlpha = dead ? 0.28 : 1;
+    drawShape(p.x, p.y, p.r, c.shape);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = isTarget && !dead ? "#ffcf6b" : "#00000055";
+    if (isTarget && !dead) ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // element letter
+    ctx.fillStyle = "#10131a";
+    ctx.font = "700 " + Math.round(p.r*0.9) + "px ui-sans-serif,system-ui,sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(ELEMENTS[c.element].letter, p.x, p.y + 1);
+    ctx.restore();
+
+    // hit flash
+    if (c.flashUntil > now && !dead){
+      const a = (c.flashUntil - now) / 280;
+      ctx.save();
+      drawShape(p.x, p.y, p.r, c.shape);
+      ctx.fillStyle = "rgba(255,255,255," + (0.6*a).toFixed(3) + ")";
+      ctx.fill(); ctx.restore();
+    }
+
+    // guard shield mark
+    if (c.guarding && !dead){
+      ctx.fillStyle = "#ffcf6b";
+      ctx.font = "600 " + Math.round(p.r*0.5) + "px ui-sans-serif,system-ui,sans-serif";
+      ctx.fillText("◆", p.x + p.r*0.9, p.y - p.r*0.9);
+    }
+
+    // name
+    ctx.fillStyle = dead ? "#6b7183" : "#eceef6";
+    ctx.font = "600 12px ui-sans-serif,system-ui,sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillText(c.name, p.x, p.y - p.r - 20);
+
+    // element word + speed
+    ctx.fillStyle = "#9aa0b4";
+    ctx.font = "11px ui-sans-serif,system-ui,sans-serif";
+    ctx.fillText(c.element + "  ·  spd " + c.speed, p.x, p.y - p.r - 6);
+
+    // HP bar
+    const bw = Math.max(72, p.r * 2.6), bh = 8, bx = p.x - bw/2, by = p.y + p.r + 8;
+    ctx.fillStyle = "#00000055"; roundRectFill(bx, by, bw, bh, 4);
+    const ratio = c.maxHp ? c.hp / c.maxHp : 0;
+    if (ratio > 0){
+      ctx.fillStyle = dead ? "#444" : hpColor(ratio);
+      roundRectFill(bx, by, Math.max(2, bw * ratio), bh, 4);
+    }
+    ctx.strokeStyle = "#ffffff22"; ctx.lineWidth = 1;
+    ctx.beginPath(); roundRect(bx, by, bw, bh, 4); ctx.stroke();
+    ctx.fillStyle = "#9aa0b4";
+    ctx.font = "11px ui-sans-serif,system-ui,sans-serif";
+    ctx.fillText("HP " + c.hp + "/" + c.maxHp, p.x, by + bh + 13);
+  }
+  function roundRectFill(x, y, w, h, r){ ctx.beginPath(); roundRect(x, y, w, h, Math.min(r, h/2)); ctx.fill(); }
+
+  let flashRaf = 0;
+  function draw(){
+    if (!ctx || !view.w) return;
+    ctx.clearRect(0, 0, view.w, view.h);
+    // faint divider between hero side and enemy side
+    ctx.strokeStyle = "#ffffff0c"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(view.w*0.47, 16); ctx.lineTo(view.w*0.47, view.h-16); ctx.stroke();
+
+    const L = layout();
+    drawCombatant(L.hero, false, S.current === S.hero);
+    L.enemies.forEach((p, i) => drawCombatant(p, i === S.target && S.phase === "hero", S.current === p.c));
+
+    // keep animating only while a flash is active (cheap, bounded)
+    const now = performance.now();
+    const anyFlash = S.list.some(c => c.flashUntil > now);
+    if (anyFlash && !flashRaf){
+      flashRaf = requestAnimationFrame(() => { flashRaf = 0; draw(); });
+    }
+  }
+
+  /* ========= input ========= */
+  // canvas click -> target the enemy under the pointer
+  canvas.addEventListener("click", (ev) => {
+    if (S.phase !== "hero") return;
+    const rect = canvas.getBoundingClientRect();
+    const x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+    for (let i=0;i<S.enemies.length;i++){
+      const e = S.enemies[i];
+      if (!e.alive || !e._hit) continue;
+      const dx = x - e._hit.x, dy = y - e._hit.y;
+      if (dx*dx + dy*dy <= (e._hit.r + 10) * (e._hit.r + 10)){ selectTarget(i); return; }
+    }
+  });
+
+  document.addEventListener("keydown", (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    const k = ev.key.toLowerCase();
+    if (S.phase === "over"){
+      if (k === "r"){ ev.preventDefault(); startFight(); }
+      return;
+    }
+    if (S.phase !== "hero") return;        // enemy/busy turns ignore all input
+    if (k === "1" || k === "2" || k === "3"){ ev.preventDefault(); selectTarget(+k - 1); return; }
+    if (k === "f"){ ev.preventDefault(); heroAttack("Fire"); return; }
+    if (k === "w"){ ev.preventDefault(); heroAttack("Water"); return; }
+    if (k === "n"){ ev.preventDefault(); heroAttack("Nature"); return; }
+    if (k === "g" || k === " "){ ev.preventDefault(); heroGuard(); return; }
+  });
+
+  document.getElementById("restart").addEventListener("click", startFight);
+
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(sizeCanvas, 100);
+  });
+
+  /* ========= boot ========= */
+  sizeCanvas();
+  startFight();
+
+  // expose a tiny hook for headless testing (no effect on normal play)
+  window.__turnclash = { S, multiplier };
+})();
+</script>
+</body>
+</html>
