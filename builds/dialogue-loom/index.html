@@ -49,7 +49,11 @@
   }
   input:focus, textarea:focus, select:focus{outline:none; border-color:var(--accent)}
   textarea{resize:vertical; min-height:58px}
-  select{appearance:none; background-image:none}
+  select{
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a7a2bd' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center; padding-right:26px;
+  }
 
   /* ---- flags panel ---- */
   .flags{
@@ -426,7 +430,12 @@
     });
 
     const spk = el("input",{type:"text", value:n.speaker, maxLength:MAXLEN.speaker, placeholder:"Speaker (blank = narration)", "aria-label":"speaker"});
-    spk.addEventListener("input",()=>{ n.speaker=clip(spk.value,MAXLEN.speaker); save(); });
+    spk.addEventListener("input",()=>{
+      n.speaker=clip(spk.value,MAXLEN.speaker); save();
+      // refresh this node's label in every other node's "goes to" dropdown without a full re-render (keeps input focus)
+      const lbl=(n.speaker||"(narration)")+" · "+n.id;
+      document.querySelectorAll('#nodeList select[aria-label="goes to"] option').forEach(o=>{ if(o.value===n.id) o.textContent=lbl; });
+    });
 
     const head = el("div",{class:"node-head"},[
       el("span",{class:"port", html:portraitSVG(n.portrait,40)}),
