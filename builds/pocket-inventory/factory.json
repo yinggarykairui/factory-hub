@@ -1,0 +1,5 @@
+{
+  "description": "A drag-and-drop RPG pocket inventory — move items on a grid, equip them into typed slots, and watch your stats change.",
+  "topics": ["inventory", "drag-and-drop", "rpg", "gamedev", "pointer-events", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
