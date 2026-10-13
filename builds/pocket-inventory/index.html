@@ -379,6 +379,36 @@
   render();
   recompute();
 
+  // ---- tooltip ----
+  function modText(it){
+    var parts = [];
+    [['atk','Attack'],['def','Defense'],['luck','Luck']].forEach(function(p){
+      var v = it[p[0]];
+      if(v) parts.push((v>0?'+':'') + v + ' ' + p[1]);
+    });
+    return parts.join(', ') || 'No bonuses';
+  }
+  function showTooltip(id, x, y){
+    var it = ITEMS[id];
+    tip.innerHTML = '<div class="tip-name">'+it.name+'</div>'+
+                    '<div class="tip-slot">'+SLOT_LABEL[it.slot]+'</div>'+
+                    '<div class="tip-mods">'+modText(it)+'</div>';
+    tip.classList.add('show');
+    positionTooltip(x,y);
+  }
+  function positionTooltip(x,y){
+    if(!tip.classList.contains('show')) return;
+    var r = tip.getBoundingClientRect(), pad = 8;
+    var left = x + 14, top = y + 16;
+    if(left + r.width > window.innerWidth - pad) left = x - r.width - 14; // flip left
+    if(left < pad) left = pad;
+    if(top + r.height > window.innerHeight - pad) top = y - r.height - 16; // flip up
+    if(top < pad) top = pad;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hideTooltip(){ tip.classList.remove('show'); }
+
   // ---- drag engine (single Pointer-Events path for mouse + touch) ----
   var drag = null; // active drag, or null
 
@@ -472,12 +502,14 @@
     itemEl.addEventListener('pointerup', onUp);
     itemEl.addEventListener('pointercancel', onCancel);
     moveGhost(e.clientX, e.clientY);
+    showTooltip(id, e.clientX, e.clientY); // also covers touch, where there is no hover
   }
 
   function onMove(e){
     if(!drag) return;
     moveGhost(e.clientX, e.clientY);
     highlight(e.clientX, e.clientY);
+    positionTooltip(e.clientX, e.clientY);
   }
   function onUp(e){
     if(!drag) return;
@@ -494,6 +526,7 @@
     d.itemEl.removeEventListener('pointercancel', onCancel);
     try{ d.itemEl.releasePointerCapture(d.pointerId); }catch(_){ }
     clearHighlight();
+    hideTooltip();
     if(applied){
       d.ghost.remove();
       render();
@@ -523,6 +556,25 @@
     e.preventDefault();
     startDrag(itemEl, e);
   });
+
+  // ---- hover tooltip (desktop) ----
+  function hoverItem(e){ return e.target.closest('.item:not(.slot-hint)'); }
+  document.addEventListener('pointerover', function(e){
+    if(drag) return;
+    var el = hoverItem(e);
+    if(el) showTooltip(el.dataset.id, e.clientX, e.clientY);
+  });
+  document.addEventListener('pointermove', function(e){
+    if(drag || !tip.classList.contains('show')) return;
+    if(hoverItem(e)) positionTooltip(e.clientX, e.clientY); else hideTooltip();
+  });
+  document.addEventListener('pointerout', function(e){
+    if(drag) return;
+    var el = hoverItem(e);
+    if(el && !el.contains(e.relatedTarget)) hideTooltip();
+  });
+  window.addEventListener('scroll', hideTooltip, true);
+  window.addEventListener('resize', hideTooltip);
 })();
 </script>
 </body>
