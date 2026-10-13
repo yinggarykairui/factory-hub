@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pocket-inventory</title>
+<style>
+  :root{
+    --bg:#15181e;
+    --bg2:#1b1f27;
+    --panel:#20242e;
+    --panel2:#262b36;
+    --cell:#2a303c;
+    --cell-in:#232834;
+    --border:#39414f;
+    --ink:#d9dde6;
+    --ink-dim:#8b93a3;
+    --gold:#cda64f;
+    --gold-dim:#8f7633;
+    --ok:#5fae7a;
+    --bad:#c56a60;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 600px at 50% -10%, #232936 0%, rgba(35,41,54,0) 60%),
+      linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+    background-attachment:fixed;
+    min-height:100vh;
+    -webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:28px 16px 48px}
+  header{margin-bottom:22px}
+  h1{
+    font-family:Georgia,"Times New Roman",serif;
+    font-weight:600;font-size:26px;letter-spacing:.5px;margin:0;
+    color:var(--gold);
+  }
+  .sub{margin:4px 0 0;color:var(--ink-dim);font-size:13.5px;letter-spacing:.2px}
+
+  .board{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+  .inv{flex:1 1 360px;min-width:0}
+  .side{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:16px}
+
+  .panel{
+    background:linear-gradient(180deg,var(--panel) 0%, var(--panel2) 100%);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 22px rgba(0,0,0,.28);
+  }
+  .panel-title{
+    font-family:Georgia,serif;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--ink-dim);margin:0 0 12px;font-weight:600;
+  }
+
+  .grid{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:8px;
+  }
+  .cell{
+    aspect-ratio:1/1;
+    background:radial-gradient(120% 120% at 50% 0%, var(--cell) 0%, var(--cell-in) 100%);
+    border:1px solid var(--border);
+    border-radius:9px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 5px rgba(0,0,0,.25) inset;
+    position:relative;
+  }
+  .cell.drop-ok{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 0 14px rgba(205,166,79,.3)}
+  .cell.drop-bad{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad) inset}
+
+  .equip{display:flex;flex-direction:column;gap:8px}
+  .slot{
+    display:flex;align-items:center;gap:10px;
+    background:radial-gradient(130% 130% at 50% 0%, var(--cell) 0%, var(--cell-in) 100%);
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:6px 10px 6px 6px;
+    box-shadow:0 2px 5px rgba(0,0,0,.25) inset;
+    position:relative;
+  }
+  .slot .pocket{
+    width:46px;height:46px;flex:0 0 46px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:7px;position:relative;
+  }
+  .slot .slot-label{font-size:13px;letter-spacing:.4px;color:var(--ink)}
+  .slot .slot-sub{display:block;font-size:11px;color:var(--ink-dim);margin-top:1px}
+  .slot.drop-ok{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset,0 0 14px rgba(205,166,79,.3)}
+  .slot.drop-bad{border-color:var(--bad);box-shadow:0 0 0 1px var(--bad) inset}
+  .slot-hint{opacity:.22}
+
+  .item{
+    width:84%;height:84%;
+    display:flex;align-items:center;justify-content:center;
+    cursor:grab;
+    touch-action:none;
+    filter:drop-shadow(0 2px 2px rgba(0,0,0,.45));
+    transition:transform .08s ease;
+  }
+  .slot .item{width:46px;height:46px}
+  .item:active{cursor:grabbing}
+  .item svg{width:100%;height:100%;display:block;pointer-events:none}
+  .item.dragging{visibility:hidden}
+
+  .ghost{
+    position:fixed;left:0;top:0;z-index:999;
+    pointer-events:none;
+    display:flex;align-items:center;justify-content:center;
+    transform:scale(1.12) rotate(-3deg);
+    filter:drop-shadow(0 10px 14px rgba(0,0,0,.5));
+    will-change:left,top;
+  }
+  .ghost svg{width:100%;height:100%;display:block}
+
+  .stats{display:flex;flex-direction:column;gap:2px}
+  .stat{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding:9px 4px;border-bottom:1px solid rgba(57,65,79,.6);
+  }
+  .stat:last-child{border-bottom:none}
+  .stat .lbl{font-size:13.5px;letter-spacing:.4px;color:var(--ink-dim)}
+  .stat .val{
+    font-family:Georgia,serif;font-size:22px;font-weight:600;color:var(--ink);
+    min-width:34px;text-align:right;font-variant-numeric:tabular-nums;
+    transition:color .18s ease;
+  }
+  .stat .val.bump{color:var(--gold)}
+
+  .tip{
+    position:fixed;z-index:1000;left:0;top:0;
+    pointer-events:none;
+    background:#11141a;
+    border:1px solid var(--gold-dim);
+    border-radius:8px;
+    padding:8px 11px;
+    max-width:200px;
+    box-shadow:0 8px 20px rgba(0,0,0,.5);
+    opacity:0;transform:translateY(3px);
+    transition:opacity .12s ease,transform .12s ease;
+  }
+  .tip.show{opacity:1;transform:translateY(0)}
+  .tip .tip-name{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .tip .tip-slot{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--gold);margin:1px 0 4px}
+  .tip .tip-mods{font-size:12.5px;color:var(--ink-dim);line-height:1.35}
+
+  .hint{margin-top:16px;color:var(--ink-dim);font-size:12.5px;text-align:center;letter-spacing:.2px}
+
+  @media (max-width:560px){
+    .wrap{padding:20px 14px 40px}
+    h1{font-size:22px}
+    .grid{gap:6px}
+    .cell{border-radius:8px}
+    .board{gap:14px}
+  }
+  @media (max-width:360px){
+    .wrap{padding:16px 12px 32px}
+    .grid{gap:5px}
+    .slot .pocket,.slot .item{width:40px;height:40px;flex-basis:40px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Pocket Inventory</h1>
+      <p class="sub">Drag an item onto its slot to equip it. Watch the numbers move.</p>
+    </header>
+
+    <div class="board">
+      <section class="panel inv" aria-label="Inventory grid">
+        <h2 class="panel-title">Satchel</h2>
+        <div class="grid" id="grid"></div>
+        <p class="hint">Drag to rearrange &middot; drop onto a matching slot to equip</p>
+      </section>
+
+      <div class="side">
+        <section class="panel" aria-label="Equipment slots">
+          <h2 class="panel-title">Equipped</h2>
+          <div class="equip" id="equip"></div>
+        </section>
+        <section class="panel" aria-label="Character stats">
+          <h2 class="panel-title">Stats</h2>
+          <div class="stats" id="stats">
+            <div class="stat"><span class="lbl">Attack</span><span class="val" data-stat="atk">0</span></div>
+            <div class="stat"><span class="lbl">Defense</span><span class="val" data-stat="def">0</span></div>
+            <div class="stat"><span class="lbl">Luck</span><span class="val" data-stat="luck">0</span></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+(function(){
+  // ---- SVG glyphs (self-drawn, one per shape, colored per item) ----
+  function wrap(inner){ return '<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">'+inner+'</svg>'; }
+
+  function gSword(c){
+    return wrap(
+      '<path d="M24 4 L27 11 L26 31 L22 31 L21 11 Z" fill="'+c.metal+'" stroke="'+c.metalD+'" stroke-width="1" stroke-linejoin="round"/>'+
+      '<line x1="24" y1="9" x2="24" y2="29" stroke="'+c.metalD+'" stroke-width="1" opacity=".55"/>'+
+      '<rect x="13" y="30" width="22" height="4.2" rx="2" fill="'+c.accent+'" stroke="'+c.metalD+'" stroke-width=".6"/>'+
+      '<rect x="22" y="34" width="4" height="8" rx="1" fill="'+c.grip+'"/>'+
+      '<circle cx="24" cy="43" r="2.7" fill="'+c.accent+'"/>'
+    );
+  }
+  function gDagger(c){
+    return wrap(
+      '<path d="M24 9 L26.4 14 L25.8 29 L22.2 29 L21.6 14 Z" fill="'+c.metal+'" stroke="'+c.metalD+'" stroke-width="1" stroke-linejoin="round"/>'+
+      '<rect x="16" y="28" width="16" height="3.6" rx="1.8" fill="'+c.accent+'" stroke="'+c.metalD+'" stroke-width=".6"/>'+
+      '<rect x="22.4" y="31" width="3.2" height="8" rx="1" fill="'+c.grip+'"/>'+
+      '<circle cx="24" cy="40" r="2.3" fill="'+c.accent+'"/>'
+    );
+  }
+  function gKite(c){
+    return wrap(
+      '<path d="M24 5 C32 7 37 11 37 18 C37 31 31 40 24 44 C17 40 11 31 11 18 C11 11 16 7 24 5 Z" fill="'+c.metal+'" stroke="'+c.metalD+'" stroke-width="1.4" stroke-linejoin="round"/>'+
+      '<path d="M24 5 L24 44 M11.5 18 L36.5 18" stroke="'+c.metalD+'" stroke-width="1" opacity=".5"/>'+
+      '<circle cx="24" cy="18" r="3.6" fill="'+c.accent+'" stroke="'+c.metalD+'" stroke-width=".8"/>'
+    );
+  }
+  function gBuckler(c){
+    return wrap(
+      '<circle cx="24" cy="24" r="16" fill="'+c.metal+'" stroke="'+c.metalD+'" stroke-width="1.4"/>'+
+      '<circle cx="24" cy="24" r="10" fill="none" stroke="'+c.metalD+'" stroke-width="1" opacity=".5"/>'+
+      '<circle cx="24" cy="24" r="4.4" fill="'+c.accent+'" stroke="'+c.metalD+'" stroke-width=".8"/>'
+    );
+  }
+  function gTower(c){
+    return wrap(
+      '<rect x="12" y="5" width="24" height="36" rx="5" fill="'+c.metal+'" stroke="'+c.metalD+'" stroke-width="1.4"/>'+
+      '<line x1="24" y1="6" x2="24" y2="40" stroke="'+c.metalD+'" stroke-width="1" opacity=".5"/>'+
+      '<circle cx="18" cy="12" r="1.4" fill="'+c.metalD+'"/><circle cx="30" cy="12" r="1.4" fill="'+c.metalD+'"/>'+
+      '<circle cx="18" cy="34" r="1.4" fill="'+c.metalD+'"/><circle cx="30" cy="34" r="1.4" fill="'+c.metalD+'"/>'+
+      '<rect x="20" y="21" width="8" height="6" rx="1.5" fill="'+c.accent+'" stroke="'+c.metalD+'" stroke-width=".7"/>'
+    );
+  }
+  function gHelm(c){
+    return wrap(
+      '<path d="M14 21 C14 10 34 10 34 21 L34 36 C34 39 32 41 29 41 L19 41 C16 41 14 39 14 36 Z" fill="'+c.metal+'" stroke="'+c.metalD+'" stroke-width="1.3" stroke-linejoin="round"/>'+
+      '<rect x="22.6" y="15" width="2.8" height="19" rx="1.2" fill="'+c.metalD+'" opacity=".55"/>'+
+      '<rect x="17" y="23" width="4" height="7" rx="1.6" fill="'+c.dark+'"/>'+
+      '<rect x="27" y="23" width="4" height="7" rx="1.6" fill="'+c.dark+'"/>'
+    );
+  }
+  function gHorned(c){
+    return wrap(
+      '<path d="M14 7 C9 9 7 14 9 19 L13 17 C12 13 13 11 16 10 Z" fill="'+c.accent+'" stroke="'+c.metalD+'" stroke-width=".8"/>'+
+      '<path d="M34 7 C39 9 41 14 39 19 L35 17 C36 13 35 11 32 10 Z" fill="'+c.accent+'" stroke="'+c.metalD+'" stroke-width=".8"/>'+
+      '<path d="M15 22 C15 12 33 12 33 22 L33 35 C33 38 31 40 28 40 L20 40 C17 40 15 38 15 35 Z" fill="'+c.metal+'" stroke="'+c.metalD+'" stroke-width="1.3" stroke-linejoin="round"/>'+
+      '<rect x="18" y="24" width="4" height="6" rx="1.6" fill="'+c.dark+'"/>'+
+      '<rect x="26" y="24" width="4" height="6" rx="1.6" fill="'+c.dark+'"/>'
+    );
+  }
+  function gRing(c){
+    return wrap(
+      '<circle cx="24" cy="29" r="11" fill="none" stroke="'+c.metal+'" stroke-width="4.2"/>'+
+      '<circle cx="24" cy="29" r="11" fill="none" stroke="'+c.metalD+'" stroke-width="1" opacity=".5"/>'+
+      '<path d="M24 11 L29 18 L24 22 L19 18 Z" fill="'+c.gem+'" stroke="'+c.metalD+'" stroke-width=".8" stroke-linejoin="round"/>'+
+      '<path d="M24 11 L24 22 M19 18 L29 18" stroke="#ffffff" stroke-width=".7" opacity=".4"/>'
+    );
+  }
+  function gAmulet(c){
+    return wrap(
+      '<path d="M13 11 Q24 22 35 11" fill="none" stroke="'+c.metal+'" stroke-width="2.4" stroke-linecap="round"/>'+
+      '<circle cx="13" cy="11" r="2" fill="'+c.metal+'"/><circle cx="35" cy="11" r="2" fill="'+c.metal+'"/>'+
+      '<path d="M24 20 C30 20 33 25 33 30 C33 36 29 41 24 41 C19 41 15 36 15 30 C15 25 18 20 24 20 Z" fill="'+c.gem+'" stroke="'+c.metal+'" stroke-width="2"/>'+
+      '<ellipse cx="21" cy="28" rx="2.4" ry="3.4" fill="#ffffff" opacity=".28"/>'
+    );
+  }
+
+  // palettes
+  var iron   = {metal:'#9aa1ab', metalD:'#5f6670', grip:'#5a4631', accent:'#c7cdd6'};
+  var steel  = {metal:'#bcc5d2', metalD:'#6f7886', grip:'#3a4555', accent:'#7fa8d0'};
+  var steel2 = {metal:'#aeb7c4', metalD:'#687180', grip:'#6b5436', accent:'#b98f4e'};
+  var wood   = {metal:'#9c6b3c', metalD:'#5e3f22', accent:'#cda64f'};
+  var bronze = {metal:'#c08a4a', metalD:'#7e5626', accent:'#e4c37a'};
+  var steelS = {metal:'#b7c0cd', metalD:'#6b7482', accent:'#9aa3b0'};
+  var bronzeH= {metal:'#bb8544', metalD:'#7a5324', dark:'#3a2a13'};
+  var ironH  = {metal:'#969da7', metalD:'#5c636d', dark:'#20242b', accent:'#8d949e'};
+  var silverR= {metal:'#cdd4dc', metalD:'#7c838d', gem:'#2e6fb0'};
+  var goldR  = {metal:'#d4af4f', metalD:'#917229', gem:'#c0392b'};
+  var goldR2 = {metal:'#d4af4f', metalD:'#917229', gem:'#3f9d6b'};
+  var silverA= {metal:'#cdd4dc', gem:'#3f9d6b'};
+  var goldA  = {metal:'#d4af4f', gem:'#e0a43a'};
+  var silverA2={metal:'#cdd4dc', gem:'#cfc6b0'};
+
+  // ---- item catalogue (deterministic) ----
+  var ITEMS = {
+    isword:{name:'Iron Sword',     slot:'weapon', atk:4,def:0,luck:0, glyph:gSword(iron)},
+    ssword:{name:'Steel Longsword',slot:'weapon', atk:6,def:1,luck:0, glyph:gSword(steel)},
+    dagger:{name:'Hunting Dagger', slot:'weapon', atk:3,def:0,luck:1, glyph:gDagger(steel2)},
+    kite:  {name:'Oak Kite Shield',slot:'shield', atk:0,def:5,luck:0, glyph:gKite(wood)},
+    buckler:{name:'Bronze Buckler',slot:'shield', atk:0,def:3,luck:1, glyph:gBuckler(bronze)},
+    tower: {name:'Tower Shield',   slot:'shield', atk:0,def:6,luck:0, glyph:gTower(steelS)},
+    bhelm: {name:'Bronze Helm',    slot:'helm',   atk:0,def:3,luck:0, glyph:gHelm(bronzeH)},
+    hhelm: {name:'Horned Helm',    slot:'helm',   atk:1,def:2,luck:0, glyph:gHorned(ironH)},
+    sring: {name:'Silver Ring',    slot:'ring',   atk:0,def:0,luck:3, glyph:gRing(silverR)},
+    rring: {name:'Ruby Ring',      slot:'ring',   atk:2,def:0,luck:2, glyph:gRing(goldR)},
+    fring: {name:'Band of Fortune',slot:'ring',   atk:0,def:0,luck:5, glyph:gRing(goldR2)},
+    jade:  {name:'Jade Amulet',    slot:'amulet', atk:0,def:2,luck:2, glyph:gAmulet(silverA)},
+    sun:   {name:'Sun Amulet',     slot:'amulet', atk:0,def:0,luck:4, glyph:gAmulet(goldA)},
+    opal:  {name:'Opal Amulet',    slot:'amulet', atk:1,def:1,luck:1, glyph:gAmulet(silverA2)}
+  };
+
+  var SLOTS = [
+    {key:'weapon', label:'Weapon'},
+    {key:'shield', label:'Shield'},
+    {key:'helm',   label:'Helm'},
+    {key:'ring',   label:'Ring'},
+    {key:'amulet', label:'Amulet'}
+  ];
+  var SLOT_LABEL = {weapon:'Weapon',shield:'Shield',helm:'Helm',ring:'Ring',amulet:'Amulet'};
+
+  // faint silhouette shown in an empty slot
+  var faint = {metal:'#8b93a3', metalD:'#8b93a3', grip:'#8b93a3', accent:'#8b93a3', gem:'#8b93a3', dark:'#8b93a3'};
+  var SLOT_HINT = {
+    weapon:gSword(faint), shield:gKite(faint), helm:gHelm(faint), ring:gRing(faint), amulet:gAmulet(faint)
+  };
+
+  // ---- state (deterministic initial layout: 20 cells, 14 items, 6 gaps) ----
+  var grid = [
+    'isword','ssword',null,'dagger','kite',
+    'buckler','tower',null,'bhelm','hhelm',
+    null,'sring','rring','fring',null,
+    'jade','sun','opal',null,null
+  ];
+  var equip = {weapon:null,shield:null,helm:null,ring:null,amulet:null};
+
+  var gridEl = document.getElementById('grid');
+  var equipEl = document.getElementById('equip');
+  var tip = document.getElementById('tip');
+
+  function itemHTML(id){
+    var it = ITEMS[id];
+    return '<div class="item" data-id="'+id+'" role="img" aria-label="'+it.name+'">'+it.glyph+'</div>';
+  }
+
+  function render(){
+    gridEl.innerHTML = grid.map(function(id,i){
+      return '<div class="cell" data-cell="'+i+'">'+(id?itemHTML(id):'')+'</div>';
+    }).join('');
+    equipEl.innerHTML = SLOTS.map(function(s){
+      var id = equip[s.key];
+      var inner = id
+        ? itemHTML(id)
+        : '<span class="item slot-hint" aria-hidden="true">'+SLOT_HINT[s.key]+'</span>';
+      var sub = id ? ITEMS[id].name : 'empty';
+      return '<div class="slot" data-slot="'+s.key+'">'+
+               '<span class="pocket">'+inner+'</span>'+
+               '<span><span class="slot-label">'+s.label+'</span>'+
+               '<span class="slot-sub">'+sub+'</span></span>'+
+             '</div>';
+    }).join('');
+  }
+
+  function recompute(){
+    var t = {atk:0,def:0,luck:0};
+    for(var k in equip){ var id=equip[k]; if(id){ var it=ITEMS[id]; t.atk+=it.atk; t.def+=it.def; t.luck+=it.luck; } }
+    ['atk','def','luck'].forEach(function(s){
+      var el = document.querySelector('.val[data-stat="'+s+'"]');
+      var next = String(t[s]);
+      if(el.textContent !== next){
+        el.textContent = next;
+        el.classList.add('bump');
+        setTimeout(function(){ el.classList.remove('bump'); }, 320);
+      }
+    });
+  }
+
+  render();
+  recompute();
+
+  // drag + tooltip wired up in later stages
+})();
+</script>
+</body>
+</html>
