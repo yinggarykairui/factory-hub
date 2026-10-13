@@ -387,22 +387,39 @@
     if(!under) return null;
     var cell = under.closest('[data-cell]');
     if(cell) return {type:'grid', key:parseInt(cell.dataset.cell,10)};
-    return null; // equip targets added in a later stage
+    var slot = under.closest('[data-slot]');
+    if(slot) return {type:'equip', key:slot.dataset.slot};
+    return null;
   }
 
-  // mutate state; return true if a valid move happened, false to snap back
+  // mutate state; return true if a valid move happened, false to snap back.
+  // item count is always conserved — every branch either moves one item or
+  // swaps two of a compatible kind.
   function applyDrop(origin, target, id){
     if(origin.type===target.type && String(origin.key)===String(target.key)) return false;
+    var item = ITEMS[id];
     if(target.type==='grid'){
-      var b = target.key;
-      var other = grid[b];
+      var b = target.key, other = grid[b];
       if(origin.type==='grid'){
-        grid[origin.key] = other; // may be null (move) or an item (swap)
+        grid[origin.key] = other;  // null => move, item => swap
         grid[b] = id;
         return true;
       }
+      // equip -> grid (unequip)
+      var oslot = origin.key;
+      if(other == null){ grid[b] = id; equip[oslot] = null; recompute(); return true; }
+      if(ITEMS[other].slot !== oslot) return false; // occupant can't go in this slot: refuse
+      grid[b] = id; equip[oslot] = other; recompute(); return true;
     }
-    return false;
+    // target is an equip slot
+    var s = target.key;
+    if(item.slot !== s) return false;      // wrong type for this slot
+    if(origin.type !== 'grid') return false; // equip->equip of another type is already wrong-type
+    var occ = equip[s];
+    equip[s] = id;
+    grid[origin.key] = occ;                // occ may be null (equip) or item (swap back to grid)
+    recompute();
+    return true;
   }
 
   function moveGhost(x,y){
@@ -415,8 +432,14 @@
     var t = resolveDrop(x,y);
     var el = null, cls = 'drop-ok';
     if(t){
-      el = (t.type==='grid') ? gridEl.children[t.key] : null;
-      if(t.type==='grid' && t.key===drag.origin.key && drag.origin.type==='grid') el=null;
+      if(t.type==='grid'){
+        el = gridEl.children[t.key];
+        if(drag.origin.type==='grid' && t.key===drag.origin.key) el = null; // self
+      } else {
+        el = equipEl.querySelector('[data-slot="'+t.key+'"]');
+        if(drag.origin.type==='equip' && t.key===drag.origin.key) el = null; // self
+        else if(ITEMS[drag.id].slot !== t.key) cls = 'drop-bad';            // wrong type
+      }
     }
     if(lastTarget && lastTarget!==el) lastTarget.classList.remove('drop-ok','drop-bad');
     if(el){ el.classList.remove('drop-ok','drop-bad'); el.classList.add(cls); }
@@ -426,9 +449,12 @@
 
   function startDrag(itemEl, e){
     var id = itemEl.dataset.id;
-    var host = itemEl.closest('[data-cell]');
-    if(!host) return; // only grid items draggable for now
-    var origin = {type:'grid', key:parseInt(host.dataset.cell,10)};
+    var cellHost = itemEl.closest('[data-cell]');
+    var slotHost = itemEl.closest('[data-slot]');
+    var origin;
+    if(cellHost) origin = {type:'grid', key:parseInt(cellHost.dataset.cell,10)};
+    else if(slotHost) origin = {type:'equip', key:slotHost.dataset.slot};
+    else return;
     var rect = itemEl.getBoundingClientRect();
 
     var ghost = document.createElement('div');
