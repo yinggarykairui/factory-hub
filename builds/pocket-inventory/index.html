@@ -87,6 +87,13 @@
     width:46px;height:46px;flex:0 0 46px;
     display:flex;align-items:center;justify-content:center;
     border-radius:7px;position:relative;
+    background:rgba(0,0,0,.18);
+    box-shadow:0 1px 3px rgba(0,0,0,.3) inset;
+    transition:background .2s ease, box-shadow .2s ease;
+  }
+  .slot .pocket.filled{
+    background:radial-gradient(120% 120% at 50% 15%, rgba(205,166,79,.14), rgba(0,0,0,.2));
+    box-shadow:0 0 0 1px rgba(205,166,79,.3) inset;
   }
   .slot .slot-label{font-size:13px;letter-spacing:.4px;color:var(--ink)}
   .slot .slot-sub{display:block;font-size:11px;color:var(--ink-dim);margin-top:1px}
@@ -106,6 +113,10 @@
   .item:active{cursor:grabbing}
   .item svg{width:100%;height:100%;display:block;pointer-events:none}
   .item.dragging{visibility:hidden}
+  @media (hover:hover){
+    .cell .item:hover{transform:translateY(-2px) scale(1.05);filter:drop-shadow(0 5px 6px rgba(0,0,0,.5))}
+    .slot .item:hover{transform:scale(1.06)}
+  }
 
   .ghost{
     position:fixed;left:0;top:0;z-index:999;
@@ -156,11 +167,16 @@
     .grid{gap:6px}
     .cell{border-radius:8px}
     .board{gap:14px}
+    .inv{flex-basis:100%}
+    .side{flex-direction:row;flex-wrap:wrap}
+    .side>.panel{flex:1 1 150px}
   }
   @media (max-width:360px){
     .wrap{padding:16px 12px 32px}
     .grid{gap:5px}
+    .slot{padding:5px 8px 5px 5px}
     .slot .pocket,.slot .item{width:40px;height:40px;flex-basis:40px}
+    .side>.panel{flex:1 1 100%}
   }
 </style>
 </head>
@@ -355,7 +371,7 @@
         : '<span class="item slot-hint" aria-hidden="true">'+SLOT_HINT[s.key]+'</span>';
       var sub = id ? ITEMS[id].name : 'empty';
       return '<div class="slot" data-slot="'+s.key+'">'+
-               '<span class="pocket">'+inner+'</span>'+
+               '<span class="pocket'+(id?' filled':'')+'">'+inner+'</span>'+
                '<span><span class="slot-label">'+s.label+'</span>'+
                '<span class="slot-sub">'+sub+'</span></span>'+
              '</div>';
@@ -498,9 +514,11 @@
             pointerId:e.pointerId, w:rect.width, h:rect.height};
     itemEl.classList.add('dragging');
     try{ itemEl.setPointerCapture(e.pointerId); }catch(_){ }
-    itemEl.addEventListener('pointermove', onMove);
-    itemEl.addEventListener('pointerup', onUp);
-    itemEl.addEventListener('pointercancel', onCancel);
+    // listen on document, not the item: captured pointer events still bubble
+    // here, so the drag always resolves even if setPointerCapture fails.
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onCancel);
     moveGhost(e.clientX, e.clientY);
     showTooltip(id, e.clientX, e.clientY); // also covers touch, where there is no hover
   }
@@ -521,9 +539,9 @@
 
   function finishDrag(applied){
     var d = drag; drag = null;
-    d.itemEl.removeEventListener('pointermove', onMove);
-    d.itemEl.removeEventListener('pointerup', onUp);
-    d.itemEl.removeEventListener('pointercancel', onCancel);
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onCancel);
     try{ d.itemEl.releasePointerCapture(d.pointerId); }catch(_){ }
     clearHighlight();
     hideTooltip();
