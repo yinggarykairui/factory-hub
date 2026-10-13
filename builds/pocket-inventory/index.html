@@ -379,7 +379,124 @@
   render();
   recompute();
 
-  // drag + tooltip wired up in later stages
+  // ---- drag engine (single Pointer-Events path for mouse + touch) ----
+  var drag = null; // active drag, or null
+
+  function resolveDrop(x,y){
+    var under = document.elementFromPoint(x,y);
+    if(!under) return null;
+    var cell = under.closest('[data-cell]');
+    if(cell) return {type:'grid', key:parseInt(cell.dataset.cell,10)};
+    return null; // equip targets added in a later stage
+  }
+
+  // mutate state; return true if a valid move happened, false to snap back
+  function applyDrop(origin, target, id){
+    if(origin.type===target.type && String(origin.key)===String(target.key)) return false;
+    if(target.type==='grid'){
+      var b = target.key;
+      var other = grid[b];
+      if(origin.type==='grid'){
+        grid[origin.key] = other; // may be null (move) or an item (swap)
+        grid[b] = id;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function moveGhost(x,y){
+    drag.ghost.style.left = (x - drag.w/2) + 'px';
+    drag.ghost.style.top  = (y - drag.h/2) + 'px';
+  }
+
+  var lastTarget = null;
+  function highlight(x,y){
+    var t = resolveDrop(x,y);
+    var el = null, cls = 'drop-ok';
+    if(t){
+      el = (t.type==='grid') ? gridEl.children[t.key] : null;
+      if(t.type==='grid' && t.key===drag.origin.key && drag.origin.type==='grid') el=null;
+    }
+    if(lastTarget && lastTarget!==el) lastTarget.classList.remove('drop-ok','drop-bad');
+    if(el){ el.classList.remove('drop-ok','drop-bad'); el.classList.add(cls); }
+    lastTarget = el;
+  }
+  function clearHighlight(){ if(lastTarget){ lastTarget.classList.remove('drop-ok','drop-bad'); lastTarget=null; } }
+
+  function startDrag(itemEl, e){
+    var id = itemEl.dataset.id;
+    var host = itemEl.closest('[data-cell]');
+    if(!host) return; // only grid items draggable for now
+    var origin = {type:'grid', key:parseInt(host.dataset.cell,10)};
+    var rect = itemEl.getBoundingClientRect();
+
+    var ghost = document.createElement('div');
+    ghost.className = 'ghost';
+    ghost.style.width = rect.width + 'px';
+    ghost.style.height = rect.height + 'px';
+    ghost.innerHTML = ITEMS[id].glyph;
+    document.body.appendChild(ghost);
+
+    drag = {id:id, origin:origin, itemEl:itemEl, ghost:ghost,
+            pointerId:e.pointerId, w:rect.width, h:rect.height};
+    itemEl.classList.add('dragging');
+    try{ itemEl.setPointerCapture(e.pointerId); }catch(_){ }
+    itemEl.addEventListener('pointermove', onMove);
+    itemEl.addEventListener('pointerup', onUp);
+    itemEl.addEventListener('pointercancel', onCancel);
+    moveGhost(e.clientX, e.clientY);
+  }
+
+  function onMove(e){
+    if(!drag) return;
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+  function onUp(e){
+    if(!drag) return;
+    var t = resolveDrop(e.clientX, e.clientY);
+    var applied = t ? applyDrop(drag.origin, t, drag.id) : false;
+    finishDrag(applied);
+  }
+  function onCancel(){ if(drag) finishDrag(false); }
+
+  function finishDrag(applied){
+    var d = drag; drag = null;
+    d.itemEl.removeEventListener('pointermove', onMove);
+    d.itemEl.removeEventListener('pointerup', onUp);
+    d.itemEl.removeEventListener('pointercancel', onCancel);
+    try{ d.itemEl.releasePointerCapture(d.pointerId); }catch(_){ }
+    clearHighlight();
+    if(applied){
+      d.ghost.remove();
+      render();
+    } else {
+      snapBack(d);
+    }
+  }
+
+  function snapBack(d){
+    var r = d.itemEl.getBoundingClientRect(); // current origin position (survives resize)
+    d.ghost.style.transition = 'left .17s ease, top .17s ease, transform .17s ease';
+    d.ghost.style.transform = 'scale(1) rotate(0deg)';
+    d.ghost.style.left = r.left + 'px';
+    d.ghost.style.top = r.top + 'px';
+    var done = false;
+    function fin(){ if(done) return; done=true; d.ghost.remove(); d.itemEl.classList.remove('dragging'); }
+    d.ghost.addEventListener('transitionend', fin, {once:true});
+    setTimeout(fin, 240);
+  }
+
+  // delegated pointerdown — one entry point for every draggable item
+  document.addEventListener('pointerdown', function(e){
+    if(drag) return;                         // guard: no overlapping drags / double down
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    var itemEl = e.target.closest('.item');
+    if(!itemEl || itemEl.classList.contains('slot-hint')) return; // empty cell / slot hint: no-op
+    e.preventDefault();
+    startDrag(itemEl, e);
+  });
 })();
 </script>
 </body>
