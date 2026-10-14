@@ -1,0 +1,5 @@
+{
+  "description": "A quest log you can watch think — fire world events and chained objectives advance, quests complete, and the quests that waited on them unlock.",
+  "topics": ["quest-log", "state-machine", "rpg", "gamedev", "journal", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
