@@ -511,7 +511,7 @@
     document.body.appendChild(ghost);
 
     drag = {id:id, origin:origin, itemEl:itemEl, ghost:ghost,
-            pointerId:e.pointerId, w:rect.width, h:rect.height};
+            pointerId:e.pointerId, pointerType:e.pointerType, w:rect.width, h:rect.height};
     itemEl.classList.add('dragging');
     try{ itemEl.setPointerCapture(e.pointerId); }catch(_){ }
     // listen on document, not the item: captured pointer events still bubble
@@ -520,7 +520,11 @@
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onCancel);
     moveGhost(e.clientX, e.clientY);
-    showTooltip(id, e.clientX, e.clientY); // also covers touch, where there is no hover
+    // Touch/pen have no hover, so the drag itself must surface the tooltip.
+    // A mouse already showed it on hover; keeping it up during a mouse drag only
+    // lets it overlap the cell being targeted, so hide it for the drag's duration.
+    if(e.pointerType !== 'mouse') showTooltip(id, e.clientX, e.clientY);
+    else hideTooltip();
   }
 
   function onMove(e){
