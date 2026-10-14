@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>quest-thread</title>
+<meta name="description" content="A quest log you can watch think — fire world events and chained objectives advance, quests complete, and the quests that waited on them unlock.">
+<style>
+  :root{
+    --bg:#15161d; --panel:#1e2029; --card:#242733; --card2:#2c303e;
+    --ink:#eceef6; --dim:#9aa0b4; --faint:#6b7085; --line:#363a4a;
+    --accent:#ffcf6b; --accent-ink:#15161d;
+    --good:#8fe0a8; --bad:#ff9a8c; --info:#7fb8ff; --locked:#7a7f96;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    padding:14px 16px; border-bottom:1px solid var(--line);
+    display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline;
+  }
+  header h1{font-size:18px; margin:0; letter-spacing:.3px; font-weight:700}
+  header h1 b{color:var(--accent)}
+  header .sub{color:var(--dim); font-size:13px}
+  main{max-width:1000px; margin:0 auto; padding:16px; padding-bottom:48px}
+
+  .layout{
+    display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; align-items:start;
+    grid-template-areas:"journal events" "journal rail";
+  }
+  .events-box{grid-area:events; position:sticky; top:16px}
+  .journal-col{grid-area:journal; min-width:0}
+  @media (max-width:760px){
+    /* phone: the controls come first, so firing events needs no scroll */
+    .layout{grid-template-columns:1fr; grid-template-areas:"events" "journal" "rail"}
+    .events-box{position:static}
+  }
+
+  h2.sec{font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin:0 0 10px}
+
+  /* ---- journal ---- */
+  .group{margin-bottom:20px}
+  .group h2.sec{display:flex; align-items:center; gap:8px}
+  .group h2.sec .n{color:var(--faint); font-variant-numeric:tabular-nums; font-weight:600}
+  .cards{display:flex; flex-direction:column; gap:12px}
+  .empty{color:var(--faint); font-size:13px; font-style:italic; padding:2px 0}
+
+  .quest{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:13px 14px; position:relative;
+  }
+  .quest.active{border-color:#4b5676}
+  .quest.completed{opacity:.72}
+  .quest.locked{opacity:.68}
+  .qhead{display:flex; align-items:flex-start; gap:10px}
+  .qicon{flex:0 0 auto; width:30px; height:30px; display:block}
+  .qtitle{font-weight:700; font-size:15px; margin:0}
+  .qgiver{color:var(--dim); font-size:12px; margin-top:1px}
+  .qbadge{
+    margin-left:auto; flex:0 0 auto; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em;
+    padding:3px 8px; border-radius:999px; border:1px solid var(--line); color:var(--dim); white-space:nowrap;
+    font-weight:700;
+  }
+  .qbadge.active{color:var(--accent); border-color:var(--accent)}
+  .qbadge.available{color:var(--info); border-color:#3a567e}
+  .qbadge.completed{color:var(--good); border-color:#3f6b50}
+  .qbadge.locked{color:var(--locked)}
+  .qsummary{color:var(--dim); font-size:13px; margin:8px 0 10px}
+
+  ul.objs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px}
+  ul.objs li{
+    display:flex; align-items:center; gap:9px; font-size:13.5px; color:var(--dim);
+    padding:3px 6px; border-radius:7px;
+  }
+  ul.objs li .mark{
+    flex:0 0 auto; width:17px; height:17px; border-radius:5px; border:1.5px solid var(--line);
+    display:inline-grid; place-items:center; font-size:11px; color:var(--bg); background:transparent;
+  }
+  ul.objs li.done{color:var(--faint)}
+  ul.objs li.done .txt{text-decoration:line-through}
+  ul.objs li.done .mark{background:var(--good); border-color:var(--good)}
+  ul.objs li.current{color:var(--ink); background:var(--card)}
+  ul.objs li.current .mark{border-color:var(--accent)}
+  ul.objs li.pending{color:var(--faint)}
+  ul.objs li .txt{flex:1 1 auto; min-width:0}
+  ul.objs li .count{
+    flex:0 0 auto; font-size:12px; color:var(--dim); font-variant-numeric:tabular-nums;
+    background:var(--card2); border-radius:999px; padding:1px 8px;
+  }
+  ul.objs li.current .count{color:var(--accent)}
+  ul.objs li .now-tag{
+    flex:0 0 auto; font-size:10px; text-transform:uppercase; letter-spacing:.06em; font-weight:700;
+    color:var(--accent-ink); background:var(--accent); border-radius:999px; padding:1px 7px;
+  }
+  ul.objs li.bumped{animation:bump .6s ease}
+  @keyframes bump{
+    0%{background:rgba(255,207,107,.28)} 100%{background:var(--card)}
+  }
+
+  .reqline{font-size:12px; color:var(--locked); margin-top:2px}
+  .reqline b{color:var(--dim); font-weight:600}
+
+  .accept{
+    margin-top:11px; font:inherit; font-size:13px; font-weight:700; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); border:0; border-radius:9px; padding:8px 14px;
+  }
+  .accept:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+
+  /* ---- side rail ---- */
+  .rail{grid-area:rail; display:flex; flex-direction:column; gap:16px}
+
+  /* finale banner when every quest is complete */
+  .finale{
+    background:linear-gradient(90deg, rgba(255,207,107,.16), rgba(143,224,168,.12));
+    border:1px solid var(--accent); border-radius:var(--radius); padding:12px 14px; margin-bottom:16px;
+    display:flex; align-items:center; gap:10px; color:var(--ink); font-weight:600; font-size:14px;
+  }
+  .finale .spark{color:var(--accent); font-size:18px; line-height:1}
+  .box{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:13px 14px}
+
+  .events{display:flex; flex-wrap:wrap; gap:8px}
+  button.ev{
+    font:inherit; font-size:13px; color:var(--ink); background:var(--card2); border:1px solid var(--line);
+    border-radius:9px; padding:8px 11px; cursor:pointer; display:flex; align-items:center; gap:8px; min-height:40px;
+    flex:1 1 calc(50% - 4px);
+  }
+  button.ev:hover{border-color:var(--accent)}
+  button.ev:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  button.ev:active{transform:translateY(1px)}
+  button.ev .evi{width:16px; height:16px; flex:0 0 auto}
+  .hint{color:var(--faint); font-size:12px; margin:0 0 10px}
+
+  .log{
+    list-style:none; margin:0; padding:0; max-height:300px; overflow:auto;
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .log li{font-size:12.5px; line-height:1.45; color:var(--dim); display:flex; gap:8px; align-items:baseline}
+  .log li .tick{flex:0 0 auto; width:3px; align-self:stretch; border-radius:2px; background:var(--line)}
+  .log li.t-complete .tick{background:var(--good)}
+  .log li.t-quest .tick{background:var(--accent)}
+  .log li.t-unlock .tick{background:var(--info)}
+  .log li.t-progress .tick{background:#7c6a3e}  /* a counter ticked up a notch */
+  .log li.t-noop .tick{background:var(--bad)}   /* an event that nothing was waiting on */
+  .log li.t-noop{color:var(--faint)}
+  .log li .n{color:var(--faint); font-variant-numeric:tabular-nums; flex:0 0 auto}
+  .log li b{color:var(--ink); font-weight:600}
+  .log li .q{color:var(--accent); font-weight:600}
+  .log .empty{padding:0}
+
+  .toolrow{display:flex; gap:8px; flex-wrap:wrap}
+  button.tool{
+    font:inherit; font-size:13px; color:var(--ink); background:var(--card2); border:1px solid var(--line);
+    border-radius:9px; padding:8px 12px; cursor:pointer; min-height:40px; flex:1 1 auto;
+  }
+  button.tool:hover{border-color:var(--accent)}
+  button.tool:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  .progress-all{font-size:12px; color:var(--dim); margin-top:2px}
+  .progress-all b{color:var(--good)}
+
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>quest<b>·</b>thread</h1>
+  <span class="sub">a quest log driven by a state machine — fire events, watch quests advance and unlock</span>
+</header>
+
+<main>
+  <div class="layout">
+    <div class="box events-box">
+      <h2 class="sec">World events</h2>
+      <p class="hint">Firing an event feeds only the <em>current</em> objective of each active quest. Out-of-order events do nothing.</p>
+      <div class="events" id="events"></div>
+    </div>
+
+    <section class="journal-col" aria-label="Quest journal">
+      <div id="journal"></div>
+    </section>
+
+    <aside class="rail">
+      <div class="box">
+        <h2 class="sec">Journal log</h2>
+        <ul class="log" id="log" aria-live="polite" aria-label="Quest log, newest first"></ul>
+      </div>
+
+      <div class="box">
+        <h2 class="sec">Snapshot</h2>
+        <p class="progress-all" id="tally"></p>
+        <div class="toolrow">
+          <button class="tool" id="export" type="button">Export JSON</button>
+          <button class="tool" id="reset" type="button">Reset</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<script>
+"use strict";
+(function(){
+  // ---- seed: quest definitions. A quest is a little state machine:
+  //      locked -> available -> active -> completed.
+  // Objectives are CHAINED: only the first unfinished one can advance, so an
+  // event aimed at a later step is ignored until the earlier steps are done.
+  // `requires` lists quests that must be completed before this one unlocks.
+  // `start:'active'` seeds the intro quest as already accepted so there is
+  // something to do on first load.
+  const SEED = {
+    events: [
+      { id:'talk-maren',  label:'Talk to Elder Maren',    icon:'person' },
+      { id:'gather-herb', label:'Gather a moonleaf',      icon:'leaf' },
+      { id:'slay-wolf',   label:'Drive off a wolf',       icon:'fang' },
+      { id:'talk-watch',  label:'Report to the Watch',    icon:'shield' },
+      { id:'find-key',    label:'Search for the key',     icon:'key' },
+      { id:'turn-wheel',  label:'Turn a drainage wheel',  icon:'wheel' },
+      { id:'take-relic',  label:'Take the relic',         icon:'gem' },
+      { id:'climb-tower', label:'Climb the tower',        icon:'tower' },
+      { id:'light-beacon',label:'Light the beacon',       icon:'flame' },
+    ],
+    quests: [
+      {
+        id:'herbalist', title:"The Herbalist's Request", giver:'Elder Maren', icon:'leaf',
+        summary:'Old Maren needs moonleaf to mend the well-keeper. Fetch it and bring it back.',
+        requires:[], start:'active',
+        objectives:[
+          { id:'o1', kind:'flag',    text:'Speak with Elder Maren',           event:'talk-maren' },
+          { id:'o2', kind:'counter', text:'Gather moonleaf from the hedgerow', event:'gather-herb', need:3 },
+          { id:'o3', kind:'flag',    text:'Bring the moonleaf back to Maren',  event:'talk-maren' },
+        ],
+      },
+      {
+        id:'wolves', title:'Thin the Pack', giver:'Gate Watch', icon:'fang',
+        summary:'Wolves have been circling the north gate after dark. Drive them off and report in.',
+        requires:['herbalist'],
+        objectives:[
+          { id:'o1', kind:'counter', text:'Drive off the gate wolves', event:'slay-wolf', need:4 },
+          { id:'o2', kind:'flag',    text:'Report to the Gate Watch',   event:'talk-watch' },
+        ],
+      },
+      {
+        id:'relic', title:'The Sunken Relic', giver:'Archivist Pell', icon:'gem',
+        summary:'A relic lies in the flooded undercroft. Drain it, then lift the relic from its plinth.',
+        requires:['herbalist'],
+        objectives:[
+          { id:'o1', kind:'flag',    text:'Find the undercroft key',     event:'find-key' },
+          { id:'o2', kind:'counter', text:'Work the three drainage wheels', event:'turn-wheel', need:3 },
+          { id:'o3', kind:'flag',    text:'Lift the relic from its plinth', event:'take-relic' },
+        ],
+      },
+      {
+        id:'vigil', title:"Vale's Vigil", giver:'Elder Maren', icon:'flame',
+        summary:'With the gate safe and the relic recovered, light the old beacon over the vale.',
+        requires:['wolves','relic'],
+        objectives:[
+          { id:'o1', kind:'flag', text:'Climb the beacon tower', event:'climb-tower' },
+          { id:'o2', kind:'flag', text:'Light the vigil fire',   event:'light-beacon' },
+        ],
+      },
+    ],
+  };
+
+  // ---- tiny inline-SVG icon set (no images, no fonts downloaded) ----
+  const ICON = {
+    person:'<circle cx="12" cy="8" r="3.4"/><path d="M5.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/>',
+    leaf:'<path d="M5 19c0-8 6-13 14-14 1 9-4 15-11 15a6 6 0 0 1-3-1z"/><path d="M8 17c2-4 5-7 9-9"/>',
+    fang:'<path d="M4 5h16l-2 4c-1 2-2 3-2 6 0 2-2 4-4 4s-4-2-4-4c0-3-1-4-2-6z"/><path d="M9 9l3 8 3-8"/>',
+    shield:'<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/>',
+    key:'<circle cx="8" cy="9" r="4"/><path d="M11 12l8 8m-3 0l3-3m-6-3l3 3"/>',
+    wheel:'<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2"/><path d="M12 4.5v3M12 16.5v3M4.5 12h3M16.5 12h3M6.7 6.7l2.1 2.1M15.2 15.2l2.1 2.1M17.3 6.7l-2.1 2.1M8.8 15.2l-2.1 2.1"/>',
+    gem:'<path d="M6 4h12l3 5-9 11L3 9z"/><path d="M3 9h18M9 4 6 9l6 11 6-11-3-5"/>',
+    tower:'<path d="M8 21V8l4-4 4 4v13z"/><path d="M8 12h8M8 16h8M10 21v-4h4v4"/>',
+    flame:'<path d="M12 3c3 4 6 6 6 10a6 6 0 0 1-12 0c0-2 1-3 2-4 0 2 1 3 2 3-1-3 1-6 2-9z"/>',
+  };
+  function svg(name, cls){
+    return '<svg class="'+(cls||'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" '+
+      'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(ICON[name]||'')+'</svg>';
+  }
+
+  // ---- state ----
+  let state;      // { quests: {...}, order: [...], log: [...], seq, bumped }
+
+  function initState(){
+    const quests = SEED.quests.map(function(def){
+      return {
+        id:def.id,
+        status:(def.requires.length === 0) ? (def.start === 'active' ? 'active' : 'available') : 'locked',
+        objectives:def.objectives.map(function(o){
+          return { id:o.id, done:false, progress:0 };
+        }),
+      };
+    });
+    const byId = {};
+    quests.forEach(function(q){ byId[q.id] = q; });
+    state = { quests:byId, order:SEED.quests.map(function(q){ return q.id; }), log:[], seq:0, bumped:{} };
+    log('unlock', 'The journal opens. <span class="q">The Herbalist’s Request</span> is already in hand.');
+    unlockAvailable(true);   // resolve any zero-prereq quests to available (silent at init)
+  }
+
+  function def(id){ return SEED.quests.find(function(q){ return q.id === id; }); }
+  function qstate(id){ return state.quests[id]; }
+
+  // first objective that isn't done, or null if the quest is finished
+  function currentIndex(q){
+    for(let i=0;i<q.objectives.length;i++){ if(!q.objectives[i].done) return i; }
+    return -1;
+  }
+
+  function log(type, html){
+    state.seq += 1;
+    state.log.unshift({ n:state.seq, type:type, html:html });
+    if(state.log.length > 120) state.log.length = 120;
+  }
+
+  function qname(id){ return '<span class="q">'+esc(def(id).title)+'</span>'; }
+
+  // move any locked quest whose prerequisites are all completed to available
+  function unlockAvailable(silent){
+    state.order.forEach(function(id){
+      const q = qstate(id);
+      if(q.status !== 'locked') return;
+      const prereqs = def(id).requires;
+      const ready = prereqs.every(function(r){ return qstate(r).status === 'completed'; });
+      if(ready){
+        q.status = 'available';
+        if(!silent) log('unlock', 'New quest available: '+qname(id)+'.');
+      }
+    });
+  }
+
+  function acceptQuest(id){
+    const q = qstate(id);
+    if(q.status !== 'available') return;
+    q.status = 'active';
+    log('quest', 'Accepted '+qname(id)+'.');
+    render();
+  }
+
+  // dispatch a world event into every active quest's CURRENT objective
+  function fireEvent(evId){
+    const ev = SEED.events.find(function(e){ return e.id === evId; });
+    state.bumped = {};
+    let any = false;
+
+    state.order.forEach(function(id){
+      const q = qstate(id);
+      if(q.status !== 'active') return;
+      const ci = currentIndex(q);
+      if(ci < 0) return;
+      const odef = def(id).objectives[ci];
+      if(odef.event !== evId) return;       // not this quest's current step -> ignored (order enforced)
+
+      const ob = q.objectives[ci];
+      any = true;
+      state.bumped[id+':'+ob.id] = true;
+
+      if(odef.kind === 'counter'){
+        ob.progress = Math.min(odef.need, ob.progress + 1);
+        if(ob.progress >= odef.need){
+          ob.done = true;
+          log('complete', 'Objective done in '+qname(id)+': <b>'+esc(odef.text)+'</b>.');
+        } else {
+          log('progress', qname(id)+': <b>'+esc(odef.text)+'</b> — '+ob.progress+'/'+odef.need+'.');
+        }
+      } else {
+        ob.done = true;
+        log('complete', 'Objective done in '+qname(id)+': <b>'+esc(odef.text)+'</b>.');
+      }
+
+      if(currentIndex(q) < 0){
+        q.status = 'completed';
+        log('quest', 'Quest complete: '+qname(id)+'. ✓');
+      }
+    });
+
+    if(!any){
+      log('noop', 'No active objective is waiting on <b>'+esc(ev.label)+'</b>.');
+    } else {
+      unlockAvailable(false);
+    }
+    render();
+  }
+
+  function reset(){
+    initState();
+    render();
+  }
+
+  function exportJSON(){
+    const snapshot = {
+      app:'quest-thread',
+      version:1,
+      exportedAt:new Date().toISOString(),
+      quests:state.order.map(function(id){
+        const d = def(id), q = qstate(id);
+        return {
+          id:id,
+          title:d.title,
+          status:q.status,
+          requires:d.requires,
+          objectives:d.objectives.map(function(odef, i){
+            const ob = q.objectives[i];
+            const row = { id:odef.id, text:odef.text, kind:odef.kind, done:ob.done };
+            if(odef.kind === 'counter'){ row.progress = ob.progress; row.need = odef.need; }
+            return row;
+          }),
+        };
+      }),
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'quest-thread-state.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 0);
+    log('unlock', 'Exported the current state as JSON.');
+    render();
+  }
+
+  // ---- rendering ----
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c];
+  }); }
+
+  const GROUPS = [
+    { key:'active',    label:'Active' },
+    { key:'available', label:'Available' },
+    { key:'locked',    label:'Locked' },
+    { key:'completed', label:'Completed' },
+  ];
+
+  function objLine(id, odef, ob, isCurrent){
+    let cls = 'pending';
+    if(ob.done) cls = 'done';
+    else if(isCurrent) cls = 'current';
+    if(state.bumped[id+':'+odef.id]) cls += ' bumped';
+    let count = '';
+    if(odef.kind === 'counter'){
+      count = '<span class="count">'+ob.progress+'/'+odef.need+'</span>';
+    }
+    const mark = ob.done ? '✓' : '';
+    const nowTag = isCurrent ? '<span class="now-tag">now</span>' : '';
+    return '<li class="'+cls+'"><span class="mark" aria-hidden="true">'+mark+'</span>'+
+           '<span class="txt">'+esc(odef.text)+'</span>'+nowTag+count+'</li>';
+  }
+
+  function questCard(id){
+    const d = def(id), q = qstate(id);
+    const ci = currentIndex(q);
+    let objs = '';
+    if(q.status === 'locked'){
+      const names = d.requires.map(function(r){ return esc(def(r).title); }).join(', ');
+      objs = '<p class="reqline"><b>Requires:</b> '+names+'</p>';
+    } else {
+      objs = '<ul class="objs">'+ d.objectives.map(function(odef, i){
+        return objLine(id, odef, q.objectives[i], i === ci && q.status === 'active');
+      }).join('') + '</ul>';
+    }
+    const badgeLabel = { active:'Active', available:'Available', locked:'Locked', completed:'Done' }[q.status];
+    const accept = (q.status === 'available')
+      ? '<button class="accept" type="button" data-accept="'+id+'">Accept quest</button>' : '';
+    return '<article class="quest '+q.status+'">'+
+      '<div class="qhead">'+svg(d.icon,'qicon')+
+        '<div><p class="qtitle">'+esc(d.title)+'</p><p class="qgiver">'+esc(d.giver)+'</p></div>'+
+        '<span class="qbadge '+q.status+'">'+badgeLabel+'</span>'+
+      '</div>'+
+      '<p class="qsummary">'+esc(d.summary)+'</p>'+
+      objs + accept +
+    '</article>';
+  }
+
+  function render(){
+    const total = state.order.length;
+    const done = state.order.filter(function(id){ return qstate(id).status === 'completed'; }).length;
+
+    // journal grouped by state
+    let html = '';
+    if(done === total){
+      html += '<div class="finale"><span class="spark" aria-hidden="true">✦</span>'+
+              'All four quests complete — the vale is safe.</div>';
+    }
+    GROUPS.forEach(function(g){
+      const ids = state.order.filter(function(id){ return qstate(id).status === g.key; });
+      html += '<div class="group"><h2 class="sec">'+g.label+' <span class="n">'+ids.length+'</span></h2>';
+      if(ids.length === 0){
+        html += '<p class="empty">— none —</p>';
+      } else {
+        html += '<div class="cards">'+ ids.map(questCard).join('') +'</div>';
+      }
+      html += '</div>';
+    });
+    document.getElementById('journal').innerHTML = html;
+
+    // log
+    const logEl = document.getElementById('log');
+    if(state.log.length === 0){
+      logEl.innerHTML = '<li class="empty">—</li>';
+    } else {
+      logEl.innerHTML = state.log.map(function(e){
+        return '<li class="t-'+e.type+'"><span class="tick" aria-hidden="true"></span>'+
+               '<span class="n">'+e.n+'</span><span>'+e.html+'</span></li>';
+      }).join('');
+    }
+
+    // tally (done / total computed at the top of render)
+    document.getElementById('tally').innerHTML = 'Quests complete: <b>'+done+'</b> / '+total +
+      (done === total ? ' — the vale is safe.' : '');
+  }
+
+  function renderEvents(){
+    document.getElementById('events').innerHTML = SEED.events.map(function(e){
+      return '<button class="ev" type="button" data-ev="'+e.id+'">'+svg(e.icon,'evi')+'<span>'+esc(e.label)+'</span></button>';
+    }).join('');
+  }
+
+  // ---- wiring (event delegation, so re-renders keep working) ----
+  document.getElementById('events').addEventListener('click', function(ev){
+    const b = ev.target.closest('button[data-ev]');
+    if(b) fireEvent(b.getAttribute('data-ev'));
+  });
+  document.getElementById('journal').addEventListener('click', function(ev){
+    const b = ev.target.closest('button[data-accept]');
+    if(b) acceptQuest(b.getAttribute('data-accept'));
+  });
+  document.getElementById('export').addEventListener('click', exportJSON);
+  document.getElementById('reset').addEventListener('click', reset);
+
+  renderEvents();
+  initState();
+  render();
+})();
+</script>
+</body>
+</html>
