@@ -1,0 +1,5 @@
+{
+  "description": "A seeded dungeon you walk through in the dark — rooms and corridors grow from one number, and the map lights up only where you have been.",
+  "topics": ["dungeon", "procedural-generation", "roguelike", "fog-of-war", "rpg", "gamedev", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
