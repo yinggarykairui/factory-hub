@@ -57,6 +57,14 @@
   .quest.active{border-color:#4b5676}
   .quest.completed{opacity:.72}
   .quest.locked{opacity:.68}
+  /* flash a card that just changed group this event, so the eye follows it there */
+  .quest.moved{animation:moveflash 1s ease}
+  @keyframes moveflash{
+    0%{border-color:var(--accent); box-shadow:0 0 0 2px rgba(255,207,107,.45)}
+    70%{border-color:var(--accent); box-shadow:0 0 0 2px rgba(255,207,107,.22)}
+    100%{box-shadow:0 0 0 0 rgba(255,207,107,0)}
+  }
+  @media (prefers-reduced-motion:reduce){ .quest.moved,ul.objs li.bumped{animation:none} }
   .qhead{display:flex; align-items:flex-start; gap:10px}
   .qicon{flex:0 0 auto; width:30px; height:30px; display:block}
   .qtitle{font-weight:700; font-size:15px; margin:0}
@@ -230,7 +238,7 @@
         summary:'Old Maren needs moonleaf to mend the well-keeper. Fetch it and bring it back.',
         requires:[], start:'active',
         objectives:[
-          { id:'o1', kind:'flag',    text:'Speak with Elder Maren',           event:'talk-maren' },
+          { id:'o1', kind:'flag',    text:'Talk to Elder Maren',              event:'talk-maren' },
           { id:'o2', kind:'counter', text:'Gather moonleaf from the hedgerow', event:'gather-herb', need:3 },
           { id:'o3', kind:'flag',    text:'Bring the moonleaf back to Maren',  event:'talk-maren' },
         ],
@@ -249,9 +257,9 @@
         summary:'A relic lies in the flooded undercroft. Drain it, then lift the relic from its plinth.',
         requires:['herbalist'],
         objectives:[
-          { id:'o1', kind:'flag',    text:'Find the undercroft key',     event:'find-key' },
-          { id:'o2', kind:'counter', text:'Work the three drainage wheels', event:'turn-wheel', need:3 },
-          { id:'o3', kind:'flag',    text:'Lift the relic from its plinth', event:'take-relic' },
+          { id:'o1', kind:'flag',    text:'Search for the undercroft key', event:'find-key' },
+          { id:'o2', kind:'counter', text:'Turn the three drainage wheels', event:'turn-wheel', need:3 },
+          { id:'o3', kind:'flag',    text:'Take the relic from its plinth', event:'take-relic' },
         ],
       },
       {
@@ -298,7 +306,7 @@
     });
     const byId = {};
     quests.forEach(function(q){ byId[q.id] = q; });
-    state = { quests:byId, order:SEED.quests.map(function(q){ return q.id; }), log:[], seq:0, bumped:{} };
+    state = { quests:byId, order:SEED.quests.map(function(q){ return q.id; }), log:[], seq:0, bumped:{}, moved:{} };
     log('unlock', 'The journal opens. <span class="q">The Herbalist’s Request</span> is already in hand.');
     unlockAvailable(true);   // resolve any zero-prereq quests to available (silent at init)
   }
@@ -329,7 +337,7 @@
       const ready = prereqs.every(function(r){ return qstate(r).status === 'completed'; });
       if(ready){
         q.status = 'available';
-        if(!silent) log('unlock', 'New quest available: '+qname(id)+'.');
+        if(!silent){ state.moved[id] = true; log('unlock', 'New quest available: '+qname(id)+'.'); }
       }
     });
   }
@@ -337,7 +345,9 @@
   function acceptQuest(id){
     const q = qstate(id);
     if(q.status !== 'available') return;
+    state.bumped = {}; state.moved = {};
     q.status = 'active';
+    state.moved[id] = true;
     log('quest', 'Accepted '+qname(id)+'.');
     render();
   }
@@ -346,6 +356,7 @@
   function fireEvent(evId){
     const ev = SEED.events.find(function(e){ return e.id === evId; });
     state.bumped = {};
+    state.moved = {};
     let any = false;
 
     state.order.forEach(function(id){
@@ -375,6 +386,7 @@
 
       if(currentIndex(q) < 0){
         q.status = 'completed';
+        state.moved[id] = true;
         log('quest', 'Quest complete: '+qname(id)+'. ✓');
       }
     });
@@ -465,7 +477,7 @@
     const badgeLabel = { active:'Active', available:'Available', locked:'Locked', completed:'Done' }[q.status];
     const accept = (q.status === 'available')
       ? '<button class="accept" type="button" data-accept="'+id+'">Accept quest</button>' : '';
-    return '<article class="quest '+q.status+'">'+
+    return '<article class="quest '+q.status+(state.moved[id] ? ' moved' : '')+'">'+
       '<div class="qhead">'+svg(d.icon,'qicon')+
         '<div><p class="qtitle">'+esc(d.title)+'</p><p class="qgiver">'+esc(d.giver)+'</p></div>'+
         '<span class="qbadge '+q.status+'">'+badgeLabel+'</span>'+
@@ -487,12 +499,9 @@
     }
     GROUPS.forEach(function(g){
       const ids = state.order.filter(function(id){ return qstate(id).status === g.key; });
+      if(ids.length === 0) return;   // hide empty groups — no "— none —" clutter
       html += '<div class="group"><h2 class="sec">'+g.label+' <span class="n">'+ids.length+'</span></h2>';
-      if(ids.length === 0){
-        html += '<p class="empty">— none —</p>';
-      } else {
-        html += '<div class="cards">'+ ids.map(questCard).join('') +'</div>';
-      }
+      html += '<div class="cards">'+ ids.map(questCard).join('') +'</div>';
       html += '</div>';
     });
     document.getElementById('journal').innerHTML = html;
