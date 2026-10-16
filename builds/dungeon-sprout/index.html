@@ -34,8 +34,9 @@
   canvas{position:absolute;inset:0;width:100%;height:100%;display:block;
     image-rendering:pixelated}
   #mini{position:absolute;top:10px;right:10px;left:auto;bottom:auto;
-    width:26%;max-width:128px;height:auto;aspect-ratio:3/2;
-    background:rgba(6,7,8,.72);border:1px solid var(--edge);border-radius:8px}
+    width:20%;max-width:104px;height:auto;aspect-ratio:3/2;
+    /* translucent so the lit disc behind it is never fully occluded at phone width */
+    background:rgba(6,7,8,.42);border:1px solid rgba(42,47,55,.65);border-radius:8px}
   .hint{position:absolute;left:10px;bottom:10px;margin:0;color:var(--dim);
     font-size:.72rem;background:rgba(6,7,8,.55);padding:3px 7px;border-radius:6px;
     pointer-events:none;transition:opacity .4s}
@@ -62,18 +63,19 @@
   .stats{display:flex;gap:16px;color:var(--dim);font-size:.8rem;flex-wrap:wrap}
   .stats b{color:var(--ink);font-variant-numeric:tabular-nums}
   /* D-pad */
-  .pad{display:grid;grid-template-columns:repeat(3,56px);
-    grid-template-rows:repeat(3,56px);gap:8px;justify-content:center;
-    align-self:center;touch-action:none}
-  .pad button{width:56px;height:56px;display:flex;align-items:center;
+  .pad{display:grid;grid-template-columns:repeat(3,var(--pad));
+    grid-template-rows:repeat(3,var(--pad));gap:var(--pad-gap);justify-content:center;
+    align-self:center;touch-action:none;
+    /* scale the pad down on narrow/zoomed viewports so it never forces sideways scroll */
+    --pad:clamp(36px,14vw,56px);--pad-gap:clamp(6px,2vw,8px)}
+  .pad button{width:var(--pad);height:var(--pad);display:flex;align-items:center;
     justify-content:center;font-size:1.3rem;border-radius:10px;padding:0}
   .pad .up{grid-area:1/2} .pad .left{grid-area:2/1}
   .pad .right{grid-area:2/3} .pad .down{grid-area:3/2}
   .pad .mid{grid-area:2/2;border:none;background:transparent;cursor:default}
   footer{color:var(--dim);font-size:.72rem;text-align:center;max-width:760px}
   footer a{color:var(--dim)}
-  @media (min-width:620px){ .pad{grid-template-columns:repeat(3,52px);
-    grid-template-rows:repeat(3,52px)} .pad button{width:52px;height:52px} }
+  @media (min-width:620px){ .pad{--pad:52px;--pad-gap:8px} }
   @keyframes bump{0%,100%{transform:translate(0,0)}
     30%{transform:translate(-3px,0)}70%{transform:translate(3px,0)}}
   .stage.bump{animation:bump .14s ease}
