@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>npc-clockwork</title>
+<meta name="description" content="A village where everyone has somewhere to be — watch the day run on its own clock, then reach in and stop someone mid-errand.">
+<style>
+  :root{
+    --bg:#1a1b26; --panel:#20222f; --ink:#e7e9f3; --dim:#9aa0b6;
+    --line:#333648; --accent:#ffb454; --accent-ink:#1a1b26;
+    --slot:#2a2d3d; --slot-now:#3a4a63; --good:#8bd5a0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.5 ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  header{
+    display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+    padding:14px 16px 10px; border-bottom:1px solid var(--line);
+  }
+  header h1{font-size:19px; margin:0; letter-spacing:.3px; font-weight:650}
+  header .tag{color:var(--dim); font-size:13px}
+  header .clock{margin-left:auto; font-variant-numeric:tabular-nums;
+    font-size:16px; font-weight:650; color:var(--accent)}
+  header .phase{color:var(--dim); font-size:13px; font-variant-numeric:tabular-nums}
+  main{display:flex; gap:16px; align-items:flex-start; padding:16px; max-width:1100px}
+  .stage{flex:1 1 auto; min-width:0}
+  canvas{width:100%; height:auto; display:block; border-radius:10px;
+    background:#11121a; outline:none; touch-action:manipulation}
+  canvas:focus-visible{box-shadow:0 0 0 3px var(--accent)}
+  aside{flex:0 0 288px; display:flex; flex-direction:column; gap:14px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px}
+  .controls{display:flex; flex-wrap:wrap; gap:8px}
+  button{
+    font:inherit; color:var(--ink); background:#2a2d3d; border:1px solid var(--line);
+    border-radius:8px; padding:7px 11px; cursor:pointer; min-height:38px;
+  }
+  button:hover{border-color:#50566f}
+  button:focus-visible{outline:none; box-shadow:0 0 0 3px var(--accent)}
+  button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:650}
+  button:disabled{opacity:.4; cursor:default}
+  .label{font-size:12px; text-transform:uppercase; letter-spacing:.7px; color:var(--dim); margin:0 0 8px}
+  .roster{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+  .roster li{margin:0}
+  .roster button{
+    width:100%; display:flex; align-items:center; gap:10px; text-align:left;
+    padding:8px 10px;
+  }
+  .dot{width:14px; height:14px; border-radius:50%; flex:0 0 auto; border:1px solid rgba(0,0,0,.35)}
+  .who{display:flex; flex-direction:column; min-width:0}
+  .who b{font-weight:600}
+  .who span{font-size:12px; color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .roster button[aria-pressed="true"]{background:var(--slot-now); border-color:#50566f}
+  .roster button[aria-pressed="true"] .who span{color:var(--ink)}
+  .detail h2{font-size:16px; margin:0 0 2px}
+  .detail .role{color:var(--dim); font-size:13px; margin:0 0 10px}
+  .now{margin:0 0 4px}
+  .now .k{color:var(--dim)}
+  .held-note{color:var(--accent); font-size:13px; margin:6px 0 0}
+  .sched{list-style:none; margin:10px 0 0; padding:0; border-top:1px solid var(--line)}
+  .sched li{display:flex; gap:10px; padding:5px 6px; border-radius:6px; font-size:13px}
+  .sched li.now{background:var(--slot-now)}
+  .sched .t{font-variant-numeric:tabular-nums; color:var(--dim); flex:0 0 46px}
+  .sched li.now .t{color:var(--accent)}
+  .sched .act{min-width:0}
+  .sched .act b{font-weight:600}
+  .empty{color:var(--dim); font-size:13px}
+  .hint{color:var(--dim); font-size:12px; margin:10px 0 0; line-height:1.55}
+  .hint kbd{background:#2a2d3d; border:1px solid var(--line); border-bottom-width:2px;
+    border-radius:4px; padding:0 5px; font:12px ui-monospace,monospace}
+  footer{color:var(--dim); font-size:12px; padding:0 16px 24px; max-width:1100px}
+  footer a{color:var(--dim)}
+  @media (max-width:720px){
+    main{flex-direction:column; padding:12px; gap:12px}
+    aside{flex:1 1 auto; width:100%}
+    header{padding:12px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>npc-clockwork</h1>
+  <span class="tag">a village on a clock</span>
+  <span class="clock" id="clock" aria-live="off">Day 1 · 06:00</span>
+</header>
+
+<main>
+  <div class="stage">
+    <canvas id="village" width="704" height="512"
+      tabindex="0" role="img"
+      aria-label="Top-down village. Use Tab or arrow keys to pick a resident, Space to pause, H to hold them."></canvas>
+  </div>
+
+  <aside>
+    <div class="card">
+      <p class="label">Clock</p>
+      <div class="controls" id="speed" role="group" aria-label="Clock speed">
+        <button data-speed="0"  aria-pressed="false">Pause</button>
+        <button data-speed="10" aria-pressed="true">1&times;</button>
+        <button data-speed="30" aria-pressed="false">3&times;</button>
+        <button data-speed="80" aria-pressed="false">8&times;</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="label">Residents</p>
+      <ul class="roster" id="roster"></ul>
+    </div>
+
+    <div class="card detail" id="detail" aria-live="polite">
+      <p class="empty">Pick a resident to watch their day. Then <b>Hold</b> them to interrupt the errand they are on.</p>
+    </div>
+
+    <p class="hint">
+      <kbd>Tab</kbd>/<kbd>&larr;&rarr;</kbd> pick &middot; <kbd>Space</kbd> pause &middot;
+      <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> speed &middot; <kbd>H</kbd> hold / resume &middot; <kbd>Esc</kbd> deselect
+    </p>
+  </aside>
+</main>
+
+<footer>
+  Day 061 of an autonomous build factory &mdash;
+  <a href="https://github.com/yinggarykairui/factory-hub">factory-hub</a>.
+  Everything is drawn from shapes and text; no images, fonts, audio, or network.
+</footer>
+
+<script>
+"use strict";
+(function(){
+  // ----- Village map -------------------------------------------------------
+  // A fixed 22x16 tile grid. Every tile is walkable "ground" except the
+  // footprints of the six places below, which are blocked. Because all the
+  // ground is open, the walkable area is one connected region, so any door
+  // tile is reachable from any other — the BFS below never dead-ends.
+  const GW = 22, GH = 16;
+
+  // Each place: a blocked footprint rect and one walkable "door" tile just
+  // outside it where residents stand to do the activity.
+  const PLACES = {
+    home:   {label:"Home",   rect:{x:2, y:2,  w:4, h:3}, door:{x:3,  y:5},  kind:"house"},
+    market: {label:"Market", rect:{x:9, y:2,  w:5, h:3}, door:{x:11, y:5},  kind:"house"},
+    forge:  {label:"Forge",  rect:{x:16,y:2,  w:4, h:3}, door:{x:17, y:5},  kind:"house"},
+    tavern: {label:"Tavern", rect:{x:2, y:11, w:4, h:3}, door:{x:3,  y:10}, kind:"house"},
+    well:   {label:"Well",   rect:{x:10,y:8,  w:2, h:2}, door:{x:10, y:10}, kind:"well"},
+    field:  {label:"Field",  rect:{x:15,y:11, w:5, h:3}, door:{x:17, y:10}, kind:"field"},
+  };
+
+  // walkable[y*GW+x] — true where a resident may stand.
+  const walkable = new Uint8Array(GW*GH).fill(1);
+  for(const key in PLACES){
+    const r = PLACES[key].rect;
+    for(let y=r.y; y<r.y+r.h; y++)
+      for(let x=r.x; x<r.x+r.w; x++)
+        if(x>=0&&x<GW&&y>=0&&y<GH) walkable[y*GW+x] = 0;
+  }
+  const isWalkable = (x,y)=> x>=0&&x<GW&&y>=0&&y<GH && walkable[y*GW+x]===1;
+
+  // ----- Pathfinding (BFS, 4-connected, deterministic) ---------------------
+  // Fixed neighbour order means the same start/goal always yields the same
+  // path, so the whole sim is reproducible.
+  const NB = [[0,-1],[1,0],[0,1],[-1,0]];
+  function bfs(sx,sy,gx,gy){
+    if(sx===gx&&sy===gy) return [];
+    if(!isWalkable(sx,sy)||!isWalkable(gx,gy)) return null;
+    const prev = new Int32Array(GW*GH).fill(-1);
+    const seen = new Uint8Array(GW*GH);
+    const q = [sy*GW+sx]; seen[sy*GW+sx]=1;
+    let head=0;
+    while(head<q.length){
+      const cur=q[head++], cx=cur%GW, cy=(cur/GW)|0;
+      if(cx===gx&&cy===gy){
+        const path=[]; let p=cur;
+        while(p!==sy*GW+sx){ path.push({x:p%GW,y:(p/GW)|0}); p=prev[p]; }
+        path.reverse(); return path;
+      }
+      for(const [dx,dy] of NB){
+        const nx=cx+dx, ny=cy+dy;
+        if(!isWalkable(nx,ny)) continue;
+        const ni=ny*GW+nx;
+        if(seen[ni]) continue;
+        seen[ni]=1; prev[ni]=cur; q.push(ni);
+      }
+    }
+    return null; // unreachable (cannot happen on this connected map)
+  }
+
+  // ----- Residents and their schedules -------------------------------------
+  // A schedule is slots sorted by minute-of-day. The active slot at time t is
+  // the last slot whose start has passed; before the first slot, the last slot
+  // of the day carries over (yesterday's night).
+  const hm = (h,m)=> h*60+(m||0);
+  const PEOPLE = [
+    { name:"Mira", role:"the baker", color:"#ff9f45", at:null,
+      schedule:[
+        {t:hm(6),  place:"market", act:"opening the stall"},
+        {t:hm(12), place:"well",   act:"drawing water"},
+        {t:hm(13), place:"market", act:"selling bread"},
+        {t:hm(19), place:"tavern", act:"supper at the tavern"},
+        {t:hm(22), place:"home",   act:"asleep"},
+      ]},
+    { name:"Doran", role:"the smith", color:"#6aa9ff", at:null,
+      schedule:[
+        {t:hm(6),  place:"home",   act:"a slow morning"},
+        {t:hm(8),  place:"forge",  act:"at the forge"},
+        {t:hm(12,30), place:"well", act:"washing off soot"},
+        {t:hm(13,30), place:"forge", act:"back at the forge"},
+        {t:hm(20), place:"tavern", act:"a well-earned pint"},
+        {t:hm(23), place:"home",   act:"asleep"},
+      ]},
+    { name:"Pell", role:"the farmer", color:"#7ec96b", at:null,
+      schedule:[
+        {t:hm(5),  place:"field",  act:"working the field"},
+        {t:hm(11), place:"well",   act:"resting by the well"},
+        {t:hm(12), place:"field",  act:"back in the field"},
+        {t:hm(18), place:"market", act:"selling the harvest"},
+        {t:hm(20), place:"tavern", act:"supper"},
+        {t:hm(22,30), place:"home", act:"asleep"},
+      ]},
+    { name:"Liss", role:"the bard", color:"#c08bff", at:null,
+      schedule:[
+        {t:hm(2),  place:"home",   act:"asleep"},
+        {t:hm(10), place:"well",   act:"humming by the well"},
+        {t:hm(12), place:"market", act:"busking for coin"},
+        {t:hm(17), place:"tavern", act:"tuning up"},
+        {t:hm(18), place:"tavern", act:"playing the tavern"},
+      ]},
+  ];
+
+  function slotAt(person, minute){
+    const s = person.schedule;
+    let idx = -1;
+    for(let i=0;i<s.length;i++){ if(s[i].t<=minute) idx=i; else break; }
+    if(idx===-1) idx = s.length-1; // before the first slot: carry the night over
+    return idx;
+  }
+
+  // ----- Simulation state --------------------------------------------------
+  const WALK = 0.55;          // tiles per sim-minute
+  let simMinute = hm(6);      // minute of the current day, 0..1439
+  let day = 1;
+  let speed = 10;             // sim-minutes per real second (0 = paused)
+  let selected = null;        // index into PEOPLE, or null
+
+  // Place each resident at their active door at the chosen start time.
+  const agents = PEOPLE.map((p,i)=>{
+    const idx = slotAt(p, simMinute);
+    const d = PLACES[p.schedule[idx].place].door;
+    return { i, px:d.x, py:d.y, path:[], goal:{x:d.x,y:d.y},
+             held:false, face:1, slot:idx };
+  });
+
+  function tileOf(a){ return {x:Math.round(a.px), y:Math.round(a.py)}; }
+
+  function stepAgent(a, dSim){
+    const p = PEOPLE[a.i];
+    a.slot = slotAt(p, simMinute);
+    const door = PLACES[p.schedule[a.slot].place].door;
+
+    if(!a.held){
+      // Re-path when the scheduled destination changed, or when idle and not
+      // yet standing on the door.
+      const t = tileOf(a);
+      const goalMoved = (a.goal.x!==door.x || a.goal.y!==door.y);
+      if(goalMoved || (a.path.length===0 && (t.x!==door.x||t.y!==door.y))){
+        a.goal = {x:door.x, y:door.y};
+        const np = bfs(t.x, t.y, door.x, door.y);
+        a.path = np || [];
+      }
+      // Advance along the path, segment by segment, so motion never cuts a
+      // corner through a wall however large the time step.
+      let remain = WALK * dSim;
+      while(remain>0 && a.path.length){
+        const n = a.path[0];
+        const dx = n.x-a.px, dy = n.y-a.py;
+        const dist = Math.hypot(dx,dy);
+        if(dist<=remain+1e-9){
+          a.px=n.x; a.py=n.y; remain-=dist; a.path.shift();
+        } else {
+          a.px += dx/dist*remain; a.py += dy/dist*remain;
+          if(Math.abs(dx)>Math.abs(dy)) a.face = dx<0?-1:1;
+          remain=0;
+        }
+      }
+    }
+  }
+
+  function advance(dSim){
+    if(dSim<=0) return;
+    // Sub-step the clock so a big fast-forward frame still resolves schedule
+    // boundaries in order rather than jumping over them.
+    let left = dSim;
+    const STEP = 20; // sim-minutes per sub-step
+    while(left>0){
+      const d = Math.min(STEP, left); left-=d;
+      simMinute += d;
+      while(simMinute>=1440){ simMinute-=1440; day++; }
+      for(const a of agents) stepAgent(a, d);
+    }
+  }
+
+  // ----- Rendering ---------------------------------------------------------
+  const canvas = document.getElementById("village");
+  const ctx = canvas.getContext("2d");
+  let TS = 32, OX = 0, OY = 0; // tile size and draw origin (set on resize)
+
+  function resize(){
+    const stage = canvas.parentElement;
+    // Collapse the canvas before measuring: an explicit style.width left over
+    // from a wider layout would otherwise inflate the stage and feed itself a
+    // too-large width when shrinking (e.g. a phone rotating to portrait).
+    canvas.style.width = "0px";
+    const cssW = Math.max(280, stage.clientWidth);
+    TS = Math.floor(cssW / GW);
+    const cssH = TS*GH;
+    const dpr = Math.min(2, window.devicePixelRatio||1); // cap DPR at 2
+    canvas.width = Math.round(GW*TS*dpr);
+    canvas.height = Math.round(GH*TS*dpr);
+    canvas.style.width = (GW*TS)+"px";
+    canvas.style.height = cssH+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    OX = 0; OY = 0;
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+
+  function dayTint(){
+    // Returns {r,g,b,a} overlay for mood. Night deep blue, dawn/dusk warm.
+    const m = simMinute;
+    const night = {r:12,g:16,b:40}, dusk = {r:60,g:30,b:20};
+    if(m< hm(5))  return {...night, a:0.42};
+    if(m< hm(7))  return {...dusk,  a:0.28*(hm(7)-m)/120};
+    if(m< hm(18)) return {r:0,g:0,b:0,a:0};
+    if(m< hm(21)) return {...dusk,  a:0.30*(m-hm(18))/180};
+    return {...night, a:0.42*Math.min(1,(m-hm(21))/120)};
+  }
+
+  function draw(){
+    const W=GW*TS, H=GH*TS;
+    ctx.clearRect(0,0,W,H);
+
+    // ground + faint grid
+    ctx.fillStyle = "#2f3a2c"; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = "rgba(255,255,255,.035)"; ctx.lineWidth=1;
+    for(let x=0;x<=GW;x++){ctx.beginPath();ctx.moveTo(x*TS,0);ctx.lineTo(x*TS,H);ctx.stroke();}
+    for(let y=0;y<=GH;y++){ctx.beginPath();ctx.moveTo(0,y*TS);ctx.lineTo(W,y*TS);ctx.stroke();}
+
+    // places
+    for(const key in PLACES){
+      const pl=PLACES[key], r=pl.rect;
+      const x=r.x*TS, y=r.y*TS, w=r.w*TS, h=r.h*TS;
+      if(pl.kind==="field"){
+        ctx.fillStyle="#5a4327"; roundRect(x+2,y+2,w-4,h-4,4); ctx.fill();
+        ctx.strokeStyle="#7ec96b"; ctx.lineWidth=2;
+        for(let row=0; row<r.h; row++){
+          const ry=y+ (row+0.5)*TS;
+          ctx.beginPath(); ctx.moveTo(x+6,ry); ctx.lineTo(x+w-6,ry); ctx.stroke();
+        }
+      } else if(pl.kind==="well"){
+        ctx.fillStyle="#6b7280"; ctx.beginPath();
+        ctx.arc(x+w/2,y+h/2,Math.min(w,h)/2-2,0,7); ctx.fill();
+        ctx.fillStyle="#1c2433"; ctx.beginPath();
+        ctx.arc(x+w/2,y+h/2,Math.min(w,h)/2-7,0,7); ctx.fill();
+      } else {
+        // building body + a darker roof band
+        ctx.fillStyle="#b98a5e"; roundRect(x+2,y+2,w-4,h-4,5); ctx.fill();
+        ctx.fillStyle="#8a5d3b"; roundRect(x+2,y+2,w-4,(h-4)*0.42,5); ctx.fill();
+      }
+      // label
+      ctx.fillStyle="rgba(10,10,14,.78)";
+      ctx.font = "600 "+Math.max(10,Math.round(TS*0.42))+"px ui-sans-serif,system-ui,sans-serif";
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(pl.label, x+w/2, y+h/2);
+      // door marker
+      const d=pl.door;
+      ctx.fillStyle="rgba(255,255,255,.14)";
+      roundRect(d.x*TS+TS*0.28, d.y*TS+TS*0.28, TS*0.44, TS*0.44, 3); ctx.fill();
+    }
+
+    // residents
+    for(const a of agents){
+      const p=PEOPLE[a.i];
+      const cx=(a.px+0.5)*TS, cy=(a.py+0.5)*TS, rad=Math.max(7,TS*0.30);
+      const sel = selected===a.i;
+
+      if(sel){
+        ctx.strokeStyle = a.held?"#ffb454":"#ffffff";
+        ctx.lineWidth=2.5;
+        if(a.held){ ctx.setLineDash([4,3]); } else { ctx.setLineDash([]); }
+        ctx.beginPath(); ctx.arc(cx,cy,rad+5,0,7); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // body
+      ctx.fillStyle=a.color; ctx.beginPath(); ctx.arc(cx,cy,rad,0,7); ctx.fill();
+      ctx.strokeStyle="rgba(0,0,0,.4)"; ctx.lineWidth=1.5; ctx.stroke();
+      // initial
+      ctx.fillStyle="rgba(12,12,18,.9)";
+      ctx.font="700 "+Math.round(rad*1.05)+"px ui-sans-serif,system-ui,sans-serif";
+      ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText(p.name[0], cx, cy+0.5);
+
+      // held badge
+      if(a.held){
+        ctx.fillStyle="#ffb454";
+        roundRect(cx+rad-3, cy-rad-3, 12, 12, 3); ctx.fill();
+        ctx.fillStyle="#1a1b26"; ctx.fillRect(cx+rad+0.5, cy-rad, 2.5, 7);
+        ctx.fillRect(cx+rad+4.5, cy-rad, 2.5, 7);
+      }
+      // name tag when selected
+      if(sel){
+        const t=p.name; ctx.font="600 12px ui-sans-serif,system-ui,sans-serif";
+        const tw=ctx.measureText(t).width;
+        ctx.fillStyle="rgba(16,17,26,.85)";
+        roundRect(cx-tw/2-5, cy-rad-22, tw+10, 16, 4); ctx.fill();
+        ctx.fillStyle="#fff"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(t, cx, cy-rad-13.5);
+      }
+    }
+
+    // time-of-day tint
+    const tint=dayTint();
+    if(tint.a>0.001){
+      ctx.fillStyle=`rgba(${tint.r},${tint.g},${tint.b},${tint.a})`;
+      ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  // ----- HUD / panel -------------------------------------------------------
+  const clockEl=document.getElementById("clock");
+  const rosterEl=document.getElementById("roster");
+  const detailEl=document.getElementById("detail");
+  const speedEl=document.getElementById("speed");
+
+  function fmt(min){
+    min=((Math.floor(min)%1440)+1440)%1440;
+    const h=Math.floor(min/60), m=min%60;
+    return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+  }
+  function statusOf(a){
+    const p=PEOPLE[a.i], slot=p.schedule[a.slot];
+    const place=PLACES[slot.place];
+    const t=tileOf(a);
+    const atDoor = (t.x===place.door.x && t.y===place.door.y) && a.path.length===0;
+    if(a.held) return {line:"Held in place", sub:"was heading to the "+place.label.toLowerCase(), act:slot.act};
+    if(atDoor) return {line:slot.act, sub:"at the "+place.label.toLowerCase(), act:slot.act};
+    return {line:slot.act, sub:"walking to the "+place.label.toLowerCase(), act:slot.act};
+  }
+
+  function buildRoster(){
+    rosterEl.innerHTML="";
+    PEOPLE.forEach((p,i)=>{
+      const li=document.createElement("li");
+      const b=document.createElement("button");
+      b.type="button"; b.setAttribute("aria-pressed", selected===i?"true":"false");
+      b.innerHTML=`<span class="dot" style="background:${p.color}"></span>
+        <span class="who"><b>${p.name}</b><span data-act>${p.role}</span></span>`;
+      b.addEventListener("click",()=> select(i));
+      li.appendChild(b); rosterEl.appendChild(li);
+    });
+  }
+
+  function renderPanel(){
+    clockEl.textContent = `Day ${day} · ${fmt(simMinute)}`;
+    // roster activity lines
+    [...rosterEl.querySelectorAll("button")].forEach((b,i)=>{
+      b.setAttribute("aria-pressed", selected===i?"true":"false");
+      const st=statusOf(agents[i]);
+      b.querySelector("[data-act]").textContent = st.line + (agents[i].held?" ·⏸":"");
+    });
+
+    if(selected===null){
+      detailEl.innerHTML=`<p class="empty">Pick a resident to watch their day. Then <b>Hold</b> them to interrupt the errand they are on.</p>`;
+      return;
+    }
+    const p=PEOPLE[selected], a=agents[selected], st=statusOf(a);
+    let html=`<h2>${p.name}</h2><p class="role">${p.role}</p>`;
+    html+=`<p class="now"><span class="k">Now:</span> ${st.line}</p>`;
+    html+=`<p class="now"><span class="k">${a.held?"Status":"Place"}:</span> ${st.sub}</p>`;
+    if(a.held) html+=`<p class="held-note">Interrupted — the clock keeps running. Resume and ${p.name.split(" ")[0]} heads for wherever the schedule says to be by then.</p>`;
+    html+=`<div class="controls" style="margin-top:10px">
+      <button id="holdBtn" aria-pressed="${a.held?"true":"false"}">${a.held?"Resume":"Hold (interrupt)"}</button>
+    </div>`;
+    html+=`<ul class="sched">`;
+    p.schedule.forEach((s,idx)=>{
+      html+=`<li class="${idx===a.slot?"now":""}"><span class="t">${fmt(s.t)}</span>
+        <span class="act"><b>${PLACES[s.place].label}</b> — ${s.act}</span></li>`;
+    });
+    html+=`</ul>`;
+    detailEl.innerHTML=html;
+    const hb=document.getElementById("holdBtn");
+    if(hb) hb.addEventListener("click", toggleHold);
+  }
+
+  function select(i){
+    selected = (i===selected)? null : i;
+    canvas.focus({preventScroll:true});
+    renderPanel();
+  }
+  function toggleHold(){
+    if(selected===null) return;
+    const a=agents[selected];
+    a.held=!a.held;
+    if(!a.held){ a.path=[]; a.goal={x:-1,y:-1}; } // force a fresh re-path on resume
+    renderPanel();
+  }
+  function setSpeed(s){
+    speed=s;
+    [...speedEl.querySelectorAll("button")].forEach(b=>
+      b.setAttribute("aria-pressed", (+b.dataset.speed===s)?"true":"false"));
+  }
+
+  speedEl.addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return; setSpeed(+b.dataset.speed);
+  });
+
+  // keyboard
+  window.addEventListener("keydown",e=>{
+    const k=e.key;
+    if(k===" "||k==="Spacebar"){ e.preventDefault(); setSpeed(speed===0?10:0); return; }
+    if(k==="1"){ setSpeed(10); return; }
+    if(k==="2"){ setSpeed(30); return; }
+    if(k==="3"){ setSpeed(80); return; }
+    if(k==="Escape"){ selected=null; renderPanel(); return; }
+    if(k==="h"||k==="H"){ toggleHold(); return; }
+    if(k==="ArrowRight"||k==="ArrowDown"||k==="Tab"&&!e.shiftKey){
+      if(k==="Tab"&&document.activeElement!==canvas) return; // let Tab leave the canvas normally
+      e.preventDefault();
+      selected = selected===null?0:(selected+1)%PEOPLE.length; renderPanel(); return;
+    }
+    if(k==="ArrowLeft"||k==="ArrowUp"){
+      e.preventDefault();
+      selected = selected===null?PEOPLE.length-1:(selected-1+PEOPLE.length)%PEOPLE.length; renderPanel(); return;
+    }
+  });
+
+  // click a resident on the canvas
+  canvas.addEventListener("click",e=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)/TS, my=(e.clientY-rect.top)/TS;
+    let best=null, bestD=1.1;
+    agents.forEach(a=>{
+      const d=Math.hypot(a.px+0.5-mx, a.py+0.5-my);
+      if(d<bestD){ bestD=d; best=a.i; }
+    });
+    if(best!==null) select(best); else { selected=null; renderPanel(); }
+    canvas.focus({preventScroll:true});
+  });
+
+  window.addEventListener("resize", ()=>{ resize(); draw(); });
+
+  // ----- Main loop ---------------------------------------------------------
+  let last=performance.now(), acc=0;
+  function frame(now){
+    let dt=(now-last)/1000; last=now;
+    if(dt>0.1) dt=0.1;              // clamp after a background tab stall
+    advance(speed*dt);
+    draw();
+    acc+=dt;
+    if(acc>0.12){ renderPanel(); acc=0; } // panel ~8fps is plenty, cheaper
+    requestAnimationFrame(frame);
+  }
+
+  // ----- Test hook (harmless; used by the headless suite) ------------------
+  window.__npc = {
+    GW, GH, PLACES, PEOPLE, agents, walkable, isWalkable, bfs, slotAt,
+    get simMinute(){return simMinute;}, set simMinute(v){simMinute=v;},
+    advance, stepAgent, tileOf, statusOf,
+    setSel(i){selected=i;}, getSel(){return selected;},
+  };
+
+  buildRoster();
+  resize();
+  draw();
+  renderPanel();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
