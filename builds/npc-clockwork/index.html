@@ -92,7 +92,7 @@
   <div class="stage">
     <canvas id="village" width="704" height="512"
       tabindex="0" role="img"
-      aria-label="Top-down village. Use Tab or arrow keys to pick a resident, Space to pause, H to hold them."></canvas>
+      aria-label="Top-down village. Use the arrow keys to pick a resident, Space to pause, H to hold them."></canvas>
   </div>
 
   <aside>
@@ -116,8 +116,8 @@
     </div>
 
     <p class="hint">
-      <kbd>Tab</kbd>/<kbd>&larr;&rarr;</kbd> pick &middot; <kbd>Space</kbd> pause &middot;
-      <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> speed &middot; <kbd>H</kbd> hold / resume &middot; <kbd>Esc</kbd> deselect
+      <kbd>&larr;</kbd><kbd>&rarr;</kbd> pick &middot; <kbd>Space</kbd> pause &middot;
+      <kbd>0</kbd><kbd>1</kbd><kbd>3</kbd><kbd>8</kbd> speed &middot; <kbd>H</kbd> hold / resume &middot; <kbd>Esc</kbd> deselect
     </p>
   </aside>
 </main>
@@ -249,8 +249,8 @@
   const agents = PEOPLE.map((p,i)=>{
     const idx = slotAt(p, simMinute);
     const d = PLACES[p.schedule[idx].place].door;
-    return { i, px:d.x, py:d.y, path:[], goal:{x:d.x,y:d.y},
-             held:false, face:1, slot:idx };
+    return { i, color:p.color, px:d.x, py:d.y, path:[], goal:{x:d.x,y:d.y},
+             held:false, heldWas:"", face:1, slot:idx };
   });
 
   function tileOf(a){ return {x:Math.round(a.px), y:Math.round(a.py)}; }
@@ -373,10 +373,13 @@
         ctx.fillStyle="#b98a5e"; roundRect(x+2,y+2,w-4,h-4,5); ctx.fill();
         ctx.fillStyle="#8a5d3b"; roundRect(x+2,y+2,w-4,(h-4)*0.42,5); ctx.fill();
       }
-      // label
-      ctx.fillStyle="rgba(10,10,14,.78)";
+      // label — on a soft dark chip so it stays legible over furrows or stone
       ctx.font = "600 "+Math.max(10,Math.round(TS*0.42))+"px ui-sans-serif,system-ui,sans-serif";
       ctx.textAlign="center"; ctx.textBaseline="middle";
+      const lw=ctx.measureText(pl.label).width, fs=Math.max(10,Math.round(TS*0.42));
+      ctx.fillStyle="rgba(12,12,18,.5)";
+      roundRect(x+w/2-lw/2-5, y+h/2-fs*0.7, lw+10, fs*1.4, 4); ctx.fill();
+      ctx.fillStyle="rgba(240,240,248,.95)";
       ctx.fillText(pl.label, x+w/2, y+h/2);
       // door marker
       const d=pl.door;
@@ -384,10 +387,33 @@
       roundRect(d.x*TS+TS*0.28, d.y*TS+TS*0.28, TS*0.44, TS*0.44, 3); ctx.fill();
     }
 
+    // time-of-day tint — applied to the village, under the residents, so the
+    // people stay vivid and countable even at night.
+    const tint=dayTint();
+    if(tint.a>0.001){
+      ctx.fillStyle=`rgba(${tint.r},${tint.g},${tint.b},${tint.a})`;
+      ctx.fillRect(0,0,W,H);
+    }
+
+    // Fan out residents who share a tile so a crowd (everyone Home at night,
+    // several at the Market door at midday) reads as N people, not one blob.
+    const buckets={};
+    for(const a of agents){ const t=tileOf(a); const k=t.x+","+t.y; (buckets[k]||(buckets[k]=[])).push(a); }
+    const offset=new Map();
+    for(const k in buckets){
+      const g=buckets[k];
+      if(g.length<2) continue;
+      g.forEach((a,gi)=>{
+        const ang=(gi/g.length)*Math.PI*2 - Math.PI/2;
+        offset.set(a, {x:Math.cos(ang)*0.34, y:Math.sin(ang)*0.34});
+      });
+    }
+
     // residents
     for(const a of agents){
       const p=PEOPLE[a.i];
-      const cx=(a.px+0.5)*TS, cy=(a.py+0.5)*TS, rad=Math.max(7,TS*0.30);
+      const off=offset.get(a)||{x:0,y:0};
+      const cx=(a.px+0.5+off.x)*TS, cy=(a.py+0.5+off.y)*TS, rad=Math.max(7,TS*0.30);
       const sel = selected===a.i;
 
       if(sel){
@@ -423,13 +449,6 @@
         ctx.fillText(t, cx, cy-rad-13.5);
       }
     }
-
-    // time-of-day tint
-    const tint=dayTint();
-    if(tint.a>0.001){
-      ctx.fillStyle=`rgba(${tint.r},${tint.g},${tint.b},${tint.a})`;
-      ctx.fillRect(0,0,W,H);
-    }
   }
 
   // ----- HUD / panel -------------------------------------------------------
@@ -443,14 +462,24 @@
     const h=Math.floor(min/60), m=min%60;
     return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
   }
-  function statusOf(a){
-    const p=PEOPLE[a.i], slot=p.schedule[a.slot];
-    const place=PLACES[slot.place];
+  // "home" takes no article; every other place does.
+  const pName = key => PLACES[key].label.toLowerCase();
+  const atPhrase = key => key==="home" ? "at home" : "at the "+pName(key);
+  const toPhrase = key => key==="home" ? "walking home" : "walking to the "+pName(key);
+  const wasPhrase = (key,atDoor) => key==="home"
+    ? (atDoor ? "was at home" : "was heading home")
+    : (atDoor ? "was at the "+pName(key) : "was heading to the "+pName(key));
+
+  function isAtDoor(a){
+    const place=PLACES[PEOPLE[a.i].schedule[a.slot].place];
     const t=tileOf(a);
-    const atDoor = (t.x===place.door.x && t.y===place.door.y) && a.path.length===0;
-    if(a.held) return {line:"Held in place", sub:"was heading to the "+place.label.toLowerCase(), act:slot.act};
-    if(atDoor) return {line:slot.act, sub:"at the "+place.label.toLowerCase(), act:slot.act};
-    return {line:slot.act, sub:"walking to the "+place.label.toLowerCase(), act:slot.act};
+    return t.x===place.door.x && t.y===place.door.y && a.path.length===0;
+  }
+  function statusOf(a){
+    const slot=PEOPLE[a.i].schedule[a.slot];
+    if(a.held) return {line:"Held in place", sub:a.heldWas, act:slot.act};
+    if(isAtDoor(a)) return {line:slot.act, sub:atPhrase(slot.place), act:slot.act};
+    return {line:slot.act, sub:toPhrase(slot.place), act:slot.act};
   }
 
   function buildRoster(){
@@ -466,36 +495,53 @@
     });
   }
 
+  let panelSig=null, subValEl=null, nowValEl=null;
   function renderPanel(){
     clockEl.textContent = `Day ${day} · ${fmt(simMinute)}`;
-    // roster activity lines
+    // roster activity lines — cheap text updates that never destroy the buttons
     [...rosterEl.querySelectorAll("button")].forEach((b,i)=>{
       b.setAttribute("aria-pressed", selected===i?"true":"false");
       const st=statusOf(agents[i]);
       b.querySelector("[data-act]").textContent = st.line + (agents[i].held?" ·⏸":"");
     });
 
-    if(selected===null){
-      detailEl.innerHTML=`<p class="empty">Pick a resident to watch their day. Then <b>Hold</b> them to interrupt the errand they are on.</p>`;
-      return;
+    const a = selected===null ? null : agents[selected];
+    // Rebuild the detail card only when its shape changes (who is selected,
+    // their held state, or their active slot). Within a slot we only update the
+    // live text, so the Hold button survives and keyboard focus is not dropped
+    // and a screen reader is not re-read the whole panel ~8x/second.
+    const sig = a===null ? "none" : `${selected}|${a.held}|${a.slot}`;
+    if(sig!==panelSig){
+      panelSig=sig;
+      if(a===null){
+        detailEl.innerHTML=`<p class="empty">Pick a resident to watch their day. Then <b>Hold</b> them to interrupt the errand they are on.</p>`;
+        subValEl=nowValEl=null;
+      } else {
+        const p=PEOPLE[selected], st=statusOf(a);
+        let html=`<h2>${p.name}</h2><p class="role">${p.role}</p>`;
+        html+=`<p class="now"><span class="k">Now:</span> <span id="nowVal">${st.line}</span></p>`;
+        html+=`<p class="now"><span class="k">${a.held?"Status":"Place"}:</span> <span id="subVal">${st.sub}</span></p>`;
+        if(a.held) html+=`<p class="held-note">Interrupted — the clock keeps running. Resume and ${p.name} heads for wherever the schedule says to be by then.</p>`;
+        html+=`<div class="controls" style="margin-top:10px">
+          <button id="holdBtn" aria-pressed="${a.held?"true":"false"}">${a.held?"Resume":"Hold (interrupt)"}</button>
+        </div>`;
+        html+=`<ul class="sched">`;
+        p.schedule.forEach((s,idx)=>{
+          html+=`<li class="${idx===a.slot?"now":""}"><span class="t">${fmt(s.t)}</span>
+            <span class="act"><b>${PLACES[s.place].label}</b> — ${s.act}</span></li>`;
+        });
+        html+=`</ul>`;
+        detailEl.innerHTML=html;
+        document.getElementById("holdBtn").addEventListener("click", toggleHold);
+        subValEl=document.getElementById("subVal");
+        nowValEl=document.getElementById("nowVal");
+      }
+    } else if(a!==null && subValEl){
+      // same card — just refresh the live "walking to…/at…" line
+      const st=statusOf(a);
+      subValEl.textContent=st.sub;
+      nowValEl.textContent=st.line;
     }
-    const p=PEOPLE[selected], a=agents[selected], st=statusOf(a);
-    let html=`<h2>${p.name}</h2><p class="role">${p.role}</p>`;
-    html+=`<p class="now"><span class="k">Now:</span> ${st.line}</p>`;
-    html+=`<p class="now"><span class="k">${a.held?"Status":"Place"}:</span> ${st.sub}</p>`;
-    if(a.held) html+=`<p class="held-note">Interrupted — the clock keeps running. Resume and ${p.name.split(" ")[0]} heads for wherever the schedule says to be by then.</p>`;
-    html+=`<div class="controls" style="margin-top:10px">
-      <button id="holdBtn" aria-pressed="${a.held?"true":"false"}">${a.held?"Resume":"Hold (interrupt)"}</button>
-    </div>`;
-    html+=`<ul class="sched">`;
-    p.schedule.forEach((s,idx)=>{
-      html+=`<li class="${idx===a.slot?"now":""}"><span class="t">${fmt(s.t)}</span>
-        <span class="act"><b>${PLACES[s.place].label}</b> — ${s.act}</span></li>`;
-    });
-    html+=`</ul>`;
-    detailEl.innerHTML=html;
-    const hb=document.getElementById("holdBtn");
-    if(hb) hb.addEventListener("click", toggleHold);
   }
 
   function select(i){
@@ -506,8 +552,15 @@
   function toggleHold(){
     if(selected===null) return;
     const a=agents[selected];
-    a.held=!a.held;
-    if(!a.held){ a.path=[]; a.goal={x:-1,y:-1}; } // force a fresh re-path on resume
+    if(!a.held){
+      // Freeze what they were doing at the instant of the interrupt, so the
+      // panel reports where they were actually going — not where the clock has
+      // since moved their schedule to.
+      a.heldWas = wasPhrase(PEOPLE[a.i].schedule[a.slot].place, isAtDoor(a));
+      a.held = true;
+    } else {
+      a.held = false; a.path=[]; a.goal={x:-1,y:-1}; // force a fresh re-path on resume
+    }
     renderPanel();
   }
   function setSpeed(s){
@@ -521,16 +574,20 @@
   });
 
   // keyboard
+  // Tab is deliberately NOT captured: it must flow through the page so a
+  // keyboard user can reach the speed buttons, roster, and Hold. Selection
+  // cycles on the arrow keys instead.
+  const SPEED_KEY = {"0":0, "1":10, "3":30, "8":80};
   window.addEventListener("keydown",e=>{
-    const k=e.key;
-    if(k===" "||k==="Spacebar"){ e.preventDefault(); setSpeed(speed===0?10:0); return; }
-    if(k==="1"){ setSpeed(10); return; }
-    if(k==="2"){ setSpeed(30); return; }
-    if(k==="3"){ setSpeed(80); return; }
+    const k=e.key, onButton=e.target.tagName==="BUTTON";
+    if(k===" "||k==="Spacebar"){
+      if(onButton) return;          // let Space activate a focused button
+      e.preventDefault(); setSpeed(speed===0?10:0); return;
+    }
+    if(k in SPEED_KEY){ setSpeed(SPEED_KEY[k]); return; }
     if(k==="Escape"){ selected=null; renderPanel(); return; }
     if(k==="h"||k==="H"){ toggleHold(); return; }
-    if(k==="ArrowRight"||k==="ArrowDown"||k==="Tab"&&!e.shiftKey){
-      if(k==="Tab"&&document.activeElement!==canvas) return; // let Tab leave the canvas normally
+    if(k==="ArrowRight"||k==="ArrowDown"){
       e.preventDefault();
       selected = selected===null?0:(selected+1)%PEOPLE.length; renderPanel(); return;
     }
