@@ -1,0 +1,5 @@
+{
+  "description": "A village where everyone has somewhere to be — watch the day run on its own clock, then reach in and stop someone mid-errand.",
+  "topics": ["npc", "scheduling", "simulation", "daily-routine", "rpg", "gamedev", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
