@@ -1,0 +1,5 @@
+{
+  "description": "A duel fought entirely in words — read the foe's tell, pick your counter, and answer in type.",
+  "topics": ["rpg", "combat", "turn-based", "text-game", "game", "gamedev", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
