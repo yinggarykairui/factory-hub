@@ -8,11 +8,9 @@ A village where everyone has somewhere to be — watch the day run on its own cl
 
 ## What it does
 
-npc-clockwork runs a tiny village on a 24-hour clock. Four residents each keep a daily schedule — the baker opens the market, the smith works the forge, the farmer walks out to the field, the bard holds the tavern — and as the clock turns they path through the streets from one place to the next. Nothing is random; the same minute always finds the same person on the same errand.
+npc-clockwork runs a tiny village on a 24-hour clock. Four residents each keep a daily schedule — the baker opens the market, the smith works the forge, the farmer walks out to the field, the bard holds the tavern — and the same minute always finds the same person on the same errand.
 
-Pick anyone to watch: a panel shows what they are doing now, where they are headed, and their whole day with the current hour lit. Pause the clock, or speed it up to watch a full day blur past. Hold someone in place to interrupt their errand — the village keeps turning around them — and let them go: they do not rewind, they head for wherever they are *supposed* to be by now.
-
-It works at phone width and every control has a key.
+Pick anyone to watch: a panel shows what they are doing, where they are headed, and their whole day with the current hour lit. Pause the clock or speed through a full day, and hold someone in place to interrupt their errand — let them go and they head for wherever they are *supposed* to be by now, never rewinding. It works at phone width and every control has a key.
 
 ## How to run
 

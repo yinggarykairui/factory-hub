@@ -395,25 +395,37 @@
       ctx.fillRect(0,0,W,H);
     }
 
+    // Token radius: a legibility floor so the initial stays readable even at
+    // phone width, where TS can fall to ~13 and TS*0.30 alone bottomed out at
+    // 7px and the initials went tiny.
+    const rad = Math.max(9, TS*0.32);
+
     // Fan out residents who share a tile so a crowd (everyone Home at night,
-    // several at the Market door at midday) reads as N people, not one blob.
+    // several at the tavern door in the evening) reads as N people, not one
+    // blob. Each resident fans toward a fixed direction keyed to their own
+    // index, so a given person always holds the same spot in the cluster
+    // however the group changes (no jitter as others arrive or leave), and the
+    // fan radius scales with the token so the circles stay clear of each other.
     const buckets={};
     for(const a of agents){ const t=tileOf(a); const k=t.x+","+t.y; (buckets[k]||(buckets[k]=[])).push(a); }
     const offset=new Map();
+    const fanTiles=(rad*1.5)/TS; // fan radius in tiles, scaled to token size
     for(const k in buckets){
       const g=buckets[k];
       if(g.length<2) continue;
-      g.forEach((a,gi)=>{
-        const ang=(gi/g.length)*Math.PI*2 - Math.PI/2;
-        offset.set(a, {x:Math.cos(ang)*0.34, y:Math.sin(ang)*0.34});
-      });
+      for(const a of g){
+        // Diagonal directions (NE/SE/SW/NW), off the vertical axis the
+        // selected resident's name tag occupies, so a tag never buries a token.
+        const ang=(a.i/PEOPLE.length)*Math.PI*2 - Math.PI/4; // fixed per resident
+        offset.set(a, {x:Math.cos(ang)*fanTiles, y:Math.sin(ang)*fanTiles});
+      }
     }
 
     // residents
     for(const a of agents){
       const p=PEOPLE[a.i];
       const off=offset.get(a)||{x:0,y:0};
-      const cx=(a.px+0.5+off.x)*TS, cy=(a.py+0.5+off.y)*TS, rad=Math.max(7,TS*0.30);
+      const cx=(a.px+0.5+off.x)*TS, cy=(a.py+0.5+off.y)*TS;
       const sel = selected===a.i;
 
       if(sel){
