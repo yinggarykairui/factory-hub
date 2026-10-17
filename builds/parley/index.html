@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>parley</title>
+<meta name="description" content="A duel fought entirely in words — read the foe's tell, pick your counter, and answer in type.">
+<style>
+  :root{
+    --bg:#15161f; --panel:#1d1f2b; --ink:#e8eaf2; --dim:#9298b0;
+    --line:#30334a; --accent:#f2c14e; --accent-ink:#15161f;
+    --foe:#e06b74; --hero:#7fd4a0; --slot:#262a3c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:620px; margin:0 auto; padding:14px 16px 28px; min-width:0}
+  header{border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:14px}
+  header h1{font-size:20px; margin:0; letter-spacing:1px; font-weight:700}
+  header p{margin:4px 0 0; color:var(--dim); font-size:12px}
+  .combatant{background:var(--panel); border:1px solid var(--line); border-radius:9px;
+    padding:10px 12px; margin-bottom:12px}
+  .combatant .row{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+  .combatant .name{font-weight:700; font-size:15px}
+  .combatant.foe .name{color:var(--foe)}
+  .combatant.hero .name{color:var(--hero)}
+  .combatant .flavor{color:var(--dim); font-size:12px; flex:1 1 140px; min-width:0}
+  .bar{margin-top:7px; display:flex; align-items:center; gap:9px; font-size:14px}
+  .bar .track{letter-spacing:1px; white-space:nowrap; overflow:hidden; flex:1 1 auto; min-width:0}
+  .combatant.foe .track .fill{color:var(--foe)}
+  .combatant.hero .track .fill{color:var(--hero)}
+  .track .empty{color:var(--line)}
+  .bar .num{color:var(--dim); font-variant-numeric:tabular-nums; flex:0 0 auto; font-size:13px}
+  .tell{background:var(--slot); border:1px solid var(--line); border-left:3px solid var(--accent);
+    border-radius:7px; padding:10px 12px; margin-bottom:12px; font-size:14px; min-height:42px;
+    display:flex; align-items:center}
+  .tell.end{border-left-color:var(--hero)}
+  .tell.dead{border-left-color:var(--foe)}
+  .log{background:#111219; border:1px solid var(--line); border-radius:9px;
+    padding:8px 12px; height:168px; overflow-y:auto; margin-bottom:12px;
+    font-size:13px; line-height:1.6}
+  .log p{margin:0; padding:2px 0; border-bottom:1px solid rgba(255,255,255,.03)}
+  .log p:last-child{border-bottom:0}
+  .log p .q{color:var(--accent)}
+  .log p .good{color:var(--hero)}
+  .log p .bad{color:var(--foe)}
+  .log p .dim{color:var(--dim)}
+  .actions{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  button{
+    font:inherit; color:var(--ink); background:var(--slot); border:1px solid var(--line);
+    border-radius:8px; padding:11px 10px; cursor:pointer; min-height:46px; text-align:left;
+    letter-spacing:.3px;
+  }
+  button .k{color:var(--accent); font-weight:700; margin-right:7px}
+  button:hover:not(:disabled){border-color:#4b5173}
+  button:focus-visible{outline:none; box-shadow:0 0 0 3px rgba(242,193,78,.55)}
+  button:active:not(:disabled){transform:translateY(1px)}
+  button:disabled{opacity:.35; cursor:default}
+  .restart{grid-column:1 / -1; text-align:center; background:var(--accent); color:var(--accent-ink);
+    border-color:var(--accent); font-weight:700; display:none}
+  .restart:hover:not(:disabled){filter:brightness(1.06); border-color:var(--accent)}
+  body.over .actions button:not(.restart){display:none}
+  body.over .restart{display:block}
+  .foot{color:var(--dim); font-size:11px; margin-top:14px; text-align:center}
+  .foot kbd{background:var(--slot); border:1px solid var(--line); border-radius:4px;
+    padding:0 4px; font:inherit; font-size:10px}
+  .sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
+    clip:rect(0 0 0 0); white-space:nowrap; border:0}
+  @media (max-width:360px){
+    .wrap{padding:12px 12px 24px}
+    .bar{font-size:12px}
+    .actions{gap:6px}
+    button{padding:10px 8px; font-size:14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>parley</h1>
+    <p>Read the tell. Pick your counter. Answer in type.</p>
+  </header>
+
+  <section class="combatant foe" aria-label="Foe">
+    <div class="row">
+      <span class="name" id="foeName">Foe</span>
+      <span class="flavor" id="foeFlavor"></span>
+    </div>
+    <div class="bar">
+      <span class="track" id="foeBar" aria-hidden="true"></span>
+      <span class="num" id="foeNum"></span>
+    </div>
+  </section>
+
+  <div class="tell" id="tell"></div>
+
+  <div class="log" id="log" role="log" aria-live="polite" aria-label="Combat log"></div>
+
+  <section class="combatant hero" aria-label="You">
+    <div class="row">
+      <span class="name">You</span>
+      <span class="flavor">Dueller of the long road.</span>
+    </div>
+    <div class="bar">
+      <span class="track" id="heroBar" aria-hidden="true"></span>
+      <span class="num" id="heroNum"></span>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button type="button" data-act="PARRY"><span class="k">1</span>PARRY</button>
+    <button type="button" data-act="DODGE"><span class="k">2</span>DODGE</button>
+    <button type="button" data-act="BRACE"><span class="k">3</span>BRACE</button>
+    <button type="button" data-act="STRIKE"><span class="k">4</span>STRIKE</button>
+    <button type="button" class="restart" id="restart">Restart duel</button>
+  </div>
+
+  <p class="foot">Keys <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> act · <kbd>Enter</kbd> restarts on an end screen.</p>
+  <p class="sr" id="live" aria-live="polite"></p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- static game data (fully deterministic; no randomness anywhere) ----
+  var HERO_MAX = 30;
+  var HERO_ATK = 5;   // damage dealt by the hero's STRIKE
+  var RIPOSTE  = 4;   // damage dealt by a correct counter
+
+  var COUNTER = { STRIKE:"PARRY", LUNGE:"DODGE", CRUSH:"BRACE" };
+  var NOUN    = { STRIKE:"strike", LUNGE:"lunge", CRUSH:"blow" };
+
+  var FOES = [
+    {
+      name:"Gaunt Knight",
+      flavor:"Rust-plated, patient, slow to tire.",
+      max:18,
+      pattern:["STRIKE","LUNGE","STRIKE","CRUSH"],
+      dmg:{STRIKE:4, LUNGE:5, CRUSH:7},
+      tells:{
+        STRIKE:"The Gaunt Knight raises its blade overhead — a heavy STRIKE comes.",
+        LUNGE:"The Gaunt Knight shifts its weight forward — a LUNGE is coming.",
+        CRUSH:"The Gaunt Knight hauls its shield up to hammer down — a CRUSH."
+      }
+    },
+    {
+      name:"Mire Hound",
+      flavor:"Low in the reeds, fast off the mark.",
+      max:22,
+      pattern:["LUNGE","LUNGE","STRIKE","CRUSH","LUNGE"],
+      dmg:{STRIKE:5, LUNGE:6, CRUSH:8},
+      tells:{
+        STRIKE:"The Mire Hound bares its teeth — a quick STRIKE.",
+        LUNGE:"The Mire Hound coils low — a LUNGE snaps toward you.",
+        CRUSH:"The Mire Hound rears to slam its bulk down — a CRUSH."
+      }
+    },
+    {
+      name:"Hollow King",
+      flavor:"Crowned in nothing, sure of every move.",
+      max:28,
+      pattern:["CRUSH","STRIKE","LUNGE","CRUSH","STRIKE","CRUSH"],
+      dmg:{STRIKE:6, LUNGE:7, CRUSH:10},
+      tells:{
+        STRIKE:"The Hollow King flicks its wrist — a precise STRIKE.",
+        LUNGE:"The Hollow King glides closer — a LUNGE threads in.",
+        CRUSH:"The Hollow King gathers the dark overhead — a crushing CRUSH."
+      }
+    }
+  ];
+
+  // ---- state ----
+  var state;
+  function reset(){
+    state = {
+      heroHp: HERO_MAX,
+      foeIndex: 0,
+      foeHp: FOES[0].max,
+      ptr: 0,          // index into current foe's pattern
+      phase: "fight",  // "fight" | "won" | "lost"
+      log: []
+    };
+  }
+
+  function curFoe(){ return FOES[state.foeIndex]; }
+  function telegraph(){ var f = curFoe(); return f.pattern[state.ptr % f.pattern.length]; }
+
+  // ---- DOM ----
+  var el = {
+    foeName: byId("foeName"), foeFlavor: byId("foeFlavor"),
+    foeBar: byId("foeBar"), foeNum: byId("foeNum"),
+    heroBar: byId("heroBar"), heroNum: byId("heroNum"),
+    tell: byId("tell"), log: byId("log"), live: byId("live"),
+    restart: byId("restart")
+  };
+  function byId(id){ return document.getElementById(id); }
+
+  function bar(hp, max){
+    var n = 10;
+    var filled = hp <= 0 ? 0 : Math.max(1, Math.round(hp / max * n));
+    if (filled > n) filled = n;
+    var f = "█".repeat(filled);
+    var e = "░".repeat(n - filled);
+    return '<span class="fill">' + f + '</span><span class="empty">' + e + '</span>';
+  }
+
+  function pushLog(html){ state.log.push(html); }
+
+  function render(){
+    var f = curFoe();
+    el.foeName.textContent = f.name;
+    el.foeFlavor.textContent = f.flavor;
+    el.foeBar.innerHTML = bar(state.foeHp, f.max);
+    el.foeNum.textContent = Math.max(0, state.foeHp) + "/" + f.max;
+    el.heroBar.innerHTML = bar(state.heroHp, HERO_MAX);
+    el.heroNum.textContent = Math.max(0, state.heroHp) + "/" + HERO_MAX;
+
+    el.tell.className = "tell";
+    if (state.phase === "won"){
+      el.tell.classList.add("end");
+      el.tell.textContent = "Victory. All three foes are cleared.";
+    } else if (state.phase === "lost"){
+      el.tell.classList.add("dead");
+      el.tell.textContent = "Defeat. You fall on the long road.";
+    } else {
+      var mv = telegraph();
+      el.tell.textContent = f.tells[mv];
+    }
+
+    el.log.innerHTML = state.log.map(function(l){ return "<p>" + l + "</p>"; }).join("");
+    el.log.scrollTop = el.log.scrollHeight;
+
+    document.body.classList.toggle("over", state.phase !== "fight");
+  }
+
+  function announce(text){ el.live.textContent = text; }
+
+  // ---- turn resolution (synchronous & instant; no reentrancy possible) ----
+  function act(action){
+    if (state.phase !== "fight") return;
+
+    var f = curFoe();
+    var mv = telegraph();          // the move being telegraphed this turn
+    var mvDmg = f.dmg[mv];
+    var noun = NOUN[mv];
+    var line, say;
+
+    if (action === "STRIKE"){
+      state.foeHp -= HERO_ATK;
+      state.heroHp -= mvDmg;
+      line = 'You <span class="q">strike</span> for ' + HERO_ATK +
+             ' and eat the ' + noun + ' for <span class="bad">' + mvDmg + '</span>.';
+      say = "You strike for " + HERO_ATK + " and take the " + noun + " for " + mvDmg + ".";
+    } else if (action === COUNTER[mv]){
+      state.foeHp -= RIPOSTE;
+      line = 'You <span class="q">' + action.toLowerCase() + '</span> the ' + noun +
+             ' clean — riposte for <span class="good">' + RIPOSTE + '</span>.';
+      say = "You " + action.toLowerCase() + " the " + noun + " and riposte for " + RIPOSTE + ".";
+    } else {
+      state.heroHp -= mvDmg;
+      line = 'You <span class="q">' + action.toLowerCase() + '</span>, but the ' + noun +
+             ' lands for <span class="bad">' + mvDmg + '</span>.';
+      say = "You " + action.toLowerCase() + ", but the " + noun + " lands for " + mvDmg + ".";
+    }
+    pushLog(line);
+
+    // hero death takes precedence
+    if (state.heroHp <= 0){
+      state.heroHp = 0;
+      state.phase = "lost";
+      pushLog('<span class="bad">The ' + f.name + ' stands over you.</span>');
+      announce(say + " You fall. Defeat.");
+      render();
+      return;
+    }
+
+    // foe defeated?
+    if (state.foeHp <= 0){
+      state.foeHp = 0;
+      pushLog('<span class="dim">The ' + f.name + ' falls.</span>');
+      if (state.foeIndex === FOES.length - 1){
+        state.phase = "won";
+        announce(say + " The " + f.name + " falls. Victory.");
+        render();
+        return;
+      }
+      state.foeIndex += 1;
+      state.foeHp = FOES[state.foeIndex].max;  // next foe to full; hero HP persists (no heal)
+      state.ptr = 0;
+      pushLog('<span class="dim">The ' + curFoe().name + ' steps forward.</span>');
+      announce(say + " The " + f.name + " falls. The " + curFoe().name + " steps forward.");
+      render();
+      return;
+    }
+
+    // advance the foe's move pointer to the next telegraph
+    state.ptr += 1;
+    announce(say + " " + curFoe().tells[telegraph()]);
+    render();
+  }
+
+  function restart(){
+    reset();
+    pushLog('<span class="dim">The ' + curFoe().name + ' steps forward.</span>');
+    render();
+    announce("New duel. " + curFoe().tells[telegraph()]);
+  }
+
+  // ---- input (buttons + keyboard, full parity; gated by phase) ----
+  var actionButtons = Array.prototype.slice.call(document.querySelectorAll("button[data-act]"));
+  actionButtons.forEach(function(b){
+    b.addEventListener("click", function(){ act(b.getAttribute("data-act")); });
+  });
+  el.restart.addEventListener("click", restart);
+
+  var KEYMAP = { "1":"PARRY", "2":"DODGE", "3":"BRACE", "4":"STRIKE" };
+  document.addEventListener("keydown", function(e){
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (state.phase === "fight" && KEYMAP[e.key]){
+      e.preventDefault();
+      act(KEYMAP[e.key]);
+    } else if (state.phase !== "fight" && (e.key === "Enter" || e.key === " ")){
+      e.preventDefault();
+      restart();
+    }
+  });
+
+  // read-only test hook (not a feature)
+  window.__parley = function(){
+    return {
+      heroHp: state.heroHp,
+      foeHp: state.foeHp,
+      telegraph: state.phase === "fight" ? telegraph() : null,
+      foeIndex: state.foeIndex,
+      phase: state.phase
+    };
+  };
+
+  // ---- go ----
+  reset();
+  pushLog('<span class="dim">The ' + curFoe().name + ' steps forward.</span>');
+  render();
+})();
+</script>
+</body>
+</html>
