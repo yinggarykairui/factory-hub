@@ -1,0 +1,5 @@
+{
+  "description": "Haggle an RPG market from a small purse to a gold target — prices swing with supply, and every trade is a negotiation.",
+  "topics": ["rpg", "economy", "trading", "haggle", "game", "gamedev", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
