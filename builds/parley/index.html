@@ -80,6 +80,13 @@
   body.over .foot-end{display:inline}
   .sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden;
     clip:rect(0 0 0 0); white-space:nowrap; border:0}
+  /* Micro-feedback: the panel whose HP just dropped flashes once and twitches.
+     Presentation only — no mechanic, no sound — and silenced for reduced motion. */
+  @keyframes hp-hit{ 0%{background:var(--panel)} 20%{background:#3a2328} 100%{background:var(--panel)} }
+  @keyframes hp-shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-2px)}
+    50%{transform:translateX(2px)} 75%{transform:translateX(-1px)} }
+  .combatant.hit{animation:hp-hit .30s ease-out, hp-shake .26s ease-out}
+  @media (prefers-reduced-motion:reduce){ .combatant.hit{animation:none} }
   @media (max-width:360px){
     .wrap{padding:12px 12px 24px}
     .bar{font-size:12px}
@@ -109,7 +116,7 @@
 
   <div class="tell" id="tell"></div>
 
-  <div class="log" id="log" role="log" aria-live="polite" aria-label="Combat log"></div>
+  <div class="log" id="log" role="log" aria-label="Combat log"></div>
 
   <section class="combatant hero" aria-label="You">
     <div class="row">
@@ -139,7 +146,7 @@
 
   <p class="foot">
     <span class="foot-fight">Keys <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> act · <kbd>Enter</kbd> restarts on an end screen.</span>
-    <span class="foot-end"><kbd>Enter</kbd> to fight again.</span>
+    <span class="foot-end"><kbd>Enter</kbd> or <kbd>Space</kbd> to fight again.</span>
   </p>
   <p class="sr" id="live" aria-live="polite"></p>
 </div>
@@ -204,6 +211,8 @@
       foeHp: FOES[0].max,
       ptr: 0,          // index into current foe's pattern
       phase: "fight",  // "fight" | "won" | "lost"
+      hitFoe: false,   // set this turn if the foe's bar dropped (drives the flash)
+      hitHero: false,  // set this turn if the hero's bar dropped
       log: []
     };
   }
@@ -217,9 +226,13 @@
     foeBar: byId("foeBar"), foeNum: byId("foeNum"),
     heroBar: byId("heroBar"), heroNum: byId("heroNum"),
     tell: byId("tell"), log: byId("log"), live: byId("live"),
-    restart: byId("restart")
+    restart: byId("restart"),
+    foePanel: document.querySelector(".combatant.foe"),
+    heroPanel: document.querySelector(".combatant.hero")
   };
   function byId(id){ return document.getElementById(id); }
+  // Retrigger the one-shot CSS flash by clearing the class and forcing a reflow.
+  function flash(elm){ if (!elm) return; elm.classList.remove("hit"); void elm.offsetWidth; elm.classList.add("hit"); }
 
   function bar(hp, max){
     var n = 10;
@@ -257,6 +270,10 @@
     el.log.scrollTop = el.log.scrollHeight;
 
     document.body.classList.toggle("over", state.phase !== "fight");
+
+    if (state.hitFoe) flash(el.foePanel); else el.foePanel.classList.remove("hit");
+    if (state.hitHero) flash(el.heroPanel); else el.heroPanel.classList.remove("hit");
+    state.hitFoe = state.hitHero = false;
   }
 
   function announce(text){ el.live.textContent = text; }
@@ -274,28 +291,39 @@
     if (action === "STRIKE"){
       state.foeHp -= HERO_ATK;
       state.heroHp -= mvDmg;
+      state.hitFoe = true; state.hitHero = true;   // a trade: both bars drop
       line = 'You <span class="q">strike</span> for ' + HERO_ATK +
              ' and eat the ' + noun + ' for <span class="bad">' + mvDmg + '</span>.';
       say = "You strike for " + HERO_ATK + " and take the " + noun + " for " + mvDmg + ".";
     } else if (action === COUNTER[mv]){
       state.foeHp -= RIPOSTE;
+      state.hitFoe = true;                          // clean riposte: only the foe drops
       line = 'You <span class="q">' + action.toLowerCase() + '</span> the ' + noun +
              ' clean — riposte for <span class="good">' + RIPOSTE + '</span>.';
       say = "You " + action.toLowerCase() + " the " + noun + " and riposte for " + RIPOSTE + ".";
     } else {
       state.heroHp -= mvDmg;
+      state.hitHero = true;                         // blown read: only the hero drops
       line = 'You <span class="q">' + action.toLowerCase() + '</span>, but the ' + noun +
              ' lands for <span class="bad">' + mvDmg + '</span>.';
       say = "You " + action.toLowerCase() + ", but the " + noun + " lands for " + mvDmg + ".";
     }
     pushLog(line);
 
-    // hero death takes precedence
+    // Hero death takes precedence: in a survival gauntlet, falling is falling, so a
+    // simultaneous kill is still a Defeat — a deliberate tie-break. When the foe fell
+    // too, the log says so plainly instead of claiming a dead foe "stands over you".
     if (state.heroHp <= 0){
       state.heroHp = 0;
+      if (state.foeHp <= 0){
+        state.foeHp = 0;
+        pushLog('<span class="bad">You fell the ' + f.name + ' as it fell you — you drop together. Defeat.</span>');
+        announce(say + " You fell the " + f.name + " as it fell you — you drop together. Defeat.");
+      } else {
+        pushLog('<span class="bad">The ' + f.name + ' stands over you.</span>');
+        announce(say + " You fall. Defeat.");
+      }
       state.phase = "lost";
-      pushLog('<span class="bad">The ' + f.name + ' stands over you.</span>');
-      announce(say + " You fall. Defeat.");
       render();
       return;
     }
@@ -303,6 +331,7 @@
     // foe defeated?
     if (state.foeHp <= 0){
       state.foeHp = 0;
+      state.hitFoe = false;  // the "falls" line is the feedback; don't flash the foe that leaves
       pushLog('<span class="dim">The ' + f.name + ' falls.</span>');
       if (state.foeIndex === FOES.length - 1){
         state.phase = "won";
