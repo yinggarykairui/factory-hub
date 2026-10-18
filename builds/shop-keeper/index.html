@@ -137,7 +137,7 @@
     </div>
   </section>
 
-  <div class="headline" id="headline" aria-live="polite">
+  <div class="headline" id="headline">
     <span class="tag">Market</span><span id="headlineText">The stalls are open for the day.</span>
   </div>
 
@@ -158,7 +158,7 @@
     <button type="button" class="btn primary" id="nextDay">Next market day →</button>
     <button type="button" class="btn" id="restart">Restart</button>
   </div>
-  <p class="result" id="result" aria-live="polite"></p>
+  <p class="result" id="result"></p>
 
   <p class="foot">
     A good gets dearer as you buy it out and cheaper as you flood the stall. Each day's events are fixed by the day number.
@@ -387,6 +387,9 @@
     renderHaggle();
 
     document.body.classList.add("haggling");
+    // make the market behind the dialog unreachable: no tabbing out, no stray
+    // Space reopening a trade (the dialog is a sibling of .wrap, so it stays live)
+    document.querySelector(".wrap").setAttribute("inert", "");
     el.push.focus();
     announce((side === "buy" ? "Haggling to buy " : "Haggling to sell ") + g.name + ". The price is " + h.price + " gold. Nerve " + h.nerve + ".");
   }
@@ -437,6 +440,7 @@
     var h = state.haggle;
     state.haggle = null;
     document.body.classList.remove("haggling");
+    document.querySelector(".wrap").removeAttribute("inert");
     if (h && h.origin && document.body.contains(h.origin) && !h.origin.disabled) h.origin.focus();
     else el.nextDay.focus();
   }
@@ -515,6 +519,9 @@
   }
 
   function restart(){
+    // if Restart is reached any way while a haggle is open, tear the dialog down too
+    document.body.classList.remove("haggling");
+    document.querySelector(".wrap").removeAttribute("inert");
     reset();
     buildRows();
     el.headlineText.textContent = "The stalls are open for the day.";
@@ -524,18 +531,21 @@
     el.nextDay.focus();
   }
 
+  // leaving a haggle with nothing traded — one path for Walk, Escape, and the scrim
+  function walkAway(){ setResult("You walked away."); announce("You walked away. Nothing traded."); closeHaggle(); render(); }
+
   // ---- wiring ----
   el.nextDay.addEventListener("click", nextDay);
   el.restart.addEventListener("click", restart);
   el.push.addEventListener("click", pushPrice);
   el.accept.addEventListener("click", acceptHaggle);
-  el.walk.addEventListener("click", function(){ setResult("You walked away."); announce("You walked away. Nothing traded."); closeHaggle(); render(); });
-  el.scrim.addEventListener("click", function(e){ if (e.target === el.scrim){ announce("Haggle closed."); closeHaggle(); } });
+  el.walk.addEventListener("click", walkAway);
+  el.scrim.addEventListener("click", function(e){ if (e.target === el.scrim) walkAway(); });
 
   document.addEventListener("keydown", function(e){
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (document.body.classList.contains("haggling")){
-      if (e.key === "Escape"){ e.preventDefault(); closeHaggle(); setResult("You walked away."); render(); }
+      if (e.key === "Escape"){ e.preventDefault(); walkAway(); }
       else if (e.key === "Enter"){ e.preventDefault(); acceptHaggle(); }
     }
   });
