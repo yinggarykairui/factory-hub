@@ -1,0 +1,5 @@
+{
+  "description": "The save system a 2D RPG needs: named slots, snapshots, and a corruption guard that refuses a bad save instead of loading garbage.",
+  "topics": ["rpg", "save-system", "localstorage", "serialization", "game", "gamedev", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
