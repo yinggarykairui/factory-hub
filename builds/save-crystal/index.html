@@ -349,7 +349,8 @@
     renderState();
     scheduleAutosave();   // defined by the slots layer; guarded below
   }
-  function scheduleAutosave(){ /* wired by slots layer */ }
+  var autosaveImpl = null; // set by the slots layer
+  function scheduleAutosave(){ if(autosaveImpl) autosaveImpl(); }
 
   // ---- adventurer controls ----
   el.name.addEventListener("input", function(){
@@ -410,8 +411,202 @@
   }
   setInterval(tick, 1000);
 
-  // ---- slots layer renders here (wired by later layers) ----
-  function renderSlots(){ /* slots layer */ }
+  // ======================================================================
+  //  SLOTS LAYER — records, canonical serialization, FNV-1a, sigils, cards
+  // ======================================================================
+
+  // Canonical JSON: objects serialized with keys in sorted order, so the same
+  // data always produces the same string (and thus the same checksum / sigil).
+  function canonical(v){
+    if(v===null || typeof v!=="object") return JSON.stringify(v);
+    if(Array.isArray(v)) return "["+v.map(canonical).join(",")+"]";
+    var keys = Object.keys(v).sort();
+    return "{"+keys.map(function(k){ return JSON.stringify(k)+":"+canonical(v[k]); }).join(",")+"}";
+  }
+
+  // FNV-1a 32-bit over the UTF-8 bytes of a string -> 8 lowercase hex chars.
+  var enc = new TextEncoder();
+  function fnv1a(str){
+    var bytes = enc.encode(str);
+    var h = 0x811c9dc5;
+    for(var i=0;i<bytes.length;i++){
+      h ^= bytes[i];
+      // h *= 16777619, kept in 32-bit range via Math.imul
+      h = Math.imul(h, 0x01000193);
+    }
+    return (h >>> 0).toString(16).padStart(8,"0");
+  }
+  function checksumOf(data){ return fnv1a(canonical(data)); }
+
+  // Build a v2 record from the current live state.
+  function snapshot(){
+    var data = {
+      name:state.name, cls:state.cls, level:state.level,
+      hp:state.hp, maxHp:state.maxHp, gold:state.gold,
+      x:state.x, y:state.y, inv:state.inv.slice()
+    };
+    return {
+      schema:CURRENT_SCHEMA,
+      savedAt:new Date().toISOString(),
+      playedMs:playedMs,
+      checksum:checksumOf(data),
+      data:data
+    };
+  }
+
+  // Apply a v2 data object + playtime to the live state.
+  function applyRecord(rec){
+    var d = rec.data;
+    state.name=d.name; state.cls=d.cls; state.level=d.level;
+    state.hp=d.hp; state.maxHp=d.maxHp; state.gold=d.gold;
+    state.x=d.x; state.y=d.y; state.inv=d.inv.slice();
+    playedMs = rec.playedMs|0; lastTick = Date.now();
+    renderState(); renderPlayed();
+  }
+
+  // ---- deterministic inline-SVG sigil from a checksum hex ----
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+    var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function sigilSVG(hex){
+    var seed = parseInt(hex,16)>>>0;
+    var rnd = mulberry32(seed);
+    var h1 = Math.floor(rnd()*360), h2 = (h1 + 40 + Math.floor(rnd()*160))%360;
+    var bg1 = "hsl("+h1+" 70% 22%)", bg2 = "hsl("+h2+" 60% 14%)";
+    var ac  = "hsl("+((h1+200)%360)+" 85% 68%)", ac2 = "hsl("+h2+" 85% 72%)";
+    var cells = "";
+    var S = 5, pad = 7, size = 64, span = (size-pad*2)/S;
+    // mirror a 3-wide half across the vertical axis for a symmetric glyph
+    for(var y=0;y<S;y++){ for(var x=0;x<3;x++){
+      if(rnd() > 0.52){
+        var cx = pad + x*span + span/2, cy = pad + y*span + span/2, r = span*0.34;
+        var col = (rnd()>0.5)?ac:ac2;
+        cells += '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+col+'" opacity="0.92"/>';
+        if(x<2){ var mx = size - cx; cells += '<circle cx="'+mx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+col+'" opacity="0.92"/>'; }
+      }
+    }}
+    var gem = '<path d="M32 10 L46 26 L32 54 L18 26 Z" fill="none" stroke="'+ac+'" stroke-width="1.6" opacity="0.8"/>';
+    return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+      + '<defs><radialGradient id="g'+hex+'" cx="50%" cy="38%"><stop offset="0%" stop-color="'+bg1+'"/><stop offset="100%" stop-color="'+bg2+'"/></radialGradient></defs>'
+      + '<rect width="64" height="64" rx="10" fill="url(#g'+hex+')"/>' + gem + cells + '</svg>';
+  }
+
+  // ---- reading / interpreting a stored slot ----
+  // Returns one of:
+  //   {kind:"empty"}
+  //   {kind:"ok", rec}            -- a well-formed v2-shaped record (version checked at load)
+  // (corruption handling is added by the guard layer)
+  function readSlot(id){
+    var raw = Store.get(PREFIX+id);
+    if(raw===null || raw===undefined) return {kind:"empty"};
+    var rec;
+    try{ rec = JSON.parse(raw); }
+    catch(e){ return {kind:"empty"}; } // guard layer turns this into a corrupted card
+    return {kind:"ok", rec:rec, raw:raw};
+  }
+
+  // ---- card rendering ----
+  var slotsEl = document.getElementById("slots");
+
+  function metaRow(rec){
+    var d = rec.rec.data || {};
+    var when = "";
+    try{ when = new Date(rec.rec.savedAt).toLocaleString(); }catch(e){ when = String(rec.rec.savedAt); }
+    var loc = "("+d.x+","+d.y+")";
+    return '<div class="meta">'
+      + '<span class="nm">'+esc(d.name)+'</span>'
+      + '<span>'+esc(d.cls)+' · Lv '+(d.level|0)+' · <span class="gold">'+(d.gold|0)+'g</span></span>'
+      + '<span>grid '+loc+' · played '+fmtTime(rec.rec.playedMs|0)+'</span>'
+      + '<span>'+esc(when)+'</span>'
+      + '</div>';
+  }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+  function renderSlot(def){
+    var card = document.createElement("div");
+    card.className = "slot" + (def.auto?" auto":"");
+    var r = readSlot(def.id);
+
+    var head = '<div class="head"><span class="ttl">'+esc(def.title)+'</span>'
+      + (def.auto?'<span class="badge autob">auto</span>':'') + '</div>';
+
+    if(r.kind==="empty"){
+      card.innerHTML = head
+        + '<div class="body"><div class="sig" aria-hidden="true"></div><div class="meta"><span class="empty-note">— empty —</span></div></div>'
+        + '<div class="acts">'
+        + (def.auto?'':'<button class="sm go" data-act="save" data-id="'+def.id+'">Save</button>')
+        + '</div>';
+      slotsEl.appendChild(card);
+      return;
+    }
+
+    // ok: show the snapshot card
+    var rec = r.rec;
+    var sig = (rec && typeof rec.checksum==="string") ? sigilSVG(rec.checksum) : "";
+    var acts = '<button class="sm go" data-act="load" data-id="'+def.id+'">Load</button>'
+             + (def.auto?'':'<button class="sm" data-act="save" data-id="'+def.id+'">Overwrite</button>')
+             + '<button class="sm danger" data-act="delete" data-id="'+def.id+'">Delete</button>';
+    card.innerHTML = head
+      + '<div class="body"><div class="sig">'+sig+'</div>'+metaRow(r)+'</div>'
+      + '<div class="acts">'+acts+'</div>';
+    slotsEl.appendChild(card);
+  }
+
+  function renderSlots(){
+    slotsEl.innerHTML = "";
+    SLOT_DEFS.forEach(renderSlot);
+  }
+
+  // ---- slot actions (event delegation) ----
+  function saveToSlot(id){
+    var rec = snapshot();
+    var res = Store.set(PREFIX+id, JSON.stringify(rec));
+    if(!res.ok){
+      announce("Slot not saved: " + res.reason + ".");
+      renderSlots();
+      return false;
+    }
+    renderSlots();
+    return true;
+  }
+  function deleteSlot(id, def){
+    if(!window.confirm("Delete "+def.title+"? This cannot be undone.")) return;
+    Store.remove(PREFIX+id);
+    renderSlots();
+    announce(def.title+" deleted.");
+  }
+  function loadFromSlot(id, def){
+    var r = readSlot(id);
+    if(r.kind!=="ok"){ announce("Nothing to load in "+def.title+"."); return; }
+    // version handling (migration / future refusal) is added by a later layer;
+    // here we load a v2 record directly.
+    if(r.rec && r.rec.schema===CURRENT_SCHEMA){
+      applyRecord(r.rec);
+      announce(def.title+" loaded — "+esc(r.rec.data.name)+", level "+r.rec.data.level+".");
+    } else {
+      announce(def.title+": unsupported save version.");
+    }
+  }
+
+  slotsEl.addEventListener("click", function(e){
+    var b = e.target.closest("button[data-act]"); if(!b) return;
+    var id = b.dataset.id, def = SLOT_DEFS.filter(function(s){return s.id===id;})[0];
+    if(!def) return;
+    if(b.dataset.act==="save"){ if(saveToSlot(id)) announce(def.title+" saved."); }
+    else if(b.dataset.act==="load"){ loadFromSlot(id, def); }
+    else if(b.dataset.act==="delete"){ deleteSlot(id, def); }
+  });
+
+  // ---- autosave: debounce writes to the dedicated autosave slot ----
+  var autoTimer = null;
+  autosaveImpl = function(){
+    if(autoTimer) clearTimeout(autoTimer);
+    autoTimer = setTimeout(function(){
+      autoTimer = null;
+      var rec = snapshot();
+      Store.set(PREFIX+"auto", JSON.stringify(rec)); // quota failure is silently tolerated for autosave
+      renderSlots();
+    }, 800);
+  };
 
   // ---- boot ----
   var ok = Store.init();
@@ -424,8 +619,14 @@
   renderPlayed();
   renderSlots();
 
-  // expose a tiny hook for the headless harness (read-only helpers added by later layers)
-  window.__sc = { get state(){ return state; }, get playedMs(){ return playedMs; }, Store:Store };
+  // expose a tiny hook for the headless harness
+  window.__sc = {
+    get state(){ return state; }, get playedMs(){ return playedMs; },
+    Store:Store, PREFIX:PREFIX,
+    canonical:canonical, fnv1a:fnv1a, checksumOf:checksumOf,
+    snapshot:snapshot, readSlot:readSlot, renderSlots:renderSlots,
+    reset:function(){ var s=freshState(); for(var k in s) state[k]=s[k]; playedMs=0; renderState(); renderPlayed(); }
+  };
 })();
 </script>
 </body>
