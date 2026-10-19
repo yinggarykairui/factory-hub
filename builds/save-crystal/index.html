@@ -729,15 +729,19 @@
   // ======================================================================
   //  SCHEMA DEMO — hand-written legacy and future records for the guard
   // ======================================================================
-  // Pick the first empty manual slot, else the last manual slot.
+  // Pick the first empty manual slot. If every manual slot is full, confirm
+  // before overwriting one — never silently destroy a filled slot.
   function demoTarget(){
     var manual = SLOT_DEFS.filter(function(s){return !s.auto;});
     for(var i=0;i<manual.length;i++){ if(readSlot(manual[i].id).kind==="empty") return manual[i]; }
-    return manual[manual.length-1];
+    var t = manual[manual.length-1];
+    if(!window.confirm("All manual slots are full. Overwrite "+t.title+"?")) return null;
+    return t;
   }
   // A valid v1 record: older shape (no class), with a correct v1 checksum.
   function writeLegacy(){
     var t = demoTarget();
+    if(!t) return;
     var d = { name:"Old Hero", level:3, hp:40, maxHp:40, gold:75, x:1, y:3, inv:["Potion","Key"] }; // v1 had no cls
     var rec = { schema:1, savedAt:new Date().toISOString(), playedMs:123000, checksum:checksumOf(d), data:d };
     var res = Store.set(PREFIX+t.id, JSON.stringify(rec));
@@ -748,6 +752,7 @@
   // A well-formed, correctly-checksummed record from a newer schema.
   function forgeFuture(){
     var t = demoTarget();
+    if(!t) return;
     var d = { name:"Time Walker", cls:"Mage", level:9, hp:88, maxHp:88, gold:999, x:4, y:0, inv:["Gem"] };
     var rec = { schema:99, savedAt:new Date().toISOString(), playedMs:456000, checksum:checksumOf(d), data:d };
     var res = Store.set(PREFIX+t.id, JSON.stringify(rec));
