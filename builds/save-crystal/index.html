@@ -628,14 +628,28 @@
     var r = readSlot(id);
     if(r.kind==="empty"){ announce("Nothing to load in "+def.title+"."); return; }
     if(r.kind==="corrupt"){ announce(def.title+": load refused — "+r.reason+"."); return; }
-    // version handling (migration / future refusal) is added by a later layer;
-    // here a v2 record loads directly.
-    if(r.schema===CURRENT_SCHEMA){
-      applyRecord(r.rec);
-      announce(def.title+" loaded — "+r.rec.data.name+", level "+r.rec.data.level+".");
-    } else {
-      announce(def.title+": unsupported save version.");
+    // version branch: refuse the future, migrate the past, load the present
+    if(r.schema > CURRENT_SCHEMA){
+      announce(def.title+": save is from a newer version (v"+r.schema+"); this build understands up to v"+CURRENT_SCHEMA+".");
+      return;
     }
+    if(r.schema < CURRENT_SCHEMA){
+      var m = migrate(r.rec);
+      applyRecord(m);
+      announce(def.title+" loaded — migrated v"+r.schema+" to v"+CURRENT_SCHEMA+"; "+m.data.name+", level "+m.data.level+".");
+      return;
+    }
+    applyRecord(r.rec);
+    announce(def.title+" loaded — "+r.rec.data.name+", level "+r.rec.data.level+".");
+  }
+
+  // Migrate an older record forward to the current schema, filling defaults.
+  // v1 -> v2: v1 had no class field; default it. (Stepwise if more versions appear.)
+  function migrate(rec){
+    var d = {}; for(var k in rec.data) d[k] = rec.data[k];
+    var schema = rec.schema;
+    if(schema === 1){ if(typeof d.cls!=="string") d.cls = "Knight"; schema = 2; }
+    return { schema:schema, savedAt:rec.savedAt, playedMs:rec.playedMs, checksum:checksumOf(d), data:d };
   }
 
   // Tamper: flip a byte inside the stored JSON without touching the checksum,
@@ -690,6 +704,47 @@
       renderSlots();
     }, 800);
   };
+
+  // ======================================================================
+  //  SCHEMA DEMO — hand-written legacy and future records for the guard
+  // ======================================================================
+  // Pick the first empty manual slot, else the last manual slot.
+  function demoTarget(){
+    var manual = SLOT_DEFS.filter(function(s){return !s.auto;});
+    for(var i=0;i<manual.length;i++){ if(readSlot(manual[i].id).kind==="empty") return manual[i]; }
+    return manual[manual.length-1];
+  }
+  // A valid v1 record: older shape (no class), with a correct v1 checksum.
+  function writeLegacy(){
+    var t = demoTarget();
+    var d = { name:"Old Hero", level:3, hp:40, maxHp:40, gold:75, x:1, y:3, inv:["Potion","Key"] }; // v1 had no cls
+    var rec = { schema:1, savedAt:new Date().toISOString(), playedMs:123000, checksum:checksumOf(d), data:d };
+    var res = Store.set(PREFIX+t.id, JSON.stringify(rec));
+    renderSlots();
+    announce(res.ok ? t.title+": wrote a legacy v1 save — Load migrates it to v"+CURRENT_SCHEMA+"."
+                    : "Legacy save not written: "+res.reason+".");
+  }
+  // A well-formed, correctly-checksummed record from a newer schema.
+  function forgeFuture(){
+    var t = demoTarget();
+    var d = { name:"Time Walker", cls:"Mage", level:9, hp:88, maxHp:88, gold:999, x:4, y:0, inv:["Gem"] };
+    var rec = { schema:99, savedAt:new Date().toISOString(), playedMs:456000, checksum:checksumOf(d), data:d };
+    var res = Store.set(PREFIX+t.id, JSON.stringify(rec));
+    renderSlots();
+    announce(res.ok ? t.title+": forged a future v99 save — Load is refused."
+                    : "Future save not written: "+res.reason+".");
+  }
+
+  function buildToolbar(){
+    var tb = document.getElementById("toolbar");
+    function add(label, aria, fn){
+      var b = document.createElement("button"); b.className="sm ghost"; b.textContent=label;
+      b.setAttribute("aria-label",aria); b.addEventListener("click",fn); tb.appendChild(b);
+    }
+    add("Write legacy (v1)", "Write a legacy v1 save into a slot", writeLegacy);
+    add("Forge future (v99)", "Forge a future v99 save into a slot", forgeFuture);
+  }
+  buildToolbar();
 
   // ---- boot ----
   var ok = Store.init();
