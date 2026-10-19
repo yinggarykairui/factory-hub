@@ -147,7 +147,7 @@
     <span class="sub">named slots, snapshots, and a guard that refuses a bad save</span>
   </header>
 
-  <div id="banner" role="alert"></div>
+  <div id="banner"></div>
 
   <div class="grid-cols">
     <!-- ADVENTURER -->
@@ -477,8 +477,10 @@
   // ---- deterministic inline-SVG sigil from a checksum hex ----
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
     var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  var sigilSeq = 0;  // makes each gradient id unique even for identical saves
   function sigilSVG(hex){
     var seed = parseInt(hex,16)>>>0;
+    var gid = "g"+hex+"-"+(++sigilSeq);
     var rnd = mulberry32(seed);
     var h1 = Math.floor(rnd()*360), h2 = (h1 + 40 + Math.floor(rnd()*160))%360;
     var bg1 = "hsl("+h1+" 70% 22%)", bg2 = "hsl("+h2+" 60% 14%)";
@@ -496,8 +498,8 @@
     }}
     var gem = '<path d="M32 10 L46 26 L32 54 L18 26 Z" fill="none" stroke="'+ac+'" stroke-width="1.6" opacity="0.8"/>';
     return '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
-      + '<defs><radialGradient id="g'+hex+'" cx="50%" cy="38%"><stop offset="0%" stop-color="'+bg1+'"/><stop offset="100%" stop-color="'+bg2+'"/></radialGradient></defs>'
-      + '<rect width="64" height="64" rx="10" fill="url(#g'+hex+')"/>' + gem + cells + '</svg>';
+      + '<defs><radialGradient id="'+gid+'" cx="50%" cy="38%"><stop offset="0%" stop-color="'+bg1+'"/><stop offset="100%" stop-color="'+bg2+'"/></radialGradient></defs>'
+      + '<rect width="64" height="64" rx="10" fill="url(#'+gid+')"/>' + gem + cells + '</svg>';
   }
 
   // ======================================================================
@@ -826,8 +828,10 @@
   var ok = Store.init();
   if(!ok){
     var b = document.getElementById("banner");
-    b.textContent = "Storage unavailable — saves will not survive a reload. Everything else works; slots live in memory for this session.";
+    var storageMsg = "Storage unavailable — saves will not survive a reload. Everything else works; slots live in memory for this session.";
+    b.textContent = storageMsg;      // persistent visible banner (not a live region)
     b.classList.add("on");
+    announce(storageMsg);            // announced once through the single #live region
   }
   renderState();
   renderPlayed();
