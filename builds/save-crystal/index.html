@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>save-crystal</title>
+<style>
+  /* ---- crystal theme tokens ---- */
+  :root{
+    --bg:#0d1020; --bg2:#141a33; --panel:#1a2142; --panel2:#222a52;
+    --edge:#2e386b; --edge2:#3c4a8a;
+    --ink:#e7ecff; --dim:#9aa6d6; --faint:#6b76a8;
+    --crys:#8ad7ff; --crys2:#b89bff; --gold:#ffd66b;
+    --ok:#6ee7a8; --warn:#ffcf5c; --bad:#ff7a93;
+    --focus:#8ad7ff;
+    --r:14px; --gap:12px;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--sans); color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #1b2550 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, #231a4a 0%, transparent 55%),
+      var(--bg);
+    min-height:100vh; line-height:1.45; padding:16px;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1040px; margin:0 auto}
+  header.top{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px}
+  header.top h1{
+    font-size:clamp(22px,5vw,30px); margin:0; letter-spacing:.5px;
+    background:linear-gradient(90deg,var(--crys),var(--crys2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  header.top .sub{color:var(--dim); font-size:13px}
+
+  /* banner (storage unavailable) */
+  #banner{
+    display:none; margin:10px 0; padding:10px 12px; border-radius:10px;
+    background:#3a1f2b; border:1px solid var(--bad); color:#ffd7df; font-size:14px;
+  }
+  #banner.on{display:block}
+
+  .grid-cols{display:grid; grid-template-columns:1fr; gap:var(--gap); margin-top:12px}
+  @media(min-width:780px){ .grid-cols{grid-template-columns:360px 1fr} }
+
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--bg2));
+    border:1px solid var(--edge); border-radius:var(--r); padding:14px;
+  }
+  .card h2{margin:0 0 10px; font-size:15px; color:var(--crys); letter-spacing:.4px; text-transform:uppercase}
+  .card h2 .hint{float:right; color:var(--faint); font-size:11px; text-transform:none; letter-spacing:0}
+
+  /* adventurer panel */
+  .row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:7px 0}
+  .row .lab{width:66px; color:var(--dim); font-size:13px; flex:0 0 auto}
+  label.inl{display:flex; align-items:center; gap:8px; width:100%}
+  input[type=text]{
+    flex:1 1 auto; min-width:0; background:#0f1430; color:var(--ink);
+    border:1px solid var(--edge2); border-radius:8px; padding:7px 9px; font-size:14px; font-family:var(--sans);
+  }
+  .stat{font-variant-numeric:tabular-nums; font-family:var(--mono)}
+  .pill{
+    display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px;
+    border:1px solid var(--edge2); color:var(--crys); background:#131a3c;
+  }
+  .gold{color:var(--gold)}
+  .hpbar{height:8px; border-radius:6px; background:#0f1430; border:1px solid var(--edge2); overflow:hidden; flex:1 1 90px; min-width:70px}
+  .hpbar>i{display:block; height:100%; background:linear-gradient(90deg,#ff7a93,#6ee7a8); transition:width .2s}
+
+  button{
+    font-family:var(--sans); font-size:13px; cursor:pointer; color:var(--ink);
+    background:#1f2750; border:1px solid var(--edge2); border-radius:9px; padding:7px 10px;
+    transition:background .12s,border-color .12s, transform .05s;
+  }
+  button:hover{background:#28326a; border-color:var(--crys)}
+  button:active{transform:translateY(1px)}
+  button.sm{padding:5px 8px; font-size:12px}
+  button.key{min-width:42px; font-size:16px}
+  button.ghost{background:transparent}
+  button.danger{border-color:#5c2b3a}
+  button.danger:hover{background:#3a1f2b; border-color:var(--bad)}
+  button.go{background:linear-gradient(180deg,#2a63a8,#1f2750); border-color:var(--crys)}
+  :focus-visible{outline:2px solid var(--focus); outline-offset:2px; border-radius:6px}
+
+  .btnrow{display:flex; gap:8px; flex-wrap:wrap}
+
+  /* grid pad */
+  .pad{display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between}
+  .board{
+    display:grid; grid-template-columns:repeat(5,1fr); gap:4px; width:min(220px,62vw);
+    aspect-ratio:1/1; background:#0f1430; border:1px solid var(--edge2); border-radius:10px; padding:5px;
+  }
+  .board .cell{border-radius:5px; background:#161d41; position:relative}
+  .board .cell.here{background:radial-gradient(circle at 50% 42%,var(--crys),#2a3a7a); box-shadow:0 0 10px rgba(138,215,255,.6)}
+  .dpad{display:grid; grid-template-columns:repeat(3,44px); grid-template-rows:repeat(3,36px); gap:5px}
+  .dpad .u{grid-column:2; grid-row:1} .dpad .l{grid-column:1; grid-row:2}
+  .dpad .r{grid-column:3; grid-row:2} .dpad .d{grid-column:2; grid-row:3}
+  .dpad .c{grid-column:2; grid-row:2; color:var(--faint); font-size:11px; display:flex; align-items:center; justify-content:center}
+
+  /* inventory */
+  .inv{display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; min-height:30px}
+  .inv .it{display:inline-flex; align-items:center; gap:6px; background:#131a3c; border:1px solid var(--edge2); border-radius:8px; padding:3px 4px 3px 9px; font-size:13px}
+  .inv .it button{padding:1px 7px; font-size:13px; line-height:1}
+  .invadd{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .empty-note{color:var(--faint); font-size:13px; font-style:italic}
+
+  /* slots */
+  .slots{display:grid; grid-template-columns:1fr; gap:var(--gap)}
+  @media(min-width:520px){ .slots{grid-template-columns:1fr 1fr} }
+  .slot{
+    background:linear-gradient(180deg,var(--panel2),var(--bg2));
+    border:1px solid var(--edge); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px;
+  }
+  .slot.auto{border-color:var(--crys2)}
+  .slot.corrupt{border-color:var(--bad); background:linear-gradient(180deg,#2a1830,#1a1226)}
+  .slot .head{display:flex; align-items:center; gap:8px}
+  .slot .head .ttl{font-weight:600; font-size:14px}
+  .slot .head .badge{margin-left:auto; font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--edge2); color:var(--dim)}
+  .slot .badge.autob{color:var(--crys2); border-color:var(--crys2)}
+  .slot .badge.mig{color:var(--warn); border-color:var(--warn)}
+  .slot .badge.future{color:var(--bad); border-color:var(--bad)}
+  .slot .body{display:flex; gap:10px}
+  .slot .sig{flex:0 0 auto; width:64px; height:64px; border-radius:10px; overflow:hidden; border:1px solid var(--edge2); background:#0f1430}
+  .slot .sig svg{display:block; width:100%; height:100%}
+  .slot .meta{font-size:12.5px; color:var(--dim); display:grid; gap:2px; min-width:0}
+  .slot .meta .nm{color:var(--ink); font-size:14px; font-weight:600}
+  .slot .meta b{color:var(--ink); font-weight:600}
+  .slot .reason{font-size:12.5px; color:#ffb3c2}
+  .slot .acts{display:flex; flex-wrap:wrap; gap:6px; margin-top:auto}
+  .slot .acts button{flex:1 1 auto}
+  .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
+
+  footer{color:var(--faint); font-size:12px; margin-top:22px; text-align:center}
+  footer code{color:var(--dim)}
+  a{color:var(--crys)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>save-crystal</h1>
+    <span class="sub">named slots, snapshots, and a guard that refuses a bad save</span>
+  </header>
+
+  <div id="banner" role="alert"></div>
+
+  <div class="grid-cols">
+    <!-- ADVENTURER -->
+    <section class="card" aria-labelledby="advh">
+      <h2 id="advh">Adventurer <span class="hint">live state</span></h2>
+
+      <label class="inl"><span class="lab">Name</span>
+        <input type="text" id="f-name" maxlength="18" aria-label="Adventurer name" autocomplete="off"></label>
+
+      <div class="row">
+        <span class="lab">Class</span>
+        <span class="pill" id="f-cls">Knight</span>
+        <button class="sm" id="b-cls" aria-label="Cycle class">Cycle ↻</button>
+      </div>
+
+      <div class="row">
+        <span class="lab">Level</span>
+        <span class="stat" id="f-level">1</span>
+        <button class="sm" id="b-level" aria-label="Level up">Level up ↑</button>
+      </div>
+
+      <div class="row">
+        <span class="lab">HP</span>
+        <div class="hpbar" aria-hidden="true"><i id="f-hpbar"></i></div>
+        <span class="stat" id="f-hp">30 / 30</span>
+      </div>
+
+      <div class="row">
+        <span class="lab gold">Gold</span>
+        <span class="stat gold" id="f-gold">0</span>
+        <button class="sm" id="b-gold" aria-label="Earn 10 gold">+10 gold</button>
+      </div>
+
+      <div class="row">
+        <span class="lab">Played</span>
+        <span class="stat" id="f-played">00:00</span>
+      </div>
+
+      <div class="pad" style="margin-top:12px">
+        <div class="board" id="board" role="img" aria-label="Position on a 5 by 5 grid"></div>
+        <div class="dpad" aria-hidden="false">
+          <button class="key u" id="m-up" aria-label="Move up">↑</button>
+          <button class="key l" id="m-left" aria-label="Move left">←</button>
+          <span class="c">arrows</span>
+          <button class="key r" id="m-right" aria-label="Move right">→</button>
+          <button class="key d" id="m-down" aria-label="Move down">↓</button>
+        </div>
+      </div>
+      <div style="margin-top:6px" class="row"><span class="lab">Cell</span><span class="stat" id="f-pos">(2,2)</span></div>
+
+      <h2 style="margin-top:14px">Inventory <span class="hint">add / drop</span></h2>
+      <div class="inv" id="inv" aria-label="Inventory items"></div>
+      <div class="invadd" id="invadd"></div>
+    </section>
+
+    <!-- SLOTS -->
+    <section class="card" aria-labelledby="sloth">
+      <h2 id="sloth">Save slots <span class="hint">4 manual + autosave</span></h2>
+      <div class="btnrow" id="toolbar" style="margin-bottom:12px"></div>
+      <div class="slots" id="slots"></div>
+    </section>
+  </div>
+
+  <footer>
+    save-crystal — single file, vanilla JS, no network. Records: <code>{schema,savedAt,playedMs,checksum,data}</code>, checksum FNV-1a over canonical data.
+  </footer>
+</div>
+
+<!-- single announcer for the whole page -->
+<div class="sr-only" id="live" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+"use strict";
+(function(){
+  // ---- constants ----
+  var CLASSES = ["Knight","Mage","Ranger","Bard"];
+  var ITEMS   = ["Potion","Ether","Key","Torch","Gem"];
+  var GRID = 5, INV_MAX = 8;
+  var CURRENT_SCHEMA = 2;
+  var PREFIX = "save-crystal:v1:slot:";
+  var SLOT_DEFS = [
+    {id:"slot1", title:"Slot I",  auto:false},
+    {id:"slot2", title:"Slot II", auto:false},
+    {id:"slot3", title:"Slot III",auto:false},
+    {id:"slot4", title:"Slot IV", auto:false},
+    {id:"auto",  title:"Autosave",auto:true}
+  ];
+
+  // ---- single announcer ----
+  var liveEl = document.getElementById("live");
+  function announce(msg){ if(liveEl){ liveEl.textContent=""; liveEl.textContent = msg; } }
+
+  // ---- storage module: real localStorage with try/catch, or in-memory fallback ----
+  var Store = (function(){
+    var mem = {}, usingMem = false, probed = false;
+    function probe(){
+      probed = true;
+      try{
+        var k = "save-crystal:__probe__";
+        window.localStorage.setItem(k,"1");
+        var v = window.localStorage.getItem(k);
+        window.localStorage.removeItem(k);
+        if(v !== "1") throw new Error("probe readback mismatch");
+        usingMem = false;
+      }catch(e){
+        usingMem = true; // private mode / blocked / throwing
+      }
+    }
+    function get(key){
+      if(usingMem) return Object.prototype.hasOwnProperty.call(mem,key) ? mem[key] : null;
+      try{ return window.localStorage.getItem(key); }catch(e){ return null; }
+    }
+    // returns {ok:true} or {ok:false, reason:"...", quota:bool}
+    function set(key,val){
+      if(usingMem){ mem[key]=String(val); return {ok:true}; }
+      try{ window.localStorage.setItem(key,val); return {ok:true}; }
+      catch(e){
+        var quota = e && (e.name==="QuotaExceededError" || e.name==="NS_ERROR_DOM_QUOTA_REACHED" || e.code===22 || e.code===1014);
+        return {ok:false, quota:!!quota, reason: quota ? "storage is full" : "write blocked"};
+      }
+    }
+    function remove(key){
+      if(usingMem){ delete mem[key]; return; }
+      try{ window.localStorage.removeItem(key); }catch(e){ /* ignore */ }
+    }
+    return {
+      init:function(){ if(!probed) probe(); return !usingMem; },
+      inMemory:function(){ return usingMem; },
+      get:get, set:set, remove:remove
+    };
+  })();
+
+  // ---- live adventurer state ----
+  var state = freshState();
+  function freshState(){
+    return { name:"Aedric", cls:"Knight", level:1, hp:30, maxHp:30, gold:0, x:2, y:2, inv:[] };
+  }
+  // playtime is tracked separately and merged into records at save time
+  var playedMs = 0, lastTick = Date.now();
+
+  // ---- rendering: adventurer ----
+  var el = {
+    name:document.getElementById("f-name"), cls:document.getElementById("f-cls"),
+    level:document.getElementById("f-level"), hp:document.getElementById("f-hp"),
+    hpbar:document.getElementById("f-hpbar"), gold:document.getElementById("f-gold"),
+    played:document.getElementById("f-played"), pos:document.getElementById("f-pos"),
+    board:document.getElementById("board"), inv:document.getElementById("inv"),
+    invadd:document.getElementById("invadd")
+  };
+
+  function fmtTime(ms){
+    var s = Math.floor(ms/1000), m = Math.floor(s/60); s = s%60;
+    if(m>=60){ var h=Math.floor(m/60); m=m%60; return h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0"); }
+    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  }
+
+  function renderBoard(){
+    var f = document.createDocumentFragment();
+    for(var y=0;y<GRID;y++){ for(var x=0;x<GRID;x++){
+      var c = document.createElement("div");
+      c.className = "cell" + (x===state.x && y===state.y ? " here" : "");
+      f.appendChild(c);
+    }}
+    el.board.innerHTML = ""; el.board.appendChild(f);
+    el.board.setAttribute("aria-label","Position on a 5 by 5 grid, currently column "+(state.x+1)+" row "+(state.y+1));
+  }
+
+  function renderInv(){
+    el.inv.innerHTML = "";
+    if(state.inv.length===0){
+      var e = document.createElement("span"); e.className="empty-note"; e.textContent="(empty — pack is light)";
+      el.inv.appendChild(e);
+    } else {
+      state.inv.forEach(function(item,i){
+        var w = document.createElement("span"); w.className="it";
+        var t = document.createElement("span"); t.textContent=item; w.appendChild(t);
+        var b = document.createElement("button"); b.className="sm"; b.textContent="×";
+        b.setAttribute("aria-label","Drop "+item); b.dataset.drop=String(i);
+        w.appendChild(b); el.inv.appendChild(w);
+      });
+    }
+  }
+
+  function renderState(){
+    if(document.activeElement !== el.name) el.name.value = state.name;
+    el.cls.textContent = state.cls;
+    el.level.textContent = String(state.level);
+    el.hp.textContent = state.hp + " / " + state.maxHp;
+    el.hpbar.style.width = Math.max(0,Math.min(100,(state.hp/state.maxHp)*100)) + "%";
+    el.gold.textContent = String(state.gold);
+    el.pos.textContent = "("+state.x+","+state.y+")";
+    renderBoard();
+    renderInv();
+  }
+
+  function renderPlayed(){ el.played.textContent = fmtTime(playedMs); }
+
+  // ---- state mutation hook: re-render, schedule autosave ----
+  function changed(){
+    renderState();
+    scheduleAutosave();   // defined by the slots layer; guarded below
+  }
+  function scheduleAutosave(){ /* wired by slots layer */ }
+
+  // ---- adventurer controls ----
+  el.name.addEventListener("input", function(){
+    state.name = el.name.value.slice(0,18);
+    scheduleAutosave();
+  });
+  document.getElementById("b-cls").addEventListener("click", function(){
+    var i = CLASSES.indexOf(state.cls); state.cls = CLASSES[(i+1)%CLASSES.length]; changed();
+    announce("Class "+state.cls);
+  });
+  document.getElementById("b-level").addEventListener("click", function(){
+    state.level += 1; state.maxHp += 8; state.hp = state.maxHp; changed();
+    announce("Level "+state.level+", HP "+state.hp);
+  });
+  document.getElementById("b-gold").addEventListener("click", function(){
+    state.gold += 10; changed();
+  });
+
+  function move(dx,dy){
+    var nx = Math.max(0,Math.min(GRID-1,state.x+dx)), ny = Math.max(0,Math.min(GRID-1,state.y+dy));
+    if(nx!==state.x || ny!==state.y){ state.x=nx; state.y=ny; changed(); }
+  }
+  document.getElementById("m-up").addEventListener("click", function(){ move(0,-1); });
+  document.getElementById("m-down").addEventListener("click", function(){ move(0,1); });
+  document.getElementById("m-left").addEventListener("click", function(){ move(-1,0); });
+  document.getElementById("m-right").addEventListener("click", function(){ move(1,0); });
+
+  // arrow keys move on the grid (but not while typing in a text field)
+  document.addEventListener("keydown", function(e){
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if(tag==="INPUT" || tag==="TEXTAREA") return;
+    var d = {ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];
+    if(d){ e.preventDefault(); move(d[0],d[1]); }
+  });
+
+  // inventory add buttons
+  ITEMS.forEach(function(it){
+    var b = document.createElement("button"); b.className="sm"; b.textContent="+ "+it;
+    b.setAttribute("aria-label","Add "+it+" to inventory");
+    b.addEventListener("click", function(){
+      if(state.inv.length>=INV_MAX){ announce("Pack is full ("+INV_MAX+" items)"); return; }
+      state.inv.push(it); changed();
+    });
+    el.invadd.appendChild(b);
+  });
+  // drop via delegation
+  el.inv.addEventListener("click", function(e){
+    var b = e.target.closest("button[data-drop]"); if(!b) return;
+    var i = parseInt(b.dataset.drop,10);
+    if(i>=0 && i<state.inv.length){ state.inv.splice(i,1); changed(); }
+  });
+
+  // ---- playtime ticking while the page is open ----
+  function tick(){
+    var now = Date.now(); var dt = now - lastTick; lastTick = now;
+    if(dt>0 && dt<60000) playedMs += dt;  // ignore big jumps (tab suspended)
+    renderPlayed();
+  }
+  setInterval(tick, 1000);
+
+  // ---- slots layer renders here (wired by later layers) ----
+  function renderSlots(){ /* slots layer */ }
+
+  // ---- boot ----
+  var ok = Store.init();
+  if(!ok){
+    var b = document.getElementById("banner");
+    b.textContent = "Storage unavailable — saves will not survive a reload. Everything else works; slots live in memory for this session.";
+    b.classList.add("on");
+  }
+  renderState();
+  renderPlayed();
+  renderSlots();
+
+  // expose a tiny hook for the headless harness (read-only helpers added by later layers)
+  window.__sc = { get state(){ return state; }, get playedMs(){ return playedMs; }, Store:Store };
+})();
+</script>
+</body>
+</html>
