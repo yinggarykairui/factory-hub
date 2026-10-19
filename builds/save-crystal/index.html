@@ -705,7 +705,8 @@
     autoTimer = setTimeout(function(){
       autoTimer = null;
       var rec = snapshot();
-      Store.set(PREFIX+"auto", JSON.stringify(rec)); // quota failure is silently tolerated for autosave
+      var res = Store.set(PREFIX+"auto", JSON.stringify(rec));
+      if(!res.ok && res.quota){ announce("Autosave skipped: storage is full."); }
       renderSlots();
     }, 800);
   };
