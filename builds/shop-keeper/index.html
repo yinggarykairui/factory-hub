@@ -10,6 +10,10 @@
     --bg:#15161f; --panel:#1d1f2b; --ink:#e8eaf2; --dim:#9298b0;
     --line:#30334a; --accent:#f2c14e; --accent-ink:#15161f;
     --up:#e06b74; --down:#7fd4a0; --slot:#262a3c; --scrim:rgba(8,9,13,.72);
+    /* price-direction cues are a temperature, not profit/loss: a good that got
+       dearer runs warm, one that got cheaper runs cool. Kept distinct from the
+       --down green, which stays the "money you receive" colour on Sell. */
+    --dearer:#e0a86b; --cheaper:#6ba8e0;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
@@ -54,7 +58,7 @@
   .good .own{color:var(--dim); font-size:11px; display:block; margin-top:1px}
   .mkt{font-weight:700}
   .mkt .arrow{margin-left:3px; font-size:11px}
-  .mkt.rose{color:var(--up)} .mkt.fell{color:var(--down)}
+  .mkt.rose{color:var(--dearer)} .mkt.fell{color:var(--cheaper)}
   td.acts{white-space:nowrap}
   .trade{font:inherit; font-size:12px; color:var(--ink); background:var(--slot);
     border:1px solid var(--line); border-radius:7px; padding:7px 9px; cursor:pointer;
@@ -105,6 +109,25 @@
   @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
   .gold.bump .val{animation:pop .3s ease-out}
   @media (prefers-reduced-motion:reduce){ .gold.bump .val{animation:none} }
+
+  /* the win moment: a single gold flourish — headline shimmers, the purse
+     pops, the goal bar glows full. One-shot, cleared on Restart. */
+  @keyframes winGlow{
+    0%{box-shadow:0 0 0 0 rgba(242,193,78,0)}
+    45%{box-shadow:0 0 0 2px var(--accent),0 0 22px rgba(242,193,78,.5)}
+    100%{box-shadow:0 0 0 1px rgba(242,193,78,.3)}
+  }
+  @keyframes winPop{0%{transform:scale(1)}30%{transform:scale(1.28)}100%{transform:scale(1)}}
+  body.won .headline{
+    border-color:var(--accent); border-left-color:var(--accent);
+    color:var(--accent); background:rgba(242,193,78,.08); animation:winGlow 1s ease-out
+  }
+  body.won .headline .tag{color:var(--accent)}
+  body.won .gold .val{animation:winPop .6s ease-out}
+  body.won .goal .barfill{box-shadow:0 0 12px rgba(242,193,78,.65)}
+  @media (prefers-reduced-motion:reduce){
+    body.won .headline, body.won .gold .val{animation:none}
+  }
 
   @media (max-width:420px){
     .wrap{padding:12px 11px 22px}
@@ -480,9 +503,11 @@
   function checkWin(){
     if (state.gold >= TARGET && state.phase === "trade"){
       state.phase = "won";
+      var days = state.day + (state.day === 1 ? " day" : " days");
+      document.body.classList.add("won");
       el.headlineText.textContent = "You hit " + TARGET + "g on day " + state.day + ". The road is yours.";
-      setResult("You reached the goal — press Restart to trade again.");
-      announce("You reached " + TARGET + " gold on day " + state.day + ". You win.");
+      setResult("Cleared in " + days + " — you turned " + START_GOLD + "g into " + state.gold + "g. Press Restart to trade again.");
+      announce("You win. Cleared in " + days + ", from " + START_GOLD + " to " + state.gold + " gold.");
     }
   }
 
@@ -521,6 +546,7 @@
   function restart(){
     // if Restart is reached any way while a haggle is open, tear the dialog down too
     document.body.classList.remove("haggling");
+    document.body.classList.remove("won");
     document.querySelector(".wrap").removeAttribute("inert");
     reset();
     buildRows();
