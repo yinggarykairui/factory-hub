@@ -44,12 +44,13 @@
   }
   #banner.on{display:block}
 
-  .grid-cols{display:grid; grid-template-columns:1fr; gap:var(--gap); margin-top:12px}
-  @media(min-width:780px){ .grid-cols{grid-template-columns:360px 1fr} }
+  .grid-cols{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap); margin-top:12px}
+  @media(min-width:780px){ .grid-cols{grid-template-columns:360px minmax(0,1fr)} }
+  .grid-cols>*{min-width:0}
 
   .card{
     background:linear-gradient(180deg,var(--panel),var(--bg2));
-    border:1px solid var(--edge); border-radius:var(--r); padding:14px;
+    border:1px solid var(--edge); border-radius:var(--r); padding:14px; min-width:0;
   }
   .card h2{margin:0 0 10px; font-size:15px; color:var(--crys); letter-spacing:.4px; text-transform:uppercase}
   .card h2 .hint{float:right; color:var(--faint); font-size:11px; text-transform:none; letter-spacing:0}
@@ -109,11 +110,11 @@
   .empty-note{color:var(--faint); font-size:13px; font-style:italic}
 
   /* slots */
-  .slots{display:grid; grid-template-columns:1fr; gap:var(--gap)}
-  @media(min-width:520px){ .slots{grid-template-columns:1fr 1fr} }
+  .slots{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--gap)}
+  @media(min-width:520px){ .slots{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
   .slot{
     background:linear-gradient(180deg,var(--panel2),var(--bg2));
-    border:1px solid var(--edge); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px;
+    border:1px solid var(--edge); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px; min-width:0;
   }
   .slot.auto{border-color:var(--crys2)}
   .slot.corrupt{border-color:var(--bad); background:linear-gradient(180deg,#2a1830,#1a1226)}
@@ -765,7 +766,7 @@
 
   // one hidden file input, reused; the pending target slot is remembered
   var importer = document.createElement("input");
-  importer.type = "file"; importer.accept = ".json,application/json";
+  importer.type = "file"; importer.id = "importer"; importer.accept = ".json,application/json";
   importer.style.display = "none"; document.body.appendChild(importer);
   var importTarget = null;
 
