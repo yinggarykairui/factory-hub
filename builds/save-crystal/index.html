@@ -557,8 +557,12 @@
 
   function metaRow(rec){
     var d = rec.rec.data || {};
-    var when = "";
-    try{ when = new Date(rec.rec.savedAt).toLocaleString(); }catch(e){ when = String(rec.rec.savedAt); }
+    // savedAt is not covered by the checksum, so it can arrive malformed;
+    // show a safe fallback instead of "Invalid Date".
+    var when = "unknown", dt = new Date(rec.rec.savedAt);
+    if(!isNaN(dt.getTime())){
+      try{ when = dt.toLocaleString(); }catch(e){ when = "unknown"; }
+    }
     var loc = "("+d.x+","+d.y+")";
     return '<div class="meta">'
       + '<span class="nm">'+esc(d.name)+'</span>'
