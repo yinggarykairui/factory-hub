@@ -298,7 +298,16 @@
     invadd:document.getElementById("invadd")
   };
 
+  // playtime is a non-negative finite duration; coerce garbage/overflow safely
+  // (NOT 32-bit truncated — playedMs is injectable since the checksum omits it).
+  function clampMs(ms){
+    var n = Number(ms);
+    if(!isFinite(n) || n<0) return 0;
+    return Math.min(n, Number.MAX_SAFE_INTEGER);
+  }
+
   function fmtTime(ms){
+    ms = clampMs(ms);
     var s = Math.floor(ms/1000), m = Math.floor(s/60); s = s%60;
     if(m>=60){ var h=Math.floor(m/60); m=m%60; return h+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0"); }
     return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
@@ -461,7 +470,7 @@
     state.name=d.name; state.cls=d.cls; state.level=d.level;
     state.hp=d.hp; state.maxHp=d.maxHp; state.gold=d.gold;
     state.x=d.x; state.y=d.y; state.inv=d.inv.slice();
-    playedMs = rec.playedMs|0; lastTick = Date.now();
+    playedMs = clampMs(rec.playedMs); lastTick = Date.now();
     renderState(); renderPlayed();
   }
 
@@ -506,14 +515,17 @@
     if(rec.data===null || typeof rec.data!=="object" || Array.isArray(rec.data)) return "missing data block";
     return null;
   }
-  // Validate the adventurer data common to every schema (cls is version-specific).
-  function validateData(d){
+  // Validate the adventurer data. cls is version-specific: v1 had no class
+  // field (migration fills a default), so cls is only required for v2+.
+  function validateData(d, schema){
     if(typeof d.name!=="string") return "data.name invalid";
     if(!isInt(d.level) || d.level<1) return "data.level invalid";
-    if(!isInt(d.hp) || !isInt(d.maxHp) || d.maxHp<1) return "data.hp invalid";
+    if(!isInt(d.maxHp) || d.maxHp<1) return "data.maxHp invalid";
+    if(!isInt(d.hp) || d.hp<0 || d.hp>d.maxHp) return "data.hp invalid";
     if(!isInt(d.gold) || d.gold<0) return "data.gold invalid";
     if(!isInt(d.x) || !isInt(d.y) || d.x<0 || d.x>=GRID || d.y<0 || d.y>=GRID) return "data.position off-grid";
     if(!Array.isArray(d.inv) || !d.inv.every(function(i){return typeof i==="string";})) return "data.inventory invalid";
+    if(isInt(schema) && schema>=CURRENT_SCHEMA && CLASSES.indexOf(d.cls)<0) return "data.class invalid";
     return null;
   }
 
@@ -528,7 +540,7 @@
     catch(e){ return {kind:"corrupt", reason:"not valid JSON — the record is unreadable"}; }
     var envErr = validateEnvelope(rec);
     if(envErr) return {kind:"corrupt", reason:"shape is wrong — "+envErr};
-    var dataErr = validateData(rec.data);
+    var dataErr = validateData(rec.data, rec.schema);
     if(dataErr) return {kind:"corrupt", reason:"shape is wrong — "+dataErr};
     // recompute the checksum over data and compare to the stored one
     if(checksumOf(rec.data) !== rec.checksum)
@@ -549,7 +561,7 @@
     return '<div class="meta">'
       + '<span class="nm">'+esc(d.name)+'</span>'
       + '<span>'+esc(d.cls)+' · Lv '+(d.level|0)+' · <span class="gold">'+(d.gold|0)+'g</span></span>'
-      + '<span>grid '+loc+' · played '+fmtTime(rec.rec.playedMs|0)+'</span>'
+      + '<span>grid '+loc+' · played '+fmtTime(rec.rec.playedMs)+'</span>'
       + '<span>'+esc(when)+'</span>'
       + '</div>';
   }
