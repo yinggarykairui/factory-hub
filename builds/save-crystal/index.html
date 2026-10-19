@@ -490,19 +490,52 @@
       + '<rect width="64" height="64" rx="10" fill="url(#g'+hex+')"/>' + gem + cells + '</svg>';
   }
 
-  // ---- reading / interpreting a stored slot ----
-  // Returns one of:
+  // ======================================================================
+  //  CORRUPTION GUARD — the whole point: refuse a bad save, never load garbage
+  // ======================================================================
+  function isInt(n){ return typeof n==="number" && isFinite(n) && Math.floor(n)===n; }
+
+  // Validate the record envelope. Returns null when fine, else a reason string.
+  function validateEnvelope(rec){
+    if(rec===null || typeof rec!=="object" || Array.isArray(rec)) return "not a record object";
+    if(!isInt(rec.schema) || rec.schema<1) return "missing or invalid schema";
+    if(typeof rec.savedAt!=="string") return "missing savedAt";
+    if(!isInt(rec.playedMs) || rec.playedMs<0) return "invalid playtime";
+    if(typeof rec.checksum!=="string" || !/^[0-9a-f]{8}$/.test(rec.checksum)) return "missing or malformed checksum";
+    if(rec.data===null || typeof rec.data!=="object" || Array.isArray(rec.data)) return "missing data block";
+    return null;
+  }
+  // Validate the adventurer data common to every schema (cls is version-specific).
+  function validateData(d){
+    if(typeof d.name!=="string") return "data.name invalid";
+    if(!isInt(d.level) || d.level<1) return "data.level invalid";
+    if(!isInt(d.hp) || !isInt(d.maxHp) || d.maxHp<1) return "data.hp invalid";
+    if(!isInt(d.gold) || d.gold<0) return "data.gold invalid";
+    if(!isInt(d.x) || !isInt(d.y) || d.x<0 || d.x>=GRID || d.y<0 || d.y>=GRID) return "data.position off-grid";
+    if(!Array.isArray(d.inv) || !d.inv.every(function(i){return typeof i==="string";})) return "data.inventory invalid";
+    return null;
+  }
+
+  // Full read + guard pipeline for a stored string. Returns:
   //   {kind:"empty"}
-  //   {kind:"ok", rec}            -- a well-formed v2-shaped record (version checked at load)
-  // (corruption handling is added by the guard layer)
-  function readSlot(id){
-    var raw = Store.get(PREFIX+id);
+  //   {kind:"corrupt", reason}
+  //   {kind:"ok", rec, schema}
+  function interpret(raw){
     if(raw===null || raw===undefined) return {kind:"empty"};
     var rec;
-    try{ rec = JSON.parse(raw); }
-    catch(e){ return {kind:"empty"}; } // guard layer turns this into a corrupted card
-    return {kind:"ok", rec:rec, raw:raw};
+    try{ rec = JSON.parse(raw); }                 // every stored parse is guarded
+    catch(e){ return {kind:"corrupt", reason:"not valid JSON — the record is unreadable"}; }
+    var envErr = validateEnvelope(rec);
+    if(envErr) return {kind:"corrupt", reason:"shape is wrong — "+envErr};
+    var dataErr = validateData(rec.data);
+    if(dataErr) return {kind:"corrupt", reason:"shape is wrong — "+dataErr};
+    // recompute the checksum over data and compare to the stored one
+    if(checksumOf(rec.data) !== rec.checksum)
+      return {kind:"corrupt", reason:"checksum mismatch — this save has been altered"};
+    return {kind:"ok", rec:rec, schema:rec.schema};
   }
+
+  function readSlot(id){ return interpret(Store.get(PREFIX+id)); }
 
   // ---- card rendering ----
   var slotsEl = document.getElementById("slots");
@@ -521,16 +554,20 @@
   }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 
+  function versionBadge(schema){
+    if(schema<CURRENT_SCHEMA) return '<span class="badge mig">v'+schema+' · migrates</span>';
+    if(schema>CURRENT_SCHEMA) return '<span class="badge future">v'+schema+' · newer</span>';
+    return '';
+  }
+
   function renderSlot(def){
     var card = document.createElement("div");
-    card.className = "slot" + (def.auto?" auto":"");
     var r = readSlot(def.id);
-
-    var head = '<div class="head"><span class="ttl">'+esc(def.title)+'</span>'
-      + (def.auto?'<span class="badge autob">auto</span>':'') + '</div>';
+    var autob = def.auto ? '<span class="badge autob">auto</span>' : '';
 
     if(r.kind==="empty"){
-      card.innerHTML = head
+      card.className = "slot" + (def.auto?" auto":"");
+      card.innerHTML = '<div class="head"><span class="ttl">'+esc(def.title)+'</span>'+autob+'</div>'
         + '<div class="body"><div class="sig" aria-hidden="true"></div><div class="meta"><span class="empty-note">— empty —</span></div></div>'
         + '<div class="acts">'
         + (def.auto?'':'<button class="sm go" data-act="save" data-id="'+def.id+'">Save</button>')
@@ -539,14 +576,27 @@
       return;
     }
 
+    if(r.kind==="corrupt"){
+      card.className = "slot corrupt" + (def.auto?" auto":"");
+      card.innerHTML = '<div class="head"><span class="ttl">'+esc(def.title)+'</span>'
+          + '<span class="badge future">corrupted</span></div>'
+        + '<div class="body"><div class="sig" aria-hidden="true"></div>'
+          + '<div class="meta"><span class="reason">'+esc(r.reason)+'</span>'
+          + '<span>Load is refused — the live adventurer is left untouched.</span></div></div>'
+        + '<div class="acts"><button class="sm danger" data-act="discard" data-id="'+def.id+'">Discard</button></div>';
+      slotsEl.appendChild(card);
+      return;
+    }
+
     // ok: show the snapshot card
+    card.className = "slot" + (def.auto?" auto":"");
     var rec = r.rec;
-    var sig = (rec && typeof rec.checksum==="string") ? sigilSVG(rec.checksum) : "";
     var acts = '<button class="sm go" data-act="load" data-id="'+def.id+'">Load</button>'
              + (def.auto?'':'<button class="sm" data-act="save" data-id="'+def.id+'">Overwrite</button>')
+             + '<button class="sm" data-act="tamper" data-id="'+def.id+'" aria-label="Tamper: flip a byte so the guard fires">Tamper</button>'
              + '<button class="sm danger" data-act="delete" data-id="'+def.id+'">Delete</button>';
-    card.innerHTML = head
-      + '<div class="body"><div class="sig">'+sig+'</div>'+metaRow(r)+'</div>'
+    card.innerHTML = '<div class="head"><span class="ttl">'+esc(def.title)+'</span>'+autob+versionBadge(r.schema)+'</div>'
+      + '<div class="body"><div class="sig">'+sigilSVG(rec.checksum)+'</div>'+metaRow(r)+'</div>'
       + '<div class="acts">'+acts+'</div>';
     slotsEl.appendChild(card);
   }
@@ -576,24 +626,57 @@
   }
   function loadFromSlot(id, def){
     var r = readSlot(id);
-    if(r.kind!=="ok"){ announce("Nothing to load in "+def.title+"."); return; }
+    if(r.kind==="empty"){ announce("Nothing to load in "+def.title+"."); return; }
+    if(r.kind==="corrupt"){ announce(def.title+": load refused — "+r.reason+"."); return; }
     // version handling (migration / future refusal) is added by a later layer;
-    // here we load a v2 record directly.
-    if(r.rec && r.rec.schema===CURRENT_SCHEMA){
+    // here a v2 record loads directly.
+    if(r.schema===CURRENT_SCHEMA){
       applyRecord(r.rec);
-      announce(def.title+" loaded — "+esc(r.rec.data.name)+", level "+r.rec.data.level+".");
+      announce(def.title+" loaded — "+r.rec.data.name+", level "+r.rec.data.level+".");
     } else {
       announce(def.title+": unsupported save version.");
     }
+  }
+
+  // Tamper: flip a byte inside the stored JSON without touching the checksum,
+  // so a stranger can watch the guard fire on the next render / load.
+  function tamperSlot(id, def){
+    var raw = Store.get(PREFIX+id);
+    if(raw===null) return;
+    var out;
+    try{
+      var rec = JSON.parse(raw);
+      if(rec && rec.data){
+        // alter a data value but keep the old checksum -> guaranteed mismatch
+        rec.data.name = (typeof rec.data.name==="string" && rec.data.name.length)
+          ? rec.data.name.slice(0,-1) + String.fromCharCode((rec.data.name.charCodeAt(rec.data.name.length-1)||65)+1)
+          : "tampered";
+        out = JSON.stringify(rec);
+      } else { out = flipChar(raw); }
+    }catch(e){ out = flipChar(raw); }
+    Store.set(PREFIX+id, out);
+    renderSlots();
+    announce(def.title+" tampered — the guard now flags it corrupted.");
+  }
+  function flipChar(s){
+    if(!s.length) return "~";
+    var i = Math.floor(s.length/2);
+    return s.slice(0,i) + (s[i]==="x"?"y":"x") + s.slice(i+1);
   }
 
   slotsEl.addEventListener("click", function(e){
     var b = e.target.closest("button[data-act]"); if(!b) return;
     var id = b.dataset.id, def = SLOT_DEFS.filter(function(s){return s.id===id;})[0];
     if(!def) return;
-    if(b.dataset.act==="save"){ if(saveToSlot(id)) announce(def.title+" saved."); }
-    else if(b.dataset.act==="load"){ loadFromSlot(id, def); }
-    else if(b.dataset.act==="delete"){ deleteSlot(id, def); }
+    var act = b.dataset.act;
+    if(act==="save"){ if(saveToSlot(id)) announce(def.title+" saved."); }
+    else if(act==="load"){ loadFromSlot(id, def); }
+    else if(act==="delete"){ deleteSlot(id, def); }
+    else if(act==="tamper"){ tamperSlot(id, def); }
+    else if(act==="discard"){
+      if(!window.confirm("Discard the corrupted contents of "+def.title+"?")) return;
+      Store.remove(PREFIX+id); renderSlots(); announce(def.title+" discarded.");
+    }
   });
 
   // ---- autosave: debounce writes to the dedicated autosave slot ----
