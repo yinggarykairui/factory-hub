@@ -181,6 +181,15 @@ async function main() {
     await p2.waitForTimeout(150);
     const bannerOn = await p2.evaluate(() => document.getElementById("banner").classList.contains("on"));
     const inMem = await p2.evaluate(() => window.__sc.Store.inMemory());
+    // (5) banner must NOT itself be a live region; the storage message is
+    // announced once through the single #live announcer. Captured before any
+    // interaction overwrites #live.
+    const bannerLive = await p2.evaluate(() => {
+      const b = document.getElementById("banner");
+      return { role: b.getAttribute("role"), ariaLive: b.getAttribute("aria-live"), live: document.getElementById("live").textContent };
+    });
+    check("7c. banner is not a live region; storage message announced once via #live",
+      !bannerLive.role && !bannerLive.ariaLive && /Storage unavailable/.test(bannerLive.live), JSON.stringify(bannerLive));
     await p2.click("#b-gold");
     await p2.click("button[data-act=save][data-id=slot1]");
     await p2.waitForTimeout(60);
@@ -232,6 +241,123 @@ async function main() {
     }
     check("8b. zero console errors across responsive run", e4.length === 0, e4.join(" | "));
     await c4.close();
+  }
+
+  // ---------- Regression suite: proves the review-cycle fixes ----------
+  {
+    const eR = [];
+    const cR = await browser.newContext();
+    const pR = await cR.newPage();
+    trackErrors(pR, eR);
+    await pR.goto(URL);
+    await pR.waitForTimeout(120);
+
+    // (1) imported playedMs:3e9 (>2^31, not checksum-covered) renders a sane,
+    //     non-negative playtime instead of 32-bit-truncated garbage.
+    const r1 = await pR.evaluate(() => {
+      const data = { name: "Overflow", cls: "Mage", level: 2, hp: 20, maxHp: 20, gold: 5, x: 1, y: 1, inv: [] };
+      const rec = { schema: 2, savedAt: new Date().toISOString(), playedMs: 3000000000, checksum: window.__sc.checksumOf(data), data };
+      window.__sc.Store.set(window.__sc.PREFIX + "slot1", JSON.stringify(rec));
+      window.__sc.renderSlots();
+      const card = [...document.querySelectorAll(".slot")].find(c => c.querySelector(".ttl")?.textContent === "Slot I");
+      const playedText = card ? [...card.querySelectorAll(".meta span")].map(s => s.textContent).find(t => /played/.test(t)) || "" : "";
+      card.querySelector("button[data-act=load]").click();
+      return { kind: window.__sc.readSlot("slot1").kind, playedText, livePlayed: window.__sc.playedMs };
+    });
+    check("R1. imported playedMs:3e9 renders non-negative playtime (no 32-bit wrap)",
+      r1.kind === "ok" && /played\s+\d/.test(r1.playedText) && !/-/.test(r1.playedText) && r1.livePlayed >= 0,
+      JSON.stringify(r1));
+
+    // (2a) a checksummed import with hp:-500, maxHp:30 is rejected, never
+    //      rendering negative hp.
+    const r2a = await pR.evaluate(() => {
+      const data = { name: "Bad HP", cls: "Knight", level: 1, hp: -500, maxHp: 30, gold: 0, x: 0, y: 0, inv: [] };
+      const rec = { schema: 2, savedAt: new Date().toISOString(), playedMs: 0, checksum: window.__sc.checksumOf(data), data };
+      window.__sc.Store.set(window.__sc.PREFIX + "slot2", JSON.stringify(rec));
+      window.__sc.renderSlots();
+      const card = [...document.querySelectorAll(".slot")].find(c => c.querySelector(".ttl")?.textContent === "Slot II");
+      return { kind: window.__sc.readSlot("slot2").kind, corrupt: card?.classList.contains("corrupt"), hasLoad: !!card?.querySelector("button[data-act=load]"), text: card?.textContent || "" };
+    });
+    check("R2a. hp:-500,maxHp:30 rejected — never renders negative hp",
+      r2a.kind === "corrupt" && r2a.corrupt && !r2a.hasLoad && !/-500/.test(r2a.text), JSON.stringify(r2a));
+
+    // (2b) a schema-2 record missing a valid cls is rejected, so no blank class
+    //      pill can ever be loaded/rendered.
+    const r2b = await pR.evaluate(() => {
+      const data = { name: "No Class", level: 1, hp: 30, maxHp: 30, gold: 0, x: 0, y: 0, inv: [] }; // no cls
+      const rec = { schema: 2, savedAt: new Date().toISOString(), playedMs: 0, checksum: window.__sc.checksumOf(data), data };
+      window.__sc.Store.set(window.__sc.PREFIX + "slot3", JSON.stringify(rec));
+      window.__sc.renderSlots();
+      const card = [...document.querySelectorAll(".slot")].find(c => c.querySelector(".ttl")?.textContent === "Slot III");
+      return { kind: window.__sc.readSlot("slot3").kind, corrupt: card?.classList.contains("corrupt"), hasLoad: !!card?.querySelector("button[data-act=load]") };
+    });
+    check("R2b. schema-2 data missing cls rejected (no blank class pill)",
+      r2b.kind === "corrupt" && r2b.corrupt && !r2b.hasLoad, JSON.stringify(r2b));
+
+    // (3) two slots holding identical data must not emit duplicate element ids.
+    const r3 = await pR.evaluate(() => {
+      const data = { name: "Twin", cls: "Bard", level: 1, hp: 30, maxHp: 30, gold: 0, x: 2, y: 2, inv: [] };
+      const json = JSON.stringify({ schema: 2, savedAt: new Date().toISOString(), playedMs: 1000, checksum: window.__sc.checksumOf(data), data });
+      window.__sc.Store.set(window.__sc.PREFIX + "slot1", json);
+      window.__sc.Store.set(window.__sc.PREFIX + "slot2", json);
+      window.__sc.renderSlots();
+      const ids = [...document.querySelectorAll("[id]")].map(e => e.id);
+      const seen = {}; let dup = null;
+      for (const id of ids) { if (seen[id]) { dup = id; break; } seen[id] = 1; }
+      return { dup, grads: document.querySelectorAll("radialGradient").length };
+    });
+    check("R3. identical saves produce no duplicate element id in the DOM",
+      r3.dup === null && r3.grads >= 2, JSON.stringify(r3));
+
+    // (4a) demo buttons prefer an empty slot — no confirm, no overwrite.
+    await pR.evaluate(() => { ["slot1", "slot2", "slot3", "slot4", "auto"].forEach(id => window.__sc.Store.remove(window.__sc.PREFIX + id)); window.__sc.renderSlots(); });
+    let dialogFiredA = false;
+    const handlerA = d => { dialogFiredA = true; d.dismiss(); };
+    pR.on("dialog", handlerA);
+    await pR.click("button[aria-label='Write a legacy v1 save into a slot']");
+    await pR.waitForTimeout(60);
+    pR.off("dialog", handlerA);
+    const r4a = await pR.evaluate(() => ({ slot1: window.__sc.readSlot("slot1").kind }));
+    check("R4a. demo prefers an empty slot (no confirm, fills Slot I)",
+      !dialogFiredA && r4a.slot1 === "ok", JSON.stringify({ dialogFiredA, r4a }));
+
+    // (4b) with every manual slot full, a demo button must confirm before
+    //      overwriting; dismissing the confirm leaves the slot intact.
+    await pR.evaluate(() => {
+      const mk = name => { const data = { name, cls: "Knight", level: 1, hp: 30, maxHp: 30, gold: 0, x: 0, y: 0, inv: [] }; return JSON.stringify({ schema: 2, savedAt: new Date().toISOString(), playedMs: 0, checksum: window.__sc.checksumOf(data), data }); };
+      ["slot1", "slot2", "slot3", "slot4"].forEach((id, i) => window.__sc.Store.set(window.__sc.PREFIX + id, mk("Hero" + i)));
+      window.__sc.renderSlots();
+    });
+    const slot4Before = await pR.evaluate(() => JSON.stringify(window.__sc.readSlot("slot4").rec.data));
+    let dialogFiredB = false;
+    const handlerB = d => { dialogFiredB = true; d.dismiss(); };
+    pR.on("dialog", handlerB);
+    await pR.click("button[aria-label='Forge a future v99 save into a slot']");
+    await pR.waitForTimeout(60);
+    pR.off("dialog", handlerB);
+    const slot4After = await pR.evaluate(() => JSON.stringify(window.__sc.readSlot("slot4").rec.data));
+    check("R4b. demo confirms before overwriting a full slot; dismiss preserves it",
+      dialogFiredB && slot4Before === slot4After, JSON.stringify({ dialogFiredB, preserved: slot4Before === slot4After }));
+
+    // (5) exactly one aria-live region in the whole DOM.
+    const r5 = await pR.evaluate(() => document.querySelectorAll('[aria-live],[role="status"],[role="alert"]').length);
+    check("R5. exactly one aria-live region in the DOM", r5 === 1, "count=" + r5);
+
+    // (6) a record with a bad savedAt renders a safe fallback, not "Invalid Date".
+    const r6 = await pR.evaluate(() => {
+      window.__sc.Store.remove(window.__sc.PREFIX + "slot2");
+      const data = { name: "Timeless", cls: "Ranger", level: 1, hp: 30, maxHp: 30, gold: 0, x: 0, y: 0, inv: [] };
+      const rec = { schema: 2, savedAt: "not-a-real-date", playedMs: 0, checksum: window.__sc.checksumOf(data), data };
+      window.__sc.Store.set(window.__sc.PREFIX + "slot1", JSON.stringify(rec));
+      window.__sc.renderSlots();
+      const card = [...document.querySelectorAll(".slot")].find(c => c.querySelector(".ttl")?.textContent === "Slot I");
+      return { kind: window.__sc.readSlot("slot1").kind, text: card ? card.textContent : "" };
+    });
+    check("R6. bad savedAt shows fallback ('unknown'), not 'Invalid Date'",
+      r6.kind === "ok" && !/Invalid Date/.test(r6.text) && /unknown/.test(r6.text), JSON.stringify(r6));
+
+    check("R. zero console errors across the regression suite", eR.length === 0, eR.join(" | "));
+    await cR.close();
   }
 
   // overall console-error tally from the main scenario run
