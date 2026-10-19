@@ -571,6 +571,7 @@
         + '<div class="body"><div class="sig" aria-hidden="true"></div><div class="meta"><span class="empty-note">— empty —</span></div></div>'
         + '<div class="acts">'
         + (def.auto?'':'<button class="sm go" data-act="save" data-id="'+def.id+'">Save</button>')
+        + '<button class="sm" data-act="import" data-id="'+def.id+'" aria-label="Import a save file into this slot">Import</button>'
         + '</div>';
       slotsEl.appendChild(card);
       return;
@@ -593,6 +594,8 @@
     var rec = r.rec;
     var acts = '<button class="sm go" data-act="load" data-id="'+def.id+'">Load</button>'
              + (def.auto?'':'<button class="sm" data-act="save" data-id="'+def.id+'">Overwrite</button>')
+             + '<button class="sm" data-act="export" data-id="'+def.id+'" aria-label="Export this save to a file">Export</button>'
+             + '<button class="sm" data-act="import" data-id="'+def.id+'" aria-label="Import a save file into this slot">Import</button>'
              + '<button class="sm" data-act="tamper" data-id="'+def.id+'" aria-label="Tamper: flip a byte so the guard fires">Tamper</button>'
              + '<button class="sm danger" data-act="delete" data-id="'+def.id+'">Delete</button>';
     card.innerHTML = '<div class="head"><span class="ttl">'+esc(def.title)+'</span>'+autob+versionBadge(r.schema)+'</div>'
@@ -687,6 +690,8 @@
     else if(act==="load"){ loadFromSlot(id, def); }
     else if(act==="delete"){ deleteSlot(id, def); }
     else if(act==="tamper"){ tamperSlot(id, def); }
+    else if(act==="export"){ exportSlot(id, def); }
+    else if(act==="import"){ importInto(id, def); }
     else if(act==="discard"){
       if(!window.confirm("Discard the corrupted contents of "+def.title+"?")) return;
       Store.remove(PREFIX+id); renderSlots(); announce(def.title+" discarded.");
@@ -735,6 +740,63 @@
                     : "Future save not written: "+res.reason+".");
   }
 
+  // ======================================================================
+  //  EXPORT / IMPORT — a Blob download out, a validated file in
+  // ======================================================================
+  function exportSlot(id, def){
+    var r = readSlot(id);
+    if(r.kind!=="ok"){ announce(def.title+": nothing valid to export."); return; }
+    var text = JSON.stringify(r.rec, null, 2);
+    var url;
+    try{
+      var blob = new Blob([text], {type:"application/json"});
+      url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "save-crystal-"+id+".sav.json";
+      document.body.appendChild(a); a.click(); a.remove();
+      announce(def.title+" exported to save-crystal-"+id+".sav.json.");
+    }catch(e){
+      announce(def.title+": export failed.");
+    }finally{
+      if(url) setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 0);
+    }
+  }
+
+  // one hidden file input, reused; the pending target slot is remembered
+  var importer = document.createElement("input");
+  importer.type = "file"; importer.accept = ".json,application/json";
+  importer.style.display = "none"; document.body.appendChild(importer);
+  var importTarget = null;
+
+  function importInto(id, def){ importTarget = def; importer.value = ""; importer.click(); }
+
+  // Validate a file's text through the SAME pipeline, branch on version,
+  // and only then accept it into the target slot. Rejections never touch the slot.
+  function acceptImport(text, def){
+    var r = interpret(text);  // parse + shape + checksum, all guarded
+    if(r.kind==="empty"){ announce(def.title+": import rejected — the file is empty."); return; }
+    if(r.kind==="corrupt"){ announce(def.title+": import rejected — "+r.reason+"."); return; }
+    if(r.schema > CURRENT_SCHEMA){
+      announce(def.title+": import rejected — save is from a newer version (v"+r.schema+"); this build understands up to v"+CURRENT_SCHEMA+".");
+      return;
+    }
+    var rec = (r.schema < CURRENT_SCHEMA) ? migrate(r.rec) : r.rec;
+    var res = Store.set(PREFIX+def.id, JSON.stringify(rec));
+    if(!res.ok){ announce(def.title+": import not saved — "+res.reason+"."); return; }
+    renderSlots();
+    announce(def.title+": imported "+rec.data.name
+      + (r.schema<CURRENT_SCHEMA ? " (migrated from v"+r.schema+")" : "") + ".");
+  }
+
+  importer.addEventListener("change", function(){
+    var file = importer.files && importer.files[0], def = importTarget;
+    if(!file || !def) return;
+    var reader = new FileReader();
+    reader.onload = function(){ try{ acceptImport(String(reader.result), def); }catch(e){ announce(def.title+": import rejected — unreadable file."); } };
+    reader.onerror = function(){ announce(def.title+": import rejected — could not read the file."); };
+    reader.readAsText(file);
+  });
+
   function buildToolbar(){
     var tb = document.getElementById("toolbar");
     function add(label, aria, fn){
@@ -763,6 +825,7 @@
     Store:Store, PREFIX:PREFIX,
     canonical:canonical, fnv1a:fnv1a, checksumOf:checksumOf,
     snapshot:snapshot, readSlot:readSlot, renderSlots:renderSlots,
+    interpret:interpret, migrate:migrate,
     reset:function(){ var s=freshState(); for(var k in s) state[k]=s[k]; playedMs=0; renderState(); renderPlayed(); }
   };
 })();
