@@ -1,0 +1,5 @@
+{
+  "description": "A single hand-inked scene and one choice that decides how it ends — a tiny illustrated vignette drawn entirely in SVG line art.",
+  "topics": ["interactive-fiction", "svg", "line-art", "generative-art", "rpg", "game", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
