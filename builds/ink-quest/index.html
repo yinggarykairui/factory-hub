@@ -93,9 +93,9 @@
   /* draw-on: normalized path length, dash runs off to 0 */
   svg .stroke{
     stroke-dasharray:1; stroke-dashoffset:1;
-    animation:draw 900ms ease-out forwards;
+    animation:draw 760ms ease-out forwards;
   }
-  svg .fade{opacity:0; animation:fade 700ms ease-out forwards}
+  svg .fade{opacity:0; animation:fade 620ms ease-out forwards}
   @keyframes draw{to{stroke-dashoffset:0}}
   @keyframes fade{to{opacity:1}}
 
@@ -164,8 +164,11 @@
   // draw-on animation is length-independent. Fills use class="fade".
   // `d` is the animation delay index; strokes stagger so the scene is drawn.
 
+  // Draw-on delays: a quick sketch, capped so the whole tableau — and its
+  // focal subject, which is appended last so it paints on top — is in before
+  // ~1.3s instead of trickling in over four seconds.
   let delayTick = 0;
-  function nextDelay(){ const v = delayTick * 55; delayTick++; return v; }
+  function nextDelay(){ const v = Math.min(delayTick * 18, 1300); delayTick++; return v; }
 
   function el(name, attrs, children){
     const n = document.createElementNS(SVGNS, name);
@@ -322,12 +325,17 @@
     opts = opts||{};
     const g = el("g", {});
     if(opts.flying){
-      // a gull-shape double arc with a small body, filled
+      // a raven in flight (heading right): a body streak with a wedge tail
+      // trailing left, a head and beak poking forward, and two crooked wings
+      // swept asymmetrically — directional, not a symmetric gull.
       g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
-        d:`M ${x-26} ${y} Q ${x-12} ${y-13} ${x-3} ${y-2}
-           Q ${x} ${y+3} ${x+3} ${y-2} Q ${x+12} ${y-13} ${x+26} ${y}
-           Q ${x+12} ${y-5} ${x+3} ${y+3} Q ${x} ${y+6} ${x-3} ${y+3}
-           Q ${x-12} ${y-5} ${x-26} ${y} Z`})));
+        d:`M ${x-13} ${y+4} L ${x+9} ${y-1} L ${x+9} ${y+2} L ${x-12} ${y+6} Z`})));   // body + wedge tail
+      g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
+        d:`M ${x+8} ${y-1} L ${x+18} ${y-2} L ${x+9} ${y+2} Z`})));                       // head + beak
+      g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
+        d:`M ${x+2} ${y} Q ${x-9} ${y-11} ${x-24} ${y-4} Q ${x-10} ${y-3} ${x+1} ${y+2} Z`})));  // left wing swept back
+      g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
+        d:`M ${x+2} ${y} Q ${x+8} ${y-12} ${x+20} ${y-9} Q ${x+9} ${y-4} ${x+3} ${y+1} Z`})));    // right wing swept forward
     } else {
       // perched, facing right: tail (left) → back → head → beak → breast
       g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
@@ -395,13 +403,6 @@
     g.appendChild(stroke(`M ${L} ${forkY} Q ${cx} ${forkY+14} ${R} ${forkY}`, 1.4));
     // a couple of median cobbles down the near road
     for(let i=0;i<3;i++){ g.appendChild(stroke(`M ${cx-7} ${baseY-14-i*34} l 14 ${-2-i}`, 1.2)); }
-    return g;
-  }
-  // a single receding road toward a point near (tx,ty)
-  function road(bx, by, tx, ty){
-    const g = el("g", {});
-    g.appendChild(stroke(`M ${bx-46} ${by} C ${bx-18} ${by-50} ${tx-14} ${ty+30} ${tx-7} ${ty}`, 2));
-    g.appendChild(stroke(`M ${bx+46} ${by} C ${bx+18} ${by-50} ${tx+14} ${ty+30} ${tx+7} ${ty}`, 2));
     return g;
   }
   // grass tufts: a few upward blades per clump, clearly growing from the baseline

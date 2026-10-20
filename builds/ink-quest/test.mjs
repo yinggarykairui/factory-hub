@@ -138,6 +138,43 @@ for (const w of [320, 360, 414]) {
   await ctx.close();
 }
 
+// ---- 8. regression: draw-on is a quick sketch, capped (fix: subject-last pacing) ----
+{
+  const { ctx, page } = await newPage();
+  await page.goto(url);
+  await page.waitForTimeout(80);
+  const maxDelay = await page.evaluate(() => {
+    let m = 0;
+    for (const n of document.querySelectorAll('#scene .stroke, #scene .fade')) {
+      const d = parseFloat(getComputedStyle(n).animationDelay) || 0; // seconds
+      if (d > m) m = d;
+    }
+    return m;
+  });
+  ok(maxDelay <= 1.35, 'draw-on stagger is capped at ~1.3s (max delay ' + maxDelay.toFixed(2) + 's)');
+  await ctx.close();
+}
+
+// ---- 9. regression: flying ravens render in the raven ending (fix: raven shape) ----
+{
+  const { ctx, page } = await newPage();
+  await page.goto(url);
+  await page.waitForTimeout(100);
+  await page.locator('#choices button').nth(2).click();
+  await page.waitForTimeout(150);
+  const fills = await page.locator('#scene path.fade').count();
+  ok(fills >= 8, 'raven ending composes multiple filled ink shapes (birds + figure): ' + fills);
+  ok(page.errs.length === 0, 'no console errors in raven ending (' + page.errs.join(' | ') + ')');
+  await ctx.close();
+}
+
+// ---- 10. regression: no dead road() helper left in source ----
+{
+  const fs = await import('node:fs');
+  const src = fs.readFileSync('index.html', 'utf8');
+  ok(!/function road\s*\(/.test(src), 'no unused road() helper in source');
+}
+
 await browser.close();
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
