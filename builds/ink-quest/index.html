@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ink-quest</title>
+<meta name="description" content="A single hand-inked scene and one choice that decides how it ends — a tiny illustrated vignette drawn entirely in SVG line art.">
+<style>
+  :root{
+    --paper:#efe6d0; --paper-deep:#e5d9bc; --ink:#241d15; --ink-soft:#4a3f2f;
+    --dim:#7a6c52; --rule:#c9b994; --accent:#9c3f2a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font:17px/1.6 Georgia,"Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
+    display:flex; justify-content:center;
+    padding:18px 16px 40px;
+    min-height:100vh;
+  }
+  /* faint paper grain behind everything */
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.14  0 0 0 0 0.11  0 0 0 0 0.08  0 0 0 0.04 0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+    opacity:.9;
+  }
+  .wrap{width:100%; max-width:760px; min-width:0}
+  header{text-align:center; margin-bottom:12px}
+  header h1{
+    font-size:26px; margin:0; letter-spacing:4px; font-weight:400;
+    text-transform:lowercase; color:var(--ink);
+  }
+  header .sub{margin:3px 0 0; color:var(--dim); font-size:13px; letter-spacing:2px; text-transform:uppercase}
+
+  /* the inked plate */
+  .plate{
+    position:relative;
+    background:var(--paper-deep);
+    border:1px solid var(--rule);
+    box-shadow:0 1px 0 #fff6 inset, 0 10px 26px -18px #0007;
+    border-radius:3px;
+    padding:10px;
+  }
+  .plate .frame{
+    position:absolute; inset:5px; border:1.5px solid var(--ink-soft);
+    pointer-events:none; opacity:.55; border-radius:2px;
+  }
+  svg.scene{display:block; width:100%; height:auto; background:transparent; position:relative}
+
+  figcaption{
+    text-align:center; font-style:italic; color:var(--ink-soft);
+    font-size:15px; margin:10px 4px 0; letter-spacing:.3px; min-height:1.2em;
+  }
+
+  .story{
+    margin:18px 2px 0;
+    font-size:18px; line-height:1.7;
+  }
+  .story p{margin:0 0 10px}
+  .story .cost{
+    font-style:italic; color:var(--accent); border-top:1px solid var(--rule);
+    padding-top:10px; margin-top:14px;
+  }
+
+  .choices{margin:18px 0 0; display:grid; gap:10px}
+  .choices .prompt{font-style:italic; color:var(--dim); margin:0 0 2px; font-size:15px; text-align:center}
+  button{
+    font:inherit; font-size:17px; color:var(--ink); background:var(--paper);
+    border:1.5px solid var(--ink-soft); border-radius:3px;
+    padding:13px 16px; cursor:pointer; text-align:left;
+    min-height:48px; letter-spacing:.3px;
+    transition:background .12s, transform .06s, box-shadow .12s;
+  }
+  button .no{color:var(--accent); font-weight:700; margin-right:10px; font-family:Georgia,serif}
+  button:hover:not(:disabled){background:#f7efda; box-shadow:0 2px 0 var(--ink-soft)}
+  button:active:not(:disabled){transform:translateY(1px); box-shadow:none}
+  button:focus-visible{outline:none; box-shadow:0 0 0 3px #9c3f2a66}
+  button:disabled{opacity:.4; cursor:default}
+  .restart{display:flex; justify-content:center; margin-top:18px}
+  .restart button{text-align:center; min-width:180px; background:transparent}
+
+  .meta{
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    margin:16px 2px 0; color:var(--dim); font-size:13px; letter-spacing:.5px;
+  }
+  .meta .paths b{color:var(--ink-soft); font-weight:700}
+  footer{text-align:center; margin-top:22px; color:var(--dim); font-size:12.5px; font-style:italic}
+  footer a{color:var(--ink-soft)}
+
+  /* draw-on: normalized path length, dash runs off to 0 */
+  svg .stroke{
+    stroke-dasharray:1; stroke-dashoffset:1;
+    animation:draw 900ms ease-out forwards;
+  }
+  svg .fade{opacity:0; animation:fade 700ms ease-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  @keyframes fade{to{opacity:1}}
+
+  @media (prefers-reduced-motion: reduce){
+    svg .stroke{animation:none; stroke-dashoffset:0}
+    svg .fade{animation:none; opacity:1}
+    button{transition:none}
+  }
+  @media (max-width:430px){
+    header h1{font-size:22px; letter-spacing:3px}
+    .story{font-size:17px}
+    button{font-size:16px}
+  }
+</style>
+</head>
+<body>
+<main class="wrap" role="main">
+  <header>
+    <h1>ink-quest</h1>
+    <p class="sub">one scene · one choice</p>
+  </header>
+
+  <figure class="plate" style="margin:0">
+    <div class="frame"></div>
+    <svg class="scene" id="scene" viewBox="0 0 800 520" role="img" aria-labelledby="sceneTitle" preserveAspectRatio="xMidYMid meet">
+      <title id="sceneTitle">The scene</title>
+    </svg>
+    <figcaption id="caption"></figcaption>
+  </figure>
+
+  <section class="story" id="story" aria-live="polite"></section>
+
+  <section class="choices" id="choices" aria-label="Your choice"></section>
+
+  <div class="meta">
+    <span class="paths">endings found: <b id="paths">0</b> / 3</span>
+    <span id="hint"></span>
+  </div>
+
+  <footer>
+    <span>Day 065 of an autonomous build factory — <a href="https://github.com/yinggarykairui/factory-hub">factory-hub</a></span>
+  </footer>
+</main>
+
+<script>
+"use strict";
+(function(){
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const sceneEl = document.getElementById("scene");
+  const titleEl = document.getElementById("sceneTitle");
+  const captionEl = document.getElementById("caption");
+  const storyEl = document.getElementById("story");
+  const choicesEl = document.getElementById("choices");
+  const pathsEl = document.getElementById("paths");
+  const hintEl = document.getElementById("hint");
+
+  // Endings discovered this session; deliberately NOT persisted to storage
+  // (persistence is save-crystal's job, #83). Survives Restart within the page.
+  const found = new Set();
+
+  let state = "opening";       // opening | sword | lantern | raven
+  let busy = false;            // guards against double-activation during a choice
+
+  // ---- ink primitives --------------------------------------------------
+  // Every drawable stroke carries class="stroke" and pathLength="1" so the
+  // draw-on animation is length-independent. Fills use class="fade".
+  // `d` is the animation delay index; strokes stagger so the scene is drawn.
+
+  let delayTick = 0;
+  function nextDelay(){ const v = delayTick * 55; delayTick++; return v; }
+
+  function el(name, attrs, children){
+    const n = document.createElementNS(SVGNS, name);
+    for(const k in attrs){ if(attrs[k] !== null && attrs[k] !== undefined) n.setAttribute(k, attrs[k]); }
+    if(children) for(const c of children) n.appendChild(c);
+    return n;
+  }
+  function stroke(d, w){
+    const p = el("path", {d, class:"stroke", "pathLength":"1", fill:"none",
+      stroke:"var(--ink)", "stroke-width": (w||2.2), "stroke-linecap":"round",
+      "stroke-linejoin":"round", filter:"url(#rough)"});
+    p.style.animationDelay = nextDelay() + "ms";
+    return p;
+  }
+  function fill(node){
+    node.classList.add("fade");
+    node.style.animationDelay = nextDelay() + "ms";
+    return node;
+  }
+
+  // crescent moon — carved with a mask so the shape is reliable, not arc-flag luck
+  let moonSeq = 0;
+  function moon(cx, cy, r){
+    const g = el("g", {});
+    const id = "moonmask" + (moonSeq++);
+    const mask = el("mask", {id}, [
+      el("circle", {cx, cy, r, fill:"#fff"}),
+      // offset disc hides the inner part, leaving a waxing crescent that opens left
+      el("circle", {cx:cx + r*0.55, cy:cy - r*0.12, r:r*0.9, fill:"#000"})
+    ]);
+    g.appendChild(el("defs", {}, [mask]));
+    g.appendChild(fill(el("circle", {cx, cy, r, fill:"var(--ink)", opacity:.85, mask:`url(#${id})`, filter:"url(#rough)"})));
+    // three faint glow ticks off the lit edge
+    for(let i=0;i<3;i++){
+      const a = 0.5 + i*0.5, L = r*1.45, l2 = r*1.85;
+      g.appendChild(stroke(`M ${cx+Math.cos(a)*L} ${cy+Math.sin(a)*L} L ${cx+Math.cos(a)*l2} ${cy+Math.sin(a)*l2}`, 1.2));
+    }
+    return g;
+  }
+
+  // soft dusk wash behind the scene (ink-wash tint over paper)
+  function skyWash(){
+    const g = el("g", {});
+    const grad = el("radialGradient", {id:"dusk", cx:"72%", cy:"18%", r:"95%"}, [
+      el("stop", {offset:"0%", "stop-color":"#d9a066", "stop-opacity":"0.42"}),
+      el("stop", {offset:"42%", "stop-color":"#b8794a", "stop-opacity":"0.22"}),
+      el("stop", {offset:"100%", "stop-color":"#4a4a5e", "stop-opacity":"0.14"})
+    ]);
+    g.appendChild(el("defs", {}, [grad]));
+    g.appendChild(fill(el("rect", {x:0, y:0, width:800, height:420, fill:"url(#dusk)"})));
+    return g;
+  }
+
+  // a run of hills with light crosshatch
+  function hills(y, amp, seed){
+    const g = el("g", {});
+    let d = `M -20 ${y+amp}`;
+    let x = -20; const rnd = mulberry(seed);
+    while(x < 820){
+      const nx = x + 120 + rnd()*90;
+      const peak = y - amp*(0.5 + rnd()*0.9);
+      d += ` Q ${(x+nx)/2} ${peak} ${nx} ${y+rnd()*amp*0.4}`;
+      x = nx;
+    }
+    d += ` L 820 ${y+120} L -20 ${y+120} Z`;
+    g.appendChild(stroke(d.replace(/ L 820[\s\S]*$/,''), 2));
+    // faint hatch fill under the ridge
+    const hatchRect = fill(el("path", {d, fill:"url(#hatch)", opacity:.5, filter:"url(#rough)"}));
+    g.insertBefore(hatchRect, g.firstChild);
+    return g;
+  }
+
+  // ink tree (bare, scratchy canopy)
+  function tree(x, y, s, seed){
+    const g = el("g", {});
+    const rnd = mulberry(seed);
+    g.appendChild(stroke(`M ${x} ${y} C ${x-6*s} ${y-40*s} ${x+5*s} ${y-70*s} ${x} ${y-100*s}`, 2.4*s));
+    // branches
+    for(let i=0;i<6;i++){
+      const by = y - (30+ i*11)*s;
+      const dir = i%2? 1 : -1;
+      const len = (18 + rnd()*22)*s;
+      g.appendChild(stroke(`M ${x} ${by} q ${dir*len*0.5} ${-6*s} ${dir*len} ${-(10+rnd()*14)*s}`, 1.6*s));
+    }
+    // canopy scribble
+    let d = `M ${x-34*s} ${y-96*s}`;
+    for(let i=0;i<10;i++){ d += ` q ${(-20+rnd()*40)*s} ${(-16+rnd()*8)*s} ${(-8+rnd()*16)*s} ${(8+rnd()*8)*s}`; }
+    g.appendChild(stroke(d, 1.3*s));
+    return g;
+  }
+
+  // standing-stone shrine; opts: sword (bool), lit lantern handled separately
+  function shrine(x, y, opts){
+    opts = opts||{};
+    const g = el("g", {});
+    // plinth
+    g.appendChild(stroke(`M ${x-46} ${y} L ${x-40} ${y-18} L ${x+40} ${y-18} L ${x+46} ${y} Z`, 2.4));
+    // standing stone with a niche
+    g.appendChild(stroke(`M ${x-30} ${y-18} L ${x-34} ${y-150} Q ${x-30} ${y-176} ${x} ${y-182}
+                          Q ${x+30} ${y-176} ${x+34} ${y-150} L ${x+30} ${y-18} Z`, 2.6));
+    // carved niche
+    g.appendChild(stroke(`M ${x-16} ${y-40} L ${x-18} ${y-120} Q ${x} ${y-134} ${x+18} ${y-120} L ${x+16} ${y-40} Z`, 1.8));
+    // hatch shading on the stone's left
+    g.appendChild(fill(el("path", {d:`M ${x-30} ${y-18} L ${x-33} ${y-148} L ${x-19} ${y-120} L ${x-16} ${y-40} L ${x-16} ${y-18} Z`,
+      fill:"url(#hatch)", opacity:.55, filter:"url(#rough)"})));
+    // runes
+    g.appendChild(stroke(`M ${x-8} ${y-150} l 16 0 M ${x} ${y-150} l 0 14 M ${x-6} ${y-130} l 12 6`, 1.4));
+    if(opts.sword){
+      // blade set into the niche, hilt up
+      g.appendChild(stroke(`M ${x} ${y-120} L ${x} ${y-56}`, 3.2));          // blade
+      g.appendChild(stroke(`M ${x-16} ${y-124} L ${x+16} ${y-124}`, 3));      // crossguard
+      g.appendChild(stroke(`M ${x} ${y-124} L ${x} ${y-140}`, 3.4));          // grip
+      g.appendChild(stroke(`M ${x} ${y-140} m -5 0 a 5 5 0 1 0 10 0 a 5 5 0 1 0 -10 0`, 2.4)); // pommel
+    } else if(opts.empty){
+      // a slit where the blade was
+      g.appendChild(stroke(`M ${x} ${y-118} L ${x} ${y-70}`, 1.4));
+    }
+    return g;
+  }
+
+  // hanging lantern on a hooked pole; opts.lit -> glow + rays
+  function lantern(x, y, opts){
+    opts = opts||{};
+    const g = el("g", {});
+    // pole
+    g.appendChild(stroke(`M ${x} ${y} L ${x} ${y-150} q 0 -10 -22 -10`, 2.4));
+    const lx = x-22, ly = y-150;
+    // chain
+    g.appendChild(stroke(`M ${lx} ${ly} L ${lx} ${ly+16}`, 1.4));
+    if(opts.lit){
+      const glow = el("radialGradient", {id:"glow", cx:"50%", cy:"50%", r:"50%"}, [
+        el("stop",{offset:"0%","stop-color":"#f4c762","stop-opacity":"0.95"}),
+        el("stop",{offset:"55%","stop-color":"#e0953a","stop-opacity":"0.35"}),
+        el("stop",{offset:"100%","stop-color":"#e0953a","stop-opacity":"0"})
+      ]);
+      g.appendChild(el("defs",{},[glow]));
+      g.appendChild(fill(el("circle",{cx:lx, cy:ly+30, r:70, fill:"url(#glow)"})));
+      for(let i=0;i<8;i++){ const a=i*Math.PI/4; g.appendChild(stroke(`M ${lx+Math.cos(a)*30} ${ly+30+Math.sin(a)*30} L ${lx+Math.cos(a)*48} ${ly+30+Math.sin(a)*48}`,1.4)); }
+    }
+    // lantern body
+    g.appendChild(stroke(`M ${lx-12} ${ly+16} L ${lx+12} ${ly+16} L ${lx+14} ${ly+44} L ${lx-14} ${ly+44} Z`, 2));
+    g.appendChild(stroke(`M ${lx-14} ${ly+44} L ${lx+14} ${ly+44} L ${lx+10} ${ly+50} L ${lx-10} ${ly+50} Z`, 1.6));
+    // flame
+    if(opts.lit){
+      g.appendChild(fill(el("path",{d:`M ${lx} ${ly+40} q -7 -8 0 -18 q 7 10 0 18 Z`, fill:"#e0953a", opacity:.95, filter:"url(#rough)"})));
+    } else {
+      g.appendChild(stroke(`M ${lx} ${ly+40} q -3 -4 0 -8 q 3 4 0 8`, 1.4));
+    }
+    return g;
+  }
+
+  // raven — a solid ink silhouette so it reads as a bird, not a scribble
+  function raven(x, y, opts){
+    opts = opts||{};
+    const g = el("g", {});
+    if(opts.flying){
+      // a gull-shape double arc with a small body, filled
+      g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
+        d:`M ${x-26} ${y} Q ${x-12} ${y-13} ${x-3} ${y-2}
+           Q ${x} ${y+3} ${x+3} ${y-2} Q ${x+12} ${y-13} ${x+26} ${y}
+           Q ${x+12} ${y-5} ${x+3} ${y+3} Q ${x} ${y+6} ${x-3} ${y+3}
+           Q ${x-12} ${y-5} ${x-26} ${y} Z`})));
+    } else {
+      // perched, facing right: tail (left) → back → head → beak → breast
+      g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
+        d:`M ${x-20} ${y+2}
+           C ${x-8} ${y-4} ${x+6} ${y-8} ${x+18} ${y-14}
+           C ${x+26} ${y-18} ${x+31} ${y-10} ${x+28} ${y-3}
+           L ${x+40} ${y-5} L ${x+29} ${y+1}
+           C ${x+26} ${y+9} ${x+8} ${y+12} ${x-2} ${y+8}
+           C ${x-10} ${y+6} ${x-16} ${y+6} ${x-20} ${y+2} Z`})));
+      // legs
+      g.appendChild(stroke(`M ${x+4} ${y+10} l -1 11 M ${x+13} ${y+9} l 1 11`, 1.5));
+    }
+    return g;
+  }
+
+  // a cloaked traveller, drawn as a filled silhouette so it clearly reads as a
+  // person. opts.flip faces them left; opts.sword shoulders a blade.
+  function figure(x, y, opts){
+    opts = opts||{};
+    const g = el("g", {});
+    const f = opts.flip ? -1 : 1;   // facing direction
+    // shadow first (under the feet)
+    g.appendChild(fill(el("ellipse",{cx:x, cy:y+2, rx:26, ry:6, fill:"var(--ink)", opacity:.22, filter:"url(#rough)"})));
+    // cloak + hood as one solid shape, leaning slightly into the walk
+    const lean = f*5;
+    g.appendChild(fill(el("path", {filter:"url(#rough)", fill:"var(--ink)",
+      d:`M ${x-18} ${y}
+         L ${x-12+lean} ${y-58}
+         Q ${x-11+lean} ${y-74} ${x+lean} ${y-78}
+         Q ${x+11+lean} ${y-74} ${x+12+lean} ${y-58}
+         L ${x+18} ${y}
+         Q ${x+6} ${y-5} ${x} ${y-2}
+         Q ${x-6} ${y-5} ${x-18} ${y} Z`})));
+    // the hood's face-opening, carved light
+    g.appendChild(fill(el("path", {fill:"var(--paper-deep)", opacity:.85, filter:"url(#rough)",
+      d:`M ${x-5+lean} ${y-64} Q ${x+lean} ${y-72} ${x+5+lean} ${y-64} Q ${x+2+lean} ${y-58} ${x+lean} ${y-58} Q ${x-2+lean} ${y-58} ${x-5+lean} ${y-64} Z`})));
+    if(opts.sword){
+      // shouldered blade: a clear diagonal with a crossguard, over the back
+      g.appendChild(stroke(`M ${x - f*6} ${y-44} L ${x - f*34} ${y-90}`, 3));
+      g.appendChild(stroke(`M ${x - f*27} ${y-74} l ${f*14} ${-8}`, 2.4));
+      g.appendChild(stroke(`M ${x - f*34} ${y-90} l ${-f*3} ${-5}`, 3));  // pommel nub
+    } else {
+      // a walking staff in the lead hand
+      g.appendChild(stroke(`M ${x + f*15} ${y-46} L ${x + f*22} ${y+4}`, 2.2));
+    }
+    return g;
+  }
+
+  function ground(y){
+    return stroke(`M -20 ${y} Q 200 ${y-8} 420 ${y} T 820 ${y-4}`, 2.4);
+  }
+  // a forked road: wide in the foreground, converging to a fork, then two
+  // branches climbing toward the hills. cx is the road's centre at the fork.
+  function forkedRoad(cx, forkY, baseY){
+    const g = el("g", {});
+    const L = cx-12, R = cx+12;
+    // two edges widening toward the viewer
+    g.appendChild(stroke(`M ${cx-70} ${baseY} C ${cx-40} ${baseY-60} ${L-6} ${forkY+40} ${L} ${forkY}`, 2));
+    g.appendChild(stroke(`M ${cx+70} ${baseY} C ${cx+40} ${baseY-60} ${R+6} ${forkY+40} ${R} ${forkY}`, 2));
+    // left branch up onto the hill
+    g.appendChild(stroke(`M ${L} ${forkY} C ${cx-26} ${forkY-18} ${cx-70} ${forkY-30} ${cx-120} ${forkY-44}`, 1.8));
+    // right branch up onto the hill
+    g.appendChild(stroke(`M ${R} ${forkY} C ${cx+26} ${forkY-18} ${cx+74} ${forkY-30} ${cx+128} ${forkY-42}`, 1.8));
+    // the splitting wedge between the forks
+    g.appendChild(stroke(`M ${L} ${forkY} Q ${cx} ${forkY+14} ${R} ${forkY}`, 1.4));
+    // a couple of median cobbles down the near road
+    for(let i=0;i<3;i++){ g.appendChild(stroke(`M ${cx-7} ${baseY-14-i*34} l 14 ${-2-i}`, 1.2)); }
+    return g;
+  }
+  // a single receding road toward a point near (tx,ty)
+  function road(bx, by, tx, ty){
+    const g = el("g", {});
+    g.appendChild(stroke(`M ${bx-46} ${by} C ${bx-18} ${by-50} ${tx-14} ${ty+30} ${tx-7} ${ty}`, 2));
+    g.appendChild(stroke(`M ${bx+46} ${by} C ${bx+18} ${by-50} ${tx+14} ${ty+30} ${tx+7} ${ty}`, 2));
+    return g;
+  }
+  // grass tufts: a few upward blades per clump, clearly growing from the baseline
+  function grass(xs, y){
+    const g = el("g",{});
+    for(const x of xs){
+      g.appendChild(stroke(`M ${x} ${y} C ${x-3} ${y-9} ${x-6} ${y-15} ${x-9} ${y-20}`, 1.3));
+      g.appendChild(stroke(`M ${x+2} ${y} C ${x+2} ${y-11} ${x+2} ${y-17} ${x+3} ${y-23}`, 1.3));
+      g.appendChild(stroke(`M ${x+4} ${y} C ${x+7} ${y-8} ${x+10} ${y-13} ${x+13} ${y-18}`, 1.3));
+    }
+    return g;
+  }
+
+  // deterministic PRNG so a given scene looks the same each visit
+  function mulberry(seed){
+    let a = seed>>>0;
+    return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+  }
+
+  // ---- scenes ----------------------------------------------------------
+  function newSVGBody(){
+    // defs shared by every scene: the roughen filter + hatch pattern
+    const defs = el("defs", {}, [
+      (function(){
+        const f = el("filter", {id:"rough", x:"-20%", y:"-20%", width:"140%", height:"140%"});
+        f.appendChild(el("feTurbulence", {type:"fractalNoise", baseFrequency:"0.018", numOctaves:"2", seed:"7", result:"noise"}));
+        f.appendChild(el("feDisplacementMap", {in:"SourceGraphic", in2:"noise", scale:"3.4", xChannelSelector:"R", yChannelSelector:"G"}));
+        return f;
+      })(),
+      (function(){
+        const p = el("pattern", {id:"hatch", width:"7", height:"7", patternUnits:"userSpaceOnUse", patternTransform:"rotate(32)"});
+        p.appendChild(el("line", {x1:0, y1:0, x2:0, y2:7, stroke:"var(--ink)", "stroke-width":"0.8", opacity:"0.6"}));
+        return p;
+      })()
+    ]);
+    return defs;
+  }
+
+  const scenes = {
+    opening(){
+      delayTick = 0;
+      const g = el("g", {});
+      g.appendChild(newSVGBody());
+      g.appendChild(skyWash());
+      g.appendChild(moon(628, 96, 30));
+      g.appendChild(hills(300, 70, 11));
+      g.appendChild(tree(120, 300, 1.05, 3));
+      g.appendChild(tree(690, 300, 0.85, 8));
+      g.appendChild(ground(382));
+      g.appendChild(forkedRoad(452, 372, 514));
+      g.appendChild(shrine(300, 380, {sword:true}));
+      g.appendChild(lantern(372, 380, {lit:false}));
+      g.appendChild(raven(292, 208, {}));
+      g.appendChild(grass([78,156,250,648,722], 396));
+      return {
+        node:g,
+        title:"A wayshrine at dusk: a forked road, a standing stone with a sword set in its niche, an unlit lantern, and a raven perched above.",
+        caption:"The wayshrine at dusk",
+        story:[
+          "The road forks at an old standing stone. A sword is set point-down in its niche, and a cold lantern hangs beside it on an iron hook.",
+          "A raven watches from the crown of the stone. Dusk is nearly spent. Whatever you do here, you have the sense you will do only once."
+        ],
+        choices:[
+          {no:"I", label:"Take the sword from the stone.", go:"sword"},
+          {no:"II", label:"Strike a light and wake the lantern.", go:"lantern"},
+          {no:"III", label:"Follow the raven into the trees.", go:"raven"}
+        ]
+      };
+    },
+    sword(){
+      delayTick = 0;
+      const g = el("g", {});
+      g.appendChild(newSVGBody());
+      g.appendChild(skyWash());
+      g.appendChild(moon(640, 70, 34));
+      g.appendChild(hills(290, 80, 21));
+      g.appendChild(ground(386));
+      g.appendChild(forkedRoad(430, 376, 514));
+      g.appendChild(shrine(250, 384, {empty:true}));
+      g.appendChild(lantern(316, 384, {lit:false}));
+      g.appendChild(figure(556, 398, {sword:true, flip:false}));
+      g.appendChild(grass([96,176,700], 398));
+      return {
+        node:g,
+        title:"A hooded figure walks up the right fork carrying a sword; the shrine behind them stands empty, its lantern dark.",
+        caption:"The sword's road",
+        story:[
+          "The blade comes free with a sound like a held breath. It is lighter than it looked, and it fits your hand as if it had been waiting.",
+          "You take the right fork, up toward the dark hills. Behind you the lantern stays cold, and the raven does not follow."
+        ],
+        cost:"Won: an edge for the road ahead. Cost: the next traveler will find the niche empty and the way unlit."
+      };
+    },
+    lantern(){
+      delayTick = 0;
+      const g = el("g", {});
+      g.appendChild(newSVGBody());
+      g.appendChild(skyWash());
+      g.appendChild(hills(300, 60, 31));
+      g.appendChild(ground(384));
+      g.appendChild(forkedRoad(448, 376, 514));
+      g.appendChild(shrine(330, 382, {sword:true}));
+      g.appendChild(lantern(402, 382, {lit:true}));
+      g.appendChild(figure(602, 398, {sword:false, flip:true}));
+      g.appendChild(grass([96,170,700], 396));
+      return {
+        node:g,
+        title:"The lantern burns bright, throwing rays over the shrine; the sword stays in its niche and a traveler on the road is drawn toward the light.",
+        caption:"The kept flame",
+        story:[
+          "The wick catches on the third strike. Light spills over the stone, over the runes, over the quiet sword you leave where it stands.",
+          "Far down the road a traveler turns toward the glow, the way made plain for them. You find you would rather be the light than carry the blade."
+        ],
+        cost:"Won: the road is lit for whoever comes next. Cost: the sword is not yours, and the hills stay dark and unwalked."
+      };
+    },
+    raven(){
+      delayTick = 0;
+      const g = el("g", {});
+      g.appendChild(newSVGBody());
+      g.appendChild(skyWash());
+      g.appendChild(moon(120, 90, 26));
+      g.appendChild(tree(170, 470, 1.6, 5));
+      g.appendChild(tree(360, 490, 2.0, 9));
+      g.appendChild(tree(560, 470, 1.7, 14));
+      g.appendChild(tree(700, 495, 1.9, 2));
+      g.appendChild(ground(470));
+      g.appendChild(raven(430, 150, {flying:true}));
+      g.appendChild(raven(300, 120, {flying:true}));
+      g.appendChild(figure(300, 492, {sword:false, flip:false}));
+      g.appendChild(grass([120,520,640], 486));
+      return {
+        node:g,
+        title:"Tall ink trees close overhead; two ravens fly ahead between the trunks while a small figure steps into the wood, the shrine lost behind.",
+        caption:"The raven's wood",
+        story:[
+          "You leave the sword and the dark lantern both. The raven drops from the stone and flaps ahead, once looking back to be sure of you.",
+          "The trees take you in. The road, the fork, the shrine — all of it closes behind like a page turned. Whatever the bird is leading you to, it knows and you do not."
+        ],
+        cost:"Won: a path no map shows. Cost: you will not find this fork again, nor know what the other roads held."
+      };
+    }
+  };
+
+  // ---- render ----------------------------------------------------------
+  function render(key){
+    const s = scenes[key]();
+    state = key;
+    // swap the SVG body (clear then append the fresh <g>, which restarts CSS anims)
+    while(sceneEl.firstChild) sceneEl.removeChild(sceneEl.firstChild);
+    titleEl.textContent = s.title;
+    sceneEl.appendChild(titleEl);           // keep the <title> inside for a11y
+    sceneEl.appendChild(s.node);
+    captionEl.textContent = s.caption;
+
+    storyEl.innerHTML = "";
+    for(const para of s.story){ const p=document.createElement("p"); p.textContent=para; storyEl.appendChild(p); }
+
+    choicesEl.innerHTML = "";
+    if(key === "opening"){
+      const prompt = document.createElement("p");
+      prompt.className = "prompt";
+      prompt.textContent = "Choose once.";
+      choicesEl.appendChild(prompt);
+      for(const c of s.choices){
+        const b = document.createElement("button");
+        b.type = "button";
+        b.innerHTML = '<span class="no"></span>';
+        b.querySelector(".no").textContent = c.no + ".";
+        b.appendChild(document.createTextNode(" " + c.label));
+        b.addEventListener("click", ()=>choose(c.go));
+        choicesEl.appendChild(b);
+      }
+      hintEl.textContent = found.size >= 3 ? "every ending found" :
+                           found.size > 0 ? "an ending waits down each road" : "";
+    } else {
+      // an ending: show the cost line + a Restart
+      const cost = document.createElement("p");
+      cost.className = "cost";
+      cost.textContent = s.cost;
+      storyEl.appendChild(cost);
+      found.add(key);
+      pathsEl.textContent = String(found.size);
+
+      const wrap = document.createElement("div");
+      wrap.className = "restart";
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = found.size >= 3 ? "↺ Begin again" : "↺ Return to the fork";
+      b.addEventListener("click", ()=>{ busy=false; render("opening"); try{choicesEl.querySelector("button").focus();}catch(e){} });
+      wrap.appendChild(b);
+      choicesEl.appendChild(wrap);
+
+      hintEl.textContent = found.size >= 3 ? "every ending found — the fork holds no more secrets"
+                                           : (3 - found.size) + " ending" + (3-found.size===1?"":"s") + " left to find";
+    }
+  }
+
+  function choose(go){
+    if(state !== "opening" || busy) return;   // one choice; ignore double taps
+    busy = true;
+    // disable the opening buttons immediately
+    for(const b of choicesEl.querySelectorAll("button")) b.disabled = true;
+    render(go);
+    busy = false;
+  }
+
+  pathsEl.textContent = "0";
+  render("opening");
+})();
+</script>
+</body>
+</html>
