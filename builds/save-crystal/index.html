@@ -564,8 +564,11 @@
       try{ when = dt.toLocaleString(); }catch(e){ when = "unknown"; }
     }
     var loc = "("+d.x+","+d.y+")";
+    // A save can carry an empty/whitespace name; show a placeholder so the
+    // card never renders a blank name line.
+    var nm = (typeof d.name==="string" && d.name.trim()) ? d.name : "(unnamed)";
     return '<div class="meta">'
-      + '<span class="nm">'+esc(d.name)+'</span>'
+      + '<span class="nm">'+esc(nm)+'</span>'
       + '<span>'+esc(d.cls)+' · Lv '+(d.level|0)+' · <span class="gold">'+(d.gold|0)+'g</span></span>'
       + '<span>grid '+loc+' · played '+fmtTime(rec.rec.playedMs)+'</span>'
       + '<span>'+esc(when)+'</span>'
@@ -624,8 +627,24 @@
   }
 
   function renderSlots(){
+    // The whole slot list is rebuilt from innerHTML, which drops keyboard
+    // focus to <body>. Capture the focused slot button first and restore it
+    // after the rebuild, so a keyboard-only user is not thrown back to the
+    // top of the page after every action (and so the debounced autosave's
+    // rebuild does not yank focus off a button mid-navigation).
+    var active = document.activeElement, focus = null;
+    if(active && slotsEl.contains(active) && active.dataset && active.dataset.id){
+      focus = { id: active.dataset.id, act: active.dataset.act };
+    }
     slotsEl.innerHTML = "";
     SLOT_DEFS.forEach(renderSlot);
+    if(focus){
+      var btn = slotsEl.querySelector('button[data-act="'+focus.act+'"][data-id="'+focus.id+'"]');
+      // The exact action may be gone (slot emptied by delete/discard); fall
+      // back to the first remaining button in the same slot.
+      if(!btn) btn = slotsEl.querySelector('button[data-id="'+focus.id+'"]');
+      if(btn){ try{ btn.focus({preventScroll:true}); }catch(e){ btn.focus(); } }
+    }
   }
 
   // ---- slot actions (event delegation) ----

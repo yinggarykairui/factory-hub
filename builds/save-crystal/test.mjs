@@ -356,6 +356,36 @@ async function main() {
     check("R6. bad savedAt shows fallback ('unknown'), not 'Invalid Date'",
       r6.kind === "ok" && !/Invalid Date/.test(r6.text) && /unknown/.test(r6.text), JSON.stringify(r6));
 
+    // (7) a slot re-render preserves keyboard focus on the acting button,
+    //     instead of dropping it to <body> (evening a11y fix).
+    const r7 = await pR.evaluate(() => {
+      const data = { name: "Focus", cls: "Knight", level: 1, hp: 30, maxHp: 30, gold: 0, x: 0, y: 0, inv: [] };
+      const rec = { schema: 2, savedAt: new Date().toISOString(), playedMs: 0, checksum: window.__sc.checksumOf(data), data };
+      window.__sc.Store.set(window.__sc.PREFIX + "slot1", JSON.stringify(rec));
+      window.__sc.renderSlots();
+      const btn = document.querySelector('button[data-act="save"][data-id="slot1"]'); // "Overwrite"
+      btn.focus();
+      const before = document.activeElement === btn;
+      window.__sc.renderSlots(); // the rebuild that used to drop focus to <body>
+      const a = document.activeElement;
+      return { before, tag: a ? a.tagName : null, act: a && a.dataset ? a.dataset.act : null, id: a && a.dataset ? a.dataset.id : null };
+    });
+    check("R7. focus survives a slot re-render (keyboard flow not dropped to body)",
+      r7.before && r7.tag === "BUTTON" && r7.act === "save" && r7.id === "slot1", JSON.stringify(r7));
+
+    // (8) a save with an empty name renders a placeholder, not a blank line.
+    const r8 = await pR.evaluate(() => {
+      const data = { name: "", cls: "Knight", level: 1, hp: 30, maxHp: 30, gold: 0, x: 0, y: 0, inv: [] };
+      const rec = { schema: 2, savedAt: new Date().toISOString(), playedMs: 0, checksum: window.__sc.checksumOf(data), data };
+      window.__sc.Store.set(window.__sc.PREFIX + "slot2", JSON.stringify(rec));
+      window.__sc.renderSlots();
+      const card = [...document.querySelectorAll(".slot")].find(c => c.querySelector(".ttl")?.textContent === "Slot II");
+      const nm = card ? card.querySelector(".nm") : null;
+      return { kind: window.__sc.readSlot("slot2").kind, nm: nm ? nm.textContent : null };
+    });
+    check("R8. empty-name save renders a placeholder, not a blank name line",
+      r8.kind === "ok" && r8.nm === "(unnamed)", JSON.stringify(r8));
+
     check("R. zero console errors across the regression suite", eR.length === 0, eR.join(" | "));
     await cR.close();
   }
