@@ -63,6 +63,14 @@
   #d-up{left:50px;top:0}#d-down{left:50px;top:100px}#d-left{left:0;top:50px}#d-right{left:100px;top:50px}
   #pbtn{right:max(16px,env(safe-area-inset-right));bottom:max(90px,calc(env(safe-area-inset-bottom) + 72px));
     width:78px;height:78px;border-radius:50%;font-weight:700;font-size:13px;line-height:1.1;text-align:center}
+
+  /* touch layout: keep the legend clear of the D-pad (it is the whole point of the
+     game), and let the one WARD button carry its own cooldown instead of a second meter. */
+  body.touch #legend{ top:42px; bottom:auto; left:50%; right:auto; transform:translateX(-50%);
+    max-width:calc(100% - 16px); display:flex; flex-wrap:wrap; justify-content:center;
+    align-items:center; gap:3px 12px; text-align:center; }
+  body.touch #legend > div:first-child{ width:100%; }
+  body.touch #pulsemeter{ display:none; }
 </style>
 </head>
 <body>
@@ -96,7 +104,7 @@
   <h1>BATTLE BRAINS</h1>
   <p>Three kinds of mind share this arena. Stay alive and watch how differently
      each one hunts you.</p>
-  <p style="opacity:.7;font-size:13px">Move: arrows / WASD · Ward pulse: Space</p>
+  <p id="startHint" style="opacity:.7;font-size:13px">Move: arrows / WASD · Ward pulse: Space</p>
   <div class="press">Press Enter or tap to begin</div>
 </div>
 
@@ -193,8 +201,10 @@
   }
   function updateEnemy(e, dt){
     const dx = player.x - e.x, dy = player.y - e.y, dist = Math.hypot(dx,dy)||1;
-    if(e.fear>0){                       // feared by a ward pulse: flee hard, any type
-      e.fear -= dt; steer(e, -dx, -dy, e.type==='coward'?260:210, 7, dt);
+    if(e.fear>0){                       // feared by a ward pulse — each mind breaks its own way:
+      e.fear -= dt;                     // coward bolts hard and long, pack scatters, aggressor
+      const fsp = e.type==='coward'?280 : e.type==='aggressor'?150 : 215;  // barely flinches
+      steer(e, -dx, -dy, fsp, e.type==='aggressor'?4:7, dt);
       e.state='feared';
     } else if(e.type==='aggressor'){
       const sp = dist<160 ? 200 : 150;  // lunge when close
@@ -235,8 +245,10 @@
       const dx = e.x-player.x, dy=e.y-player.y, d=Math.hypot(dx,dy);
       if(d < PULSE_R){
         const f = (1 - d/PULSE_R), imp = 360*f + 120;
-        e.vx += dx/(d||1)*imp; e.vy += dy/(d||1)*imp; e.fear = PULSE_FEAR;
-        if(e.type==='pack') e.rushT = 0;
+        e.vx += dx/(d||1)*imp; e.vy += dy/(d||1)*imp;
+        // the coward panics longest, the aggressor shrugs it off and re-charges
+        e.fear = e.type==='coward'? PULSE_FEAR*1.6 : e.type==='aggressor'? PULSE_FEAR*0.45 : PULSE_FEAR;
+        if(e.type==='pack') e.rushT = 0;  // the pack's rush is broken; it must regroup
       }
     }
     return true;
@@ -290,14 +302,25 @@
     cssW = st.clientWidth; cssH = st.clientHeight;
     canvas.width=Math.max(1,Math.round(cssW*dpr)); canvas.height=Math.max(1,Math.round(cssH*dpr));
     ctx.setTransform(dpr,0,0,dpr,0,0); ctx.imageSmoothingEnabled=true;
-    const m = 14; // fit arena into the canvas with a margin, centred, uniform scale
-    scale = Math.min((cssW-m*2)/ARENA_W, (cssH-m*2)/ARENA_H);
-    offX = (cssW - ARENA_W*scale)/2; offY = (cssH - ARENA_H*scale)/2;
+    const m = 14; // scale clamped so a degenerate sub-margin viewport can never make radii negative
+    const coarse = matchMedia('(pointer: coarse)').matches || cssW < 620;
+    if (coarse && cssH >= cssW){
+      // portrait touch: legend lives in a top band, controls in a bottom band,
+      // the arena fits cleanly between the two so neither covers the playfield
+      const topR = 210, botR = 176, bandH = Math.max(120, cssH - topR - botR);
+      scale = Math.max(0.001, Math.min((cssW-16)/ARENA_W, bandH/ARENA_H));
+      offX = (cssW - ARENA_W*scale)/2;
+      offY = topR + (bandH - ARENA_H*scale)/2;
+    } else {
+      scale = Math.max(0.001, Math.min((cssW-m*2)/ARENA_W, (cssH-m*2)/ARENA_H));
+      offX = (cssW - ARENA_W*scale)/2; offY = (cssH - ARENA_H*scale)/2;
+    }
     updateTouchVisibility();
   }
   function updateTouchVisibility(){
-    const show = (matchMedia('(pointer: coarse)').matches) || cssW < 620;
-    document.getElementById('touch').classList.toggle('show', show && state==='play');
+    const coarse = (matchMedia('(pointer: coarse)').matches) || cssW < 620;
+    document.body.classList.toggle('touch', coarse);
+    document.getElementById('touch').classList.toggle('show', coarse && state==='play');
   }
   const S = (v)=> v*scale;
   function wx(x){ return offX + x*scale; }
@@ -321,10 +344,14 @@
       const ey = e.state==='flee'? -Math.sin(ang)*r*0.3 : Math.sin(ang)*r*0.3;
       ctx.fillStyle='#2a2410'; ctx.beginPath(); ctx.arc(-r*0.32+ex,-r*0.1+ey,r*0.26,0,7);
       ctx.arc(r*0.32+ex,-r*0.1+ey,r*0.26,0,7); ctx.fill();
-    } else {                                   // pack: arrowhead, highlight on a rush
-      ctx.rotate(Math.atan2(e.vy,e.vx)); ctx.fillStyle = e.state==='rush'? '#9cc8ff' : col;
-      ctx.beginPath(); ctx.moveTo(r*1.1,0); ctx.lineTo(-r*0.8,-r*0.8); ctx.lineTo(-r*0.3,0);
-      ctx.lineTo(-r*0.8,r*0.8); ctx.closePath(); ctx.fill();
+    } else {                                   // pack: a double chevron — a silhouette
+      ctx.rotate(Math.atan2(e.vy,e.vx));        // distinct from the solid aggressor triangle
+      ctx.strokeStyle = e.state==='rush'? '#bcd8ff' : col;
+      ctx.lineWidth = Math.max(2, S(2.4)); ctx.lineJoin='round'; ctx.lineCap='round';
+      for(const off of [r*0.55, -r*0.35]){
+        ctx.beginPath(); ctx.moveTo(off-r*0.5,-r*0.85); ctx.lineTo(off+r*0.55,0);
+        ctx.lineTo(off-r*0.5,r*0.85); ctx.stroke();
+      }
     }
     ctx.restore();
   }
@@ -386,6 +413,12 @@
     pmx.fillStyle = ready? '#53e6c8':'#7b8299'; pmx.font='600 15px ui-monospace,monospace';
     pmx.textAlign='center'; pmx.textBaseline='middle';
     pmx.fillText(ready?'WARD':Math.ceil(pulseCd)+'', cx, cy+1);
+    // on touch the one WARD button carries the cooldown itself (the meter is hidden)
+    if(document.body.classList.contains('touch')){
+      const pbtn = document.getElementById('pbtn');
+      pbtn.textContent = ready ? 'WARD' : Math.ceil(pulseCd)+'';
+      pbtn.style.opacity = ready ? '1' : '0.5';
+    }
   }
 
   // ---------- loop ----------
@@ -419,6 +452,7 @@
   function beginOrRestart(){
     hideAll(); srand(Date.now()>>>0); state='play';
     hearts=START_HEARTS; elapsed=0; iTimer=0; pulseCd=0; shake=0; pulseFx=99;
+    input.up=input.down=input.left=input.right=false;   // no drift from a key held through death
     player.x=ARENA_W/2; player.y=ARENA_H/2; player.vx=player.vy=0;
     spawnWave(); updateTouchVisibility();
   }
@@ -428,7 +462,10 @@
     if(e.key==='Enter'||e.key===' '){ e.preventDefault(); beginOrRestart(); } }));
 
   window.addEventListener('resize', ()=>{ resize(); });
-  resize(); render(); raf=requestAnimationFrame(frame);
+  resize();
+  if(matchMedia('(pointer: coarse)').matches)
+    document.getElementById('startHint').textContent = 'Move: on-screen pad · Ward pulse: the WARD button';
+  render(); raf=requestAnimationFrame(frame);
 
   // ---------- test hooks ----------
   window.__bb = {

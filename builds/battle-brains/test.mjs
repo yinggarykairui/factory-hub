@@ -212,6 +212,36 @@ const setup = `window.__bb.begin(); window.__bb.seed(12345); window.__bb.stopSpa
   await ctx.close();
 }
 
+// ---- 10. fixer-cycle regressions ----
+{
+  // 10a. a degenerate sub-margin viewport must not throw (scale clamp)
+  const { ctx, page } = await newPage({ viewport: { width: 900, height: 650 } });
+  await page.goto(url); await page.evaluate(() => window.__bb.begin());
+  await page.setViewportSize({ width: 400, height: 20 }); await page.waitForTimeout(60);
+  await page.setViewportSize({ width: 900, height: 650 }); await page.waitForTimeout(40);
+  ok(page.errs.length === 0, 'no throw at a degenerate sub-28px viewport (' + page.errs.join(' | ') + ')');
+  await ctx.close();
+}
+{
+  // 10b. the ward pulse breaks each personality differently: the coward flees far,
+  // the aggressor barely flinches and re-charges.
+  const { ctx, page } = await newPage({ viewport: { width: 1000, height: 700 } });
+  await page.goto(url);
+  const r = await page.evaluate((s) => {
+    eval(s); const cx = window.__bb.ARENA_W/2, cy = window.__bb.ARENA_H/2;
+    window.__bb.spawn('aggressor', cx + 90, cy);     // same distance, opposite sides
+    window.__bb.spawn('coward',    cx - 90, cy);
+    window.__bb.pulse();
+    window.__bb.tick(48);                            // ~0.8s: aggressor fear has lapsed, coward's has not
+    const es = window.__bb.enemies;
+    const agg = es.find(e=>e.type==='aggressor').dist, cow = es.find(e=>e.type==='coward').dist;
+    return { agg, cow };
+  }, setup);
+  ok(r.cow > r.agg + 40, `pulse breaks each mind differently: coward flees far (${r.cow.toFixed(0)}), aggressor re-charges (${r.agg.toFixed(0)})`);
+  ok(page.errs.length === 0, 'no console errors in the differentiated-pulse check');
+  await ctx.close();
+}
+
 await browser.close();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
