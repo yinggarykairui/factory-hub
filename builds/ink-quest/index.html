@@ -222,7 +222,7 @@
     return g;
   }
 
-  // a run of hills with light crosshatch
+  // a run of hills with light hatching
   function hills(y, amp, seed){
     const g = el("g", {});
     let d = `M -20 ${y+amp}`;
@@ -595,6 +595,9 @@
       b.addEventListener("click", ()=>{ busy=false; render("opening"); try{choicesEl.querySelector("button").focus();}catch(e){} });
       wrap.appendChild(b);
       choicesEl.appendChild(wrap);
+      // keep keyboard focus in the flow: an ending is only reached by a choice,
+      // so move focus to Restart rather than letting it drop to <body>.
+      try{ b.focus({preventScroll:true}); }catch(e){}
 
       hintEl.textContent = found.size >= 3 ? "every ending found — the fork holds no more secrets"
                                            : (3 - found.size) + " ending" + (3-found.size===1?"":"s") + " left to find";

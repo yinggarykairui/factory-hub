@@ -175,6 +175,32 @@ for (const w of [320, 360, 414]) {
   ok(!/function road\s*\(/.test(src), 'no unused road() helper in source');
 }
 
+// ---- 11. regression: focus moves to Restart after an ending (not dropped to <body>) ----
+{
+  const { ctx, page } = await newPage();
+  await page.goto(url);
+  await page.waitForTimeout(120);
+  await page.locator('#choices button').first().focus();
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(150);
+  const active = await page.evaluate(() => ({ tag: document.activeElement && document.activeElement.tagName,
+                                              text: document.activeElement && document.activeElement.textContent }));
+  ok(active.tag === 'BUTTON' && /again|fork/i.test(active.text || ''),
+     'focus moves to the Restart button after an ending (active: ' + active.tag + ' "' + (active.text || '') + '")');
+  ok(page.errs.length === 0, 'no console errors in focus-management path (' + page.errs.join(' | ') + ')');
+  await ctx.close();
+}
+
+// ---- 12. regression: README + source art claims match the build (fix: lantern/hatch wording) ----
+{
+  const fs = await import('node:fs');
+  const rd = fs.readFileSync('README.md', 'utf8');
+  ok(!/guttering|dying lantern/i.test(rd), 'README does not call the unlit lantern "guttering"/"dying"');
+  ok(!/crosshatch/i.test(rd), 'README says "hatch", not "crosshatch" (the #hatch pattern is single-direction)');
+  const src2 = fs.readFileSync('index.html', 'utf8');
+  ok(!/crosshatch/i.test(src2), 'source comment says "hatch", not "crosshatch"');
+}
+
 await browser.close();
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
