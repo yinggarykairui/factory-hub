@@ -1,0 +1,5 @@
+{
+  "description": "Three enemy minds share one arena, and you can tell them apart by how they hunt you — the aggressor charges, the coward darts and bolts, the pack circles and strikes together.",
+  "topics": ["game", "ai", "game-ai", "steering-behaviors", "arena", "canvas", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
