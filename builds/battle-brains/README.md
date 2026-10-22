@@ -17,11 +17,12 @@ drawn and labelled so the difference is obvious in a few seconds:
 - **Coward** (yellow) — wants you but is skittish: it creeps closer from a
   distance and bolts the instant you get near.
 - **Pack** (blue) — hunts as a group, circling at a distance and only rushing in
-  when two or more have you flanked. A lone packmate loses its nerve and hangs
+  when two or more are near you. A lone packmate loses its nerve and hangs
   back.
 
 Contact costs a heart; you have three. Fire a **ward pulse** (Space) to shove
-every enemy back and watch each personality break differently — then regroup.
+back every enemy near you and watch each personality break differently — then
+regroup.
 Survive as long as you can; your time is the score. Arrow keys or WASD to move,
 or the on-screen controls on a phone.
 

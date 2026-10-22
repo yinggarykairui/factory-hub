@@ -12,6 +12,7 @@ const _pw = await import(pwPath);
 const chromium = _pw.chromium || (_pw.default && _pw.default.chromium);
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const url = pathToFileURL(path.resolve('index.html')).href;
 let pass = 0, fail = 0;
@@ -240,6 +241,20 @@ const setup = `window.__bb.begin(); window.__bb.seed(12345); window.__bb.stopSpa
   ok(r.cow > r.agg + 40, `pulse breaks each mind differently: coward flees far (${r.cow.toFixed(0)}), aggressor re-charges (${r.agg.toFixed(0)})`);
   ok(page.errs.length === 0, 'no console errors in the differentiated-pulse check');
   await ctx.close();
+}
+
+// ---- 11. README truthfulness regressions (evening polish, #85) ----
+// The ward pulse is radius-limited (PULSE_R), not global, and the pack's rush
+// gate is proximity (≥2 packmates near the player), not geometric flanking.
+// A README that said "every enemy" / "have you flanked" overstated both mechanics.
+{
+  const readme = readFileSync(path.resolve('README.md'), 'utf8');
+  ok(!/shove\s+every enemy back/i.test(readme),
+    'README does not claim the pulse shoves *every* enemy (it is radius-limited)');
+  ok(/near you/i.test(readme),
+    'README qualifies the pulse shove as nearby enemies');
+  ok(!/flanked/i.test(readme),
+    'README does not overstate the pack gate as geometric flanking');
 }
 
 await browser.close();
