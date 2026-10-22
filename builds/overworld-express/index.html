@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>overworld-express</title>
+<style>
+  :root {
+    --bg: #11151c; --panel: #192230; --panel-2: #121926;
+    --line: #2b3647; --ink: #e8edf4; --muted: #9fb0c6; --accent: #e8c34b;
+    --void: #0b0e13;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 14px 16px 28px; }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
+  header h1 small { color: var(--muted); font-size: 14px; font-weight: 400; }
+  .lede { color: var(--muted); margin: 4px 0 14px; max-width: 62ch; }
+  .layout { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .stage { position: relative; flex: 1 1 360px; min-width: 0; }
+  .side { flex: 0 0 258px; max-width: 100%; }
+  @media (max-width: 620px) { .side { flex-basis: 100%; } }
+
+  .screen {
+    position: relative; width: 100%; aspect-ratio: 4 / 3;
+    background: var(--void); border: 1px solid var(--line); border-radius: 8px;
+    overflow: hidden; touch-action: none;
+  }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+  /* biome crossing banner */
+  .banner {
+    position: absolute; left: 50%; top: 14px; transform: translateX(-50%) translateY(-8px);
+    background: rgba(12,16,22,.82); border: 1px solid var(--line);
+    color: var(--accent); padding: 6px 16px; border-radius: 999px;
+    font-size: 15px; font-weight: 600; letter-spacing: .4px; white-space: nowrap;
+    opacity: 0; transition: opacity .35s ease, transform .35s ease; pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+  }
+  .banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* touch d-pad */
+  .dpad {
+    position: absolute; right: 12px; bottom: 12px;
+    display: grid; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px);
+    gap: 4px; opacity: .92;
+  }
+  .dpad button {
+    border: 1px solid var(--line); background: rgba(25,34,48,.86); color: var(--ink);
+    border-radius: 8px; font-size: 20px; line-height: 1; cursor: pointer;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  .dpad button:active { background: var(--accent); color: #1a1205; }
+  .dpad .up { grid-area: 1 / 2; } .dpad .left { grid-area: 2 / 1; }
+  .dpad .right { grid-area: 2 / 3; } .dpad .down { grid-area: 3 / 2; }
+  .dpad .mid { grid-area: 2 / 2; border: none; background: none; }
+  /* hide the pad only on wide screens with a real mouse; phone width always shows it */
+  @media (min-width: 620px) and (hover: hover) and (pointer: fine) { .dpad { display: none; } }
+
+  .readout {
+    display: flex; gap: 10px; align-items: baseline; margin: 10px 0 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .readout .biome { font-size: 17px; font-weight: 700; color: var(--accent); }
+  .readout .coords { color: var(--muted); font-size: 13px; }
+
+  .side h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin: 18px 0 8px; }
+  .side .card { background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px; }
+  button.act, label.act {
+    display: inline-block; font: inherit; border: 1px solid var(--line);
+    border-bottom-width: 2px; background: var(--panel-2); color: var(--ink);
+    padding: 7px 11px; border-radius: 6px; cursor: pointer; margin: 0 6px 6px 0;
+  }
+  button.act:hover, label.act:hover { border-color: var(--accent); }
+  button.act.primary { background: var(--accent); color: #1a1205; border-color: var(--accent); font-weight: 600; }
+  textarea {
+    width: 100%; min-height: 76px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--ink); background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin-top: 2px;
+  }
+  .status { min-height: 1.4em; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  .status.ok { color: #7fd69a; } .status.err { color: #f0907f; }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; }
+  kbd { font: inherit; font-size: 12px; background: var(--panel-2); border: 1px solid var(--line);
+    border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 13px; height: 13px; border-radius: 3px; display: inline-block; border: 1px solid rgba(0,0,0,.3); }
+  footer { color: var(--muted); font-size: 12.5px; margin-top: 22px; border-top: 1px solid var(--line); padding-top: 12px; }
+  footer a { color: var(--accent); }
+  .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>overworld-express <small>— walk a tiled overworld</small></h1>
+  </header>
+  <p class="lede">Move with the arrow keys, <kbd>WASD</kbd>, or the on-screen pad. The map is
+  bigger than the screen, so the camera follows you and stops at the edges. Water, trees, and
+  walls block you; cross from one biome into the next and the land announces itself.</p>
+
+  <div class="layout">
+    <div class="stage">
+      <div class="screen" id="screen">
+        <canvas id="view" role="img" aria-label="Top-down overworld map with a traveler you can move."></canvas>
+        <div class="banner" id="banner" aria-live="polite"></div>
+        <div class="dpad" aria-hidden="true">
+          <button class="up"    data-dir="up"    aria-label="Move up">▲</button>
+          <button class="left"  data-dir="left"  aria-label="Move left">◀</button>
+          <span class="mid"></span>
+          <button class="right" data-dir="right" aria-label="Move right">▶</button>
+          <button class="down"  data-dir="down"  aria-label="Move down">▼</button>
+        </div>
+      </div>
+      <div class="readout">
+        <span class="biome" id="biome">Meadow</span>
+        <span class="coords" id="coords">(0, 0)</span>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <aside class="side">
+      <h2>Load a map</h2>
+      <div class="card">
+        <p style="margin:0 0 8px; color:var(--muted); font-size:13px;">
+          This reads <a href="https://yinggarykairui.github.io/tile-forge/" style="color:var(--accent)">tile-forge</a>
+          exports — the <code>{version, width, height, palette, tiles}</code> JSON.</p>
+        <button class="act primary" id="example">Load example map</button>
+        <label class="act" for="file">Open .json file…</label>
+        <input id="file" type="file" accept=".json,application/json" class="sr">
+        <textarea id="paste" placeholder="…or paste a tile-forge JSON map here"></textarea>
+        <button class="act" id="loadpaste">Load pasted map</button>
+        <p class="status" id="status" role="status"></p>
+      </div>
+      <p class="hint">Keys: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or
+        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> to walk. Hold to keep moving.</p>
+    </aside>
+  </div>
+
+  <footer>
+    Tiles and the traveler are drawn from code — no images, no fonts, no network.<br>
+    Day 067 of an autonomous build factory —
+    <a href="https://github.com/yinggarykairui/factory-hub">factory-hub</a>.
+  </footer>
+</div>
+
+<script>
+"use strict";
+(function () {
+  // ===================================================================
+  // overworld-express — a top-down overworld walker.
+  // Single file, vanilla JS, zero dependencies. Tiles are drawn in code,
+  // reusing tile-forge's procedural art so a tile-forge map renders the
+  // same here. The map format is tile-forge's exactly (schema v1).
+  // ===================================================================
+
+  var TILE = 32;        // on-screen tile size, px (logical)
+  var SRC  = 32;        // tile art is authored at this resolution (1:1 with TILE)
+  var STEP_MS = 115;    // time to walk one tile when a direction is held
+
+  // Palette indices match tile-forge's export order. 0 is "empty" (void).
+  var NAMES = ["empty","grass","water","sand","stone","path","tree","flower","wall","door"];
+  var EMPTY=0, GRASS=1, WATER=2, SAND=3, STONE=4, PATH=5, TREE=6, FLOWER=7, WALL=8, DOOR=9;
+
+  // What stops a traveler. Everything else is walkable.
+  var BLOCK = { 0:1, 2:1, 6:1, 8:1 };               // empty, water, tree, wall
+  function walkableIdx(i) { return !BLOCK[i]; }
+
+  // Biome is read from the tile you stand on, so it works for any map —
+  // built-in or imported. Blocking tiles are never stood on.
+  var BIOME = {};
+  BIOME[GRASS]="Meadow"; BIOME[FLOWER]="Meadow"; BIOME[SAND]="The Sands";
+  BIOME[STONE]="Stone Pass"; BIOME[PATH]="The Road"; BIOME[DOOR]="Doorway";
+  function biomeOf(i) { return BIOME[i] || "The Wilds"; }
+
+  // ---- procedural tile art (ported from tile-forge, deterministic) ----
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  function fillBase(c, base) { c.fillStyle = base; c.fillRect(0, 0, SRC, SRC); }
+  function drawEmpty(c) { c.clearRect(0,0,SRC,SRC); c.fillStyle="#0b0e13"; c.fillRect(0,0,SRC,SRC); }
+  function speckle(c, color, n) { var r = rng(n*131+7); c.fillStyle=color;
+    for (var i=0;i<n*3;i++) c.fillRect((r()*SRC)|0,(r()*SRC)|0,2,2); }
+  function blades(c, color) { var r=rng(41); c.strokeStyle=color; c.lineWidth=1.5;
+    for (var i=0;i<9;i++){ var x=(r()*SRC)|0,y=(r()*SRC)|0; c.beginPath(); c.moveTo(x,y); c.lineTo(x,y-4); c.stroke(); } }
+  function waves(c, color) { c.strokeStyle=color; c.lineWidth=1.5;
+    for (var y=6;y<SRC;y+=9){ c.beginPath(); for (var x=0;x<=SRC;x+=4) c.lineTo(x, y+Math.sin(x/4)*1.6); c.stroke(); } }
+  function cracks(c, color) { c.strokeStyle=color; c.lineWidth=1;
+    c.beginPath(); c.moveTo(6,4); c.lineTo(12,14); c.lineTo(9,24); c.stroke();
+    c.beginPath(); c.moveTo(26,8); c.lineTo(20,18); c.stroke(); }
+  function bricks(c, color) { c.strokeStyle=color; c.lineWidth=1.5; var step=SRC/4, off=0;
+    for (var y=step;y<SRC;y+=step){ c.beginPath(); c.moveTo(0,y); c.lineTo(SRC,y); c.stroke();
+      off = off ? 0 : step/2; for (var x=off;x<SRC;x+=step){ c.beginPath(); c.moveTo(x,y-step); c.lineTo(x,y); c.stroke(); } } }
+  function treeArt(c) { c.fillStyle="#6b4a2b"; c.fillRect(14,20,4,10);
+    c.fillStyle="#2f7a44"; c.beginPath(); c.arc(16,13,9,0,Math.PI*2); c.fill();
+    c.fillStyle="#3b9254"; c.beginPath(); c.arc(13,11,4,0,Math.PI*2); c.fill(); }
+  function flowerArt(c) { c.fillStyle="#d85c7a";
+    [[16,10],[12,14],[20,14],[13,19],[19,19]].forEach(function(p){ c.beginPath(); c.arc(p[0],p[1],3,0,Math.PI*2); c.fill(); });
+    c.fillStyle="#f2d24b"; c.beginPath(); c.arc(16,15,2.2,0,Math.PI*2); c.fill(); }
+  function doorArt(c) { c.fillStyle="#7a4a28"; c.fillRect(9,10,14,22);
+    c.strokeStyle="#5c3720"; c.lineWidth=1; c.strokeRect(9,10,14,22);
+    c.fillStyle="#e9c94b"; c.beginPath(); c.arc(20,21,1.6,0,Math.PI*2); c.fill(); }
+
+  var ART = [
+    drawEmpty,
+    function(c){ fillBase(c,"#4c9a52"); blades(c,"#3c7e42"); },                 // grass
+    function(c){ fillBase(c,"#3f78c2"); waves(c,"#5b93d8"); },                  // water
+    function(c){ fillBase(c,"#d8c18a"); speckle(c,"#c3a96d",7); },              // sand
+    function(c){ fillBase(c,"#8a909c"); speckle(c,"#767c88",6); cracks(c,"#6d727d"); }, // stone
+    function(c){ fillBase(c,"#b08a5e"); bricks(c,"#9a7549"); },                 // path
+    function(c){ fillBase(c,"#4c9a52"); treeArt(c); },                         // tree
+    function(c){ fillBase(c,"#4c9a52"); flowerArt(c); },                       // flower
+    function(c){ fillBase(c,"#5a5f6b"); bricks(c,"#474b55"); },                 // wall
+    function(c){ fillBase(c,"#5a5f6b"); bricks(c,"#474b55"); doorArt(c); }      // door
+  ];
+  var cache = [];
+  function buildCache() {
+    cache = ART.map(function (draw) {
+      var o = document.createElement("canvas"); o.width = SRC; o.height = SRC;
+      draw(o.getContext("2d")); return o;
+    });
+  }
+
+  // ---- the built-in overworld -----------------------------------------
+  // Laid out in distinct biomes with a road crossing all of them, so the
+  // traveler can reach and dismount into every biome.
+  function makeOverworld() {
+    var W = 56, H = 40, roadY = 20;
+    var t = [];
+    function riverCol(y) { return Math.round(W * 0.46 + Math.sin(y * 0.27) * 3); }
+    function base(x, y) {
+      var rc = riverCol(y), d = x - rc;
+      if (d >= -1 && d <= 1) return WATER;                 // river
+      if (d >= -3 && d <= 3) return SAND;                  // banks / beach
+      if (d < -3) return GRASS;                            // west: meadow
+      return (y < H * 0.5) ? STONE : SAND;                 // east: highland / desert
+    }
+    // 1. base terrain
+    for (var y = 0; y < H; y++) { var row = []; for (var x = 0; x < W; x++) row.push(base(x, y)); t.push(row); }
+    // 2. a forest in the west meadow + highland peaks in the east stone
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      var v = Math.sin(x * 0.55 + 1.3) * Math.cos(y * 0.5 + 0.7) + Math.sin((x + y) * 0.33);
+      if (t[y][x] === GRASS && x < W * 0.30 && y > H * 0.52 && v > 0.65) t[y][x] = TREE;
+      if (t[y][x] === STONE && v > 1.05) t[y][x] = WALL;   // impassable peak
+      if (t[y][x] === GRASS && v < -1.2) t[y][x] = FLOWER; // sparse blooms
+    }
+    // 3. the road: a clear walkable band across every biome (bridges the river)
+    for (x = 0; x < W; x++) { t[roadY][x] = PATH; t[roadY + 1][x] = PATH; }
+    // keep the rows flanking the road clear so you can always dismount into a biome
+    for (x = 0; x < W; x++) for (var yy = roadY - 1; yy <= roadY + 2; yy++) {
+      if (BLOCK[t[yy][x]]) {
+        var rc2 = riverCol(yy);
+        t[yy][x] = (x <= rc2 + 3 && x >= rc2 - 3) ? SAND : (x < rc2 ? GRASS : (yy < H * 0.5 ? STONE : SAND));
+      }
+    }
+    // 4. a small settlement on the meadow, just north of the road
+    var sx = 6, sy = roadY - 7;
+    for (y = sy; y < sy + 5; y++) for (x = sx; x < sx + 9; x++) t[y][x] = PATH;      // plaza
+    hut(t, sx, sy, 3); hut(t, sx + 5, sy, 3);                                         // two huts
+    for (x = sx + 1; x < sx + 8; x++) if (!BLOCK[t[roadY - 1][x]]) t[roadY - 2][x] = PATH; // lane to road
+    return { version: 1, width: W, height: H, palette: NAMES.slice(), tiles: t };
+  }
+  function hut(t, x0, y0, s) { // a wall box with a door facing south
+    for (var y = y0; y < y0 + s; y++) for (var x = x0; x < x0 + s; x++)
+      if (y === y0 || y === y0 + s - 1 || x === x0 || x === x0 + s - 1) t[y][x] = WALL;
+    t[y0 + s - 1][x0 + ((s / 2) | 0)] = DOOR;
+  }
+
+  // ---- map validation / import ----------------------------------------
+  // Accepts tile-forge's schema; normalizes out-of-range indices to EMPTY
+  // rather than trusting them, and rejects anything structurally wrong.
+  function validate(obj) {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) throw new Error("not a map object");
+    var w = obj.width, h = obj.height, tiles = obj.tiles;
+    if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1 || w > 512 || h > 512)
+      throw new Error("bad width/height");
+    if (!Array.isArray(tiles) || tiles.length !== h) throw new Error("tiles is not " + h + " rows");
+    var out = [], clamped = 0;
+    for (var y = 0; y < h; y++) {
+      var r = tiles[y];
+      if (!Array.isArray(r) || r.length !== w) throw new Error("row " + y + " is not " + w + " wide");
+      var row = [];
+      for (var x = 0; x < w; x++) {
+        var v = r[x];
+        if (typeof v !== "number" || !isFinite(v) || v < 0 || v >= NAMES.length || (v | 0) !== v) { v = EMPTY; clamped++; }
+        row.push(v);
+      }
+      out.push(row);
+    }
+    return { map: { version: 1, width: w, height: h, palette: NAMES.slice(), tiles: out }, clamped: clamped };
+  }
+  function spawnOf(map) { // nearest walkable tile to the map centre (spiral search)
+    var cx = map.width >> 1, cy = map.height >> 1;
+    for (var ring = 0; ring <= map.width + map.height; ring++)
+      for (var dy = -ring; dy <= ring; dy++) for (var dx = -ring; dx <= ring; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
+        var x = cx + dx, y = cy + dy;
+        if (x >= 0 && y >= 0 && x < map.width && y < map.height && walkableIdx(map.tiles[y][x])) return { x: x, y: y };
+      }
+    return { x: 0, y: 0 }; // a map with no walkable tile at all
+  }
+
+  // ---- state ----------------------------------------------------------
+  var screenEl = document.getElementById("screen");
+  var cv = document.getElementById("view");
+  var ctx = cv.getContext("2d");
+  var biomeEl = document.getElementById("biome");
+  var coordsEl = document.getElementById("coords");
+  var bannerEl = document.getElementById("banner");
+  var statusEl = document.getElementById("status");
+
+  var map, player, cam = { x: 0, y: 0 }, lastBiome = "", bannerUntil = 0;
+  var held = { up: false, down: false, left: false, right: false };
+  var viewW = 1, viewH = 1, dpr = 1;
+
+  function loadMap(m, announce) {
+    map = m;
+    var s = spawnOf(m);
+    player = { tx: s.x, ty: s.y, px: s.x * TILE + TILE / 2, py: s.y * TILE + TILE / 2,
+               moving: false, fromX: 0, fromY: 0, toX: 0, toY: 0, t0: 0, face: "down" };
+    lastBiome = "";
+    centreCam();
+    updateBiome(true);
+    if (announce) flashBanner(biomeOf(map.tiles[player.ty][player.tx]));
+  }
+
+  function canWalk(tx, ty) {
+    return tx >= 0 && ty >= 0 && tx < map.width && ty < map.height && walkableIdx(map.tiles[ty][tx]);
+  }
+  var DIRS = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+
+  function beginStep(dir) {
+    if (player.moving) return false;
+    var d = DIRS[dir]; player.face = dir;
+    var nx = player.tx + d[0], ny = player.ty + d[1];
+    if (!canWalk(nx, ny)) return false;
+    player.moving = true; player.fromX = player.tx; player.fromY = player.ty;
+    player.toX = nx; player.toY = ny; player.t0 = performance.now();
+    return true;
+  }
+  function arrive() {
+    player.tx = player.toX; player.ty = player.toY;
+    player.px = player.tx * TILE + TILE / 2; player.py = player.ty * TILE + TILE / 2;
+    player.moving = false;
+    updateBiome(false);
+  }
+  function updateBiome(silent) {
+    var b = biomeOf(map.tiles[player.ty][player.tx]);
+    coordsEl.textContent = "(" + player.tx + ", " + player.ty + ")";
+    biomeEl.textContent = b;
+    if (b !== lastBiome) { if (!silent) flashBanner(b); lastBiome = b; }
+  }
+  function flashBanner(text) {
+    bannerEl.textContent = text; bannerEl.classList.add("show");
+    bannerUntil = performance.now() + 1700;
+  }
+
+  // ---- camera / layout ------------------------------------------------
+  function centreCam() { cam.x = clampCamX(player.px - viewW / 2); cam.y = clampCamY(player.py - viewH / 2); }
+  function clampCamX(x) { var max = map.width * TILE - viewW; return max <= 0 ? max / 2 : Math.max(0, Math.min(max, x)); }
+  function clampCamY(y) { var max = map.height * TILE - viewH; return max <= 0 ? max / 2 : Math.max(0, Math.min(max, y)); }
+
+  function resize() {
+    var rect = screenEl.getBoundingClientRect();
+    viewW = Math.max(1, Math.round(rect.width));
+    viewH = Math.max(1, Math.round(rect.height));
+    dpr = Math.min(2, window.devicePixelRatio || 1);      // cap dpr at 2 (LESSONS)
+    cv.width = Math.max(1, Math.round(viewW * dpr));
+    cv.height = Math.max(1, Math.round(viewH * dpr));
+    if (map && player) centreCam();
+  }
+
+  // ---- render ---------------------------------------------------------
+  function render() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = "#0b0e13"; ctx.fillRect(0, 0, viewW, viewH);
+
+    var x0 = Math.floor(cam.x / TILE), y0 = Math.floor(cam.y / TILE);
+    var x1 = Math.ceil((cam.x + viewW) / TILE), y1 = Math.ceil((cam.y + viewH) / TILE);
+    for (var ty = y0; ty < y1; ty++) {
+      for (var tx = x0; tx < x1; tx++) {
+        var sx = Math.round(tx * TILE - cam.x), sy = Math.round(ty * TILE - cam.y);
+        if (tx < 0 || ty < 0 || tx >= map.width || ty >= map.height) continue; // void stays dark
+        ctx.drawImage(cache[map.tiles[ty][tx]], sx, sy, TILE, TILE);
+      }
+    }
+    drawPlayer();
+  }
+  function drawPlayer() {
+    var x = player.px - cam.x, y = player.py - cam.y;
+    // soft shadow
+    ctx.fillStyle = "rgba(0,0,0,.28)";
+    ctx.beginPath(); ctx.ellipse(x, y + 10, 9, 4, 0, 0, Math.PI * 2); ctx.fill();
+    // cloak + body
+    ctx.fillStyle = "#c0433a"; ctx.beginPath(); ctx.arc(x, y + 1, 8.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#e7ad57"; ctx.beginPath(); ctx.arc(x, y - 6, 5, 0, Math.PI * 2); ctx.fill(); // head
+    ctx.fillStyle = "#3a2417"; ctx.beginPath(); ctx.arc(x, y - 8, 5, Math.PI, 0); ctx.fill();     // hair/hat
+    // facing nub
+    var f = DIRS[player.face]; ctx.fillStyle = "#fff4d6";
+    ctx.beginPath(); ctx.arc(x + f[0] * 5, y - 6 + f[1] * 4, 1.6, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // ---- loop -----------------------------------------------------------
+  function firstHeld() { return held.up ? "up" : held.down ? "down" : held.left ? "left" : held.right ? "right" : null; }
+  function frame(now) {
+    if (player.moving) {
+      var k = Math.min(1, (now - player.t0) / STEP_MS);
+      var ax = player.fromX * TILE + TILE / 2, ay = player.fromY * TILE + TILE / 2;
+      var bx = player.toX * TILE + TILE / 2, by = player.toY * TILE + TILE / 2;
+      player.px = ax + (bx - ax) * k; player.py = ay + (by - ay) * k;
+      if (k >= 1) arrive();
+    } else {
+      var dir = firstHeld(); if (dir) beginStep(dir);
+    }
+    centreCam();
+    if (bannerUntil && now > bannerUntil) { bannerEl.classList.remove("show"); bannerUntil = 0; }
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- input ----------------------------------------------------------
+  var KEYMAP = { ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right",
+                 w:"up", s:"down", a:"left", d:"right", W:"up", S:"down", A:"left", D:"right" };
+  addEventListener("keydown", function (e) {
+    var dir = KEYMAP[e.key]; if (!dir) return;
+    if (e.target && /^(TEXTAREA|INPUT)$/.test(e.target.tagName)) return; // let the paste box type
+    held[dir] = true; e.preventDefault();
+  });
+  addEventListener("keyup", function (e) { var dir = KEYMAP[e.key]; if (dir) held[dir] = false; });
+  addEventListener("blur", function () { held.up = held.down = held.left = held.right = false; });
+
+  // touch d-pad
+  Array.prototype.forEach.call(document.querySelectorAll(".dpad button"), function (b) {
+    var dir = b.getAttribute("data-dir");
+    function on(e) { held[dir] = true; e.preventDefault(); }
+    function off(e) { held[dir] = false; e.preventDefault(); }
+    b.addEventListener("touchstart", on, { passive: false });
+    b.addEventListener("touchend", off); b.addEventListener("touchcancel", off);
+    b.addEventListener("mousedown", on); b.addEventListener("mouseup", off); b.addEventListener("mouseleave", off);
+  });
+
+  // ---- map loading UI -------------------------------------------------
+  function setStatus(msg, kind) { statusEl.textContent = msg || ""; statusEl.className = "status" + (kind ? " " + kind : ""); }
+  function loadText(text) {
+    var obj; try { obj = JSON.parse(text); } catch (e) { setStatus("That is not valid JSON.", "err"); return false; }
+    var res; try { res = validate(obj); } catch (e) { setStatus("Not a tile-forge map: " + e.message + ".", "err"); return false; }
+    loadMap(res.map, true);
+    setStatus("Loaded a " + res.map.width + "×" + res.map.height + " map" +
+      (res.clamped ? " (" + res.clamped + " unknown tiles cleared)" : "") + ".", "ok");
+    return true;
+  }
+  document.getElementById("example").addEventListener("click", function () {
+    loadMap(makeOverworld(), true); setStatus("Loaded the built-in overworld.", "ok");
+  });
+  document.getElementById("loadpaste").addEventListener("click", function () {
+    var v = document.getElementById("paste").value.trim();
+    if (!v) { setStatus("Paste a map first.", "err"); return; }
+    loadText(v);
+  });
+  document.getElementById("file").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () { loadText(String(rd.result)); };
+    rd.onerror = function () { setStatus("Could not read that file.", "err"); };
+    rd.readAsText(f); e.target.value = "";
+  });
+
+  // legend
+  (function () {
+    var items = [["#4c9a52","Meadow"],["#b08a5e","Road"],["#d8c18a","Sands"],["#8a909c","Stone"],["#3f78c2","Water"],["#5a5f6b","Walls"]];
+    document.getElementById("legend").innerHTML = items.map(function (it) {
+      return '<span><i style="background:' + it[0] + '"></i>' + it[1] + '</span>';
+    }).join("");
+  })();
+
+  // ---- boot -----------------------------------------------------------
+  buildCache();
+  resize();
+  loadMap(makeOverworld(), false);
+  addEventListener("resize", resize);
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(screenEl);
+  requestAnimationFrame(frame);
+
+  // ---- test hook (headless checks drive the sim deterministically) ----
+  window.__ow = {
+    get map() { return map; },
+    get player() { return { tx: player.tx, ty: player.ty, face: player.face, moving: player.moving }; },
+    get cam() { return { x: cam.x, y: cam.y }; },
+    get view() { return { w: viewW, h: viewH }; },
+    biome: function () { return biomeEl.textContent; },
+    banner: function () { return bannerEl.classList.contains("show") ? bannerEl.textContent : ""; },
+    canWalk: canWalk,
+    // instant logical step for tests (bypasses the walk tween); returns whether it moved
+    step: function (dir) {
+      if (player.moving) { arrive(); }
+      var d = DIRS[dir]; player.face = dir;
+      var nx = player.tx + d[0], ny = player.ty + d[1];
+      if (!canWalk(nx, ny)) return false;
+      player.tx = nx; player.ty = ny; player.px = nx * TILE + TILE / 2; player.py = ny * TILE + TILE / 2;
+      updateBiome(false); centreCam(); return true;
+    },
+    teleport: function (tx, ty) { if (!canWalk(tx, ty)) return false;
+      player.tx = tx; player.ty = ty; player.px = tx * TILE + TILE / 2; player.py = ty * TILE + TILE / 2;
+      player.moving = false; updateBiome(true); centreCam(); return true; },
+    loadText: loadText,
+    loadBuiltIn: function () { loadMap(makeOverworld(), false); },
+    makeOverworld: makeOverworld,
+    validate: validate
+  };
+})();
+</script>
+</body>
+</html>
