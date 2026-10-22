@@ -165,6 +165,7 @@ const api = () => page.evaluate.bind(page);
     [JSON.stringify([1,2,3]), 'array not object'],
     [JSON.stringify({ version: 1, width: -4, height: 3, tiles: [] }), 'negative dimension'],
     [JSON.stringify(null), 'null'],
+    [JSON.stringify({ version: 1, width: 3, height: 3, tiles: [[2,2,2],[2,8,2],[2,2,2]] }), 'no walkable ground'],
   ];
   for (const [text, label] of cases) {
     const r = await page.evaluate((t) => {
@@ -181,6 +182,37 @@ const api = () => page.evaluate.bind(page);
       ok(r.after.w === r.before.w && r.after.h === r.before.h, `current map kept after: ${label}`);
     }
   }
+}
+
+// 6b. a large all-blocking map is refused without hanging the thread
+{
+  const big = JSON.stringify((() => {
+    const w = 220, h = 220, row = Array(w).fill(8); // all wall
+    return { version: 1, width: w, height: h, palette: ['empty','grass','water','sand','stone','path','tree','flower','wall','door'], tiles: Array.from({ length: h }, () => row.slice()) };
+  })());
+  const r = await page.evaluate((t) => {
+    const o = window.__ow; const before = { w: o.map.width };
+    const t0 = performance.now(); const ret = o.loadText(t); const ms = performance.now() - t0;
+    return { ret, ms, kept: o.map.width === before.w };
+  }, big);
+  ok(r.ret === false && r.kept, 'a 220×220 all-wall map is refused and the current map kept');
+  ok(r.ms < 1000, `refusal is prompt, no spiral hang (${r.ms.toFixed(0)}ms)`);
+}
+
+// 6c. a quick d-pad tap steps exactly once (no hold required)
+{
+  await page.setViewportSize({ width: 360, height: 720 });
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('.dpad')).display !== 'none');
+  const r = await page.evaluate(async () => {
+    const o = window.__ow; o.loadBuiltIn(); o.teleport(28, 20);           // spawn on the road
+    const before = o.player.ty;
+    const btn = document.querySelector('.dpad .down');
+    btn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    btn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));       // released same frame
+    await new Promise(r => setTimeout(r, 220));                            // let the tween finish
+    return { before, after: o.player.ty, moving: o.player.moving };
+  });
+  ok(r.after === r.before + 1 && !r.moving, `a tap-release on the d-pad walks one tile (${r.before}→${r.after})`);
 }
 
 // 7. phone width: usable at a narrow viewport, d-pad present, resize re-fits

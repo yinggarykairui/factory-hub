@@ -1,5 +1,5 @@
 {
-  "description": "Walk a top-down overworld larger than the screen — a camera follows you, terrain blocks you, and crossing from meadow to dunes to a stone pass is announced. Loads maps made in tile-forge.",
+  "description": "Walk a top-down overworld larger than the screen — a camera follows you, terrain blocks you, and crossing from meadow to open sands to a stone pass is announced. Loads maps made in tile-forge.",
   "topics": ["game", "rpg", "overworld", "tilemap", "camera", "collision", "canvas", "vanilla-js", "zero-dependency"],
   "pages": true
 }

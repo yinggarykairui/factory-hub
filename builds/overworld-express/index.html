@@ -243,12 +243,17 @@
     }
     // 1. base terrain
     for (var y = 0; y < H; y++) { var row = []; for (var x = 0; x < W; x++) row.push(base(x, y)); t.push(row); }
-    // 2. a forest in the west meadow + highland peaks in the east stone
+    // 2. a forest in the west meadow + highland peaks in the east stone.
+    // A low-frequency field shapes the regions; a per-cell hash scatters the
+    // placement so trees and blooms don't land on a visible grid.
+    function hash(x, y) { var n = (x * 374761393 + y * 668265263) >>> 0; n = ((n ^ (n >>> 13)) * 1274126177) >>> 0; return (n >>> 0) / 4294967296; }
     for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
-      var v = Math.sin(x * 0.55 + 1.3) * Math.cos(y * 0.5 + 0.7) + Math.sin((x + y) * 0.33);
-      if (t[y][x] === GRASS && x < W * 0.30 && y > H * 0.52 && v > 0.65) t[y][x] = TREE;
-      if (t[y][x] === STONE && v > 1.05) t[y][x] = WALL;   // impassable peak
-      if (t[y][x] === GRASS && v < -1.2) t[y][x] = FLOWER; // sparse blooms
+      var j = hash(x, y);
+      if (t[y][x] === GRASS && x < W * 0.34 && y > H * 0.52 &&
+          Math.sin(x * 0.5) * Math.cos(y * 0.5) + (j - 0.5) * 1.5 > 0.5) t[y][x] = TREE;
+      if (t[y][x] === STONE &&
+          Math.sin(x * 0.6 + 1) * Math.sin(y * 0.5) + (j - 0.5) * 1.3 > 0.5) t[y][x] = WALL; // peak
+      if (t[y][x] === GRASS && j > 0.91) t[y][x] = FLOWER; // scattered blooms
     }
     // 3. the road: a clear walkable band across every biome (bridges the river)
     for (x = 0; x < W; x++) { t[roadY][x] = PATH; t[roadY + 1][x] = PATH; }
@@ -293,17 +298,18 @@
       }
       out.push(row);
     }
+    if (!spawnOf({ width: w, height: h, tiles: out }))
+      throw new Error("no walkable ground"); // a map you could never stand on is refused
     return { map: { version: 1, width: w, height: h, palette: NAMES.slice(), tiles: out }, clamped: clamped };
   }
-  function spawnOf(map) { // nearest walkable tile to the map centre (spiral search)
-    var cx = map.width >> 1, cy = map.height >> 1;
-    for (var ring = 0; ring <= map.width + map.height; ring++)
-      for (var dy = -ring; dy <= ring; dy++) for (var dx = -ring; dx <= ring; dx++) {
-        if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
-        var x = cx + dx, y = cy + dy;
-        if (x >= 0 && y >= 0 && x < map.width && y < map.height && walkableIdx(map.tiles[y][x])) return { x: x, y: y };
-      }
-    return { x: 0, y: 0 }; // a map with no walkable tile at all
+  function spawnOf(map) { // walkable tile nearest the map centre; null if there are none
+    var cx = (map.width - 1) / 2, cy = (map.height - 1) / 2, best = null, bestD = Infinity;
+    for (var y = 0; y < map.height; y++) for (var x = 0; x < map.width; x++) {
+      if (!walkableIdx(map.tiles[y][x])) continue;
+      var d = Math.max(Math.abs(x - cx), Math.abs(y - cy)); // Chebyshev → a central spawn
+      if (d < bestD) { bestD = d; best = { x: x, y: y }; }
+    }
+    return best; // single pass, O(w·h): no spiral blow-up on a mostly-blocked map
   }
 
   // ---- state ----------------------------------------------------------
@@ -321,7 +327,7 @@
 
   function loadMap(m, announce) {
     map = m;
-    var s = spawnOf(m);
+    var s = spawnOf(m) || { x: 0, y: 0 }; // imported maps are guaranteed walkable by validate()
     player = { tx: s.x, ty: s.y, px: s.x * TILE + TILE / 2, py: s.y * TILE + TILE / 2,
                moving: false, fromX: 0, fromY: 0, toX: 0, toY: 0, t0: 0, face: "down" };
     lastBiome = "";
@@ -396,15 +402,19 @@
   function drawPlayer() {
     var x = player.px - cam.x, y = player.py - cam.y;
     // soft shadow
-    ctx.fillStyle = "rgba(0,0,0,.28)";
-    ctx.beginPath(); ctx.ellipse(x, y + 10, 9, 4, 0, 0, Math.PI * 2); ctx.fill();
-    // cloak + body
-    ctx.fillStyle = "#c0433a"; ctx.beginPath(); ctx.arc(x, y + 1, 8.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#e7ad57"; ctx.beginPath(); ctx.arc(x, y - 6, 5, 0, Math.PI * 2); ctx.fill(); // head
+    ctx.fillStyle = "rgba(0,0,0,.3)";
+    ctx.beginPath(); ctx.ellipse(x, y + 10, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
+    // a faint "you are here" ring so the traveler reads against busy tiles
+    ctx.strokeStyle = "rgba(255,244,214,.5)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y + 1, 13, 0, Math.PI * 2); ctx.stroke();
+    // cloak + body, dark-outlined for contrast
+    ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.lineWidth = 1.5;
+    ctx.fillStyle = "#c0433a"; ctx.beginPath(); ctx.arc(x, y + 1, 8.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#e7ad57"; ctx.beginPath(); ctx.arc(x, y - 6, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); // head
     ctx.fillStyle = "#3a2417"; ctx.beginPath(); ctx.arc(x, y - 8, 5, Math.PI, 0); ctx.fill();     // hair/hat
     // facing nub
     var f = DIRS[player.face]; ctx.fillStyle = "#fff4d6";
-    ctx.beginPath(); ctx.arc(x + f[0] * 5, y - 6 + f[1] * 4, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + f[0] * 5, y - 6 + f[1] * 4, 1.8, 0, Math.PI * 2); ctx.fill();
   }
 
   // ---- loop -----------------------------------------------------------
@@ -437,14 +447,17 @@
   addEventListener("blur", function () { held.up = held.down = held.left = held.right = false; });
 
   // touch d-pad
+  function clearHeld() { held.up = held.down = held.left = held.right = false; }
   Array.prototype.forEach.call(document.querySelectorAll(".dpad button"), function (b) {
     var dir = b.getAttribute("data-dir");
-    function on(e) { held[dir] = true; e.preventDefault(); }
+    function on(e) { held[dir] = true; if (player && !player.moving) beginStep(dir); e.preventDefault(); } // a quick tap steps once
     function off(e) { held[dir] = false; e.preventDefault(); }
     b.addEventListener("touchstart", on, { passive: false });
     b.addEventListener("touchend", off); b.addEventListener("touchcancel", off);
     b.addEventListener("mousedown", on); b.addEventListener("mouseup", off); b.addEventListener("mouseleave", off);
   });
+  // a finger that slides off a held d-pad button never fires that button's touchend
+  addEventListener("touchend", clearHeld); addEventListener("touchcancel", clearHeld);
 
   // ---- map loading UI -------------------------------------------------
   function setStatus(msg, kind) { statusEl.textContent = msg || ""; statusEl.className = "status" + (kind ? " " + kind : ""); }
