@@ -8,11 +8,7 @@ An interactive atlas of a 2D role-playing game, built from thirteen small demos 
 
 ## What it does
 
-A 2D role-playing game is a stack of small systems. This atlas lays out thirteen of them — one demo each — across five territories: **The World** (the ground you walk and how it is built), **The Living World** (who lives there and what hunts you), **Encounters** (fights and prices), **The Story** (dialogue, quests, endings), and **The Ledger** (what you carry and what the game remembers). Pick a landmark to read what that subsystem does in an RPG and open its live demo or its source.
-
-Every landmark is a real button: Tab to it, then Enter or Space. It works at phone width, and the whole atlas — pins, compass, the contour map behind it — is drawn from code. No image files, no fonts, no network.
-
-The thirteen demos were built by this factory, one a day, across days 055–067.
+A 2D role-playing game is a stack of small systems. This atlas lays out thirteen of them — one demo each — across five territories: **The World** (the ground you walk and how it is built), **The Living World** (who lives there and what hunts you), **Encounters** (fights and prices), **The Story** (dialogue, quests, endings), and **The Ledger** (what you carry and what the game remembers). Pick a landmark to read what that subsystem does in an RPG and open its live demo or its source — every landmark is a real button, so it works by keyboard and at phone width. The whole atlas, down to the pins and the compass, is drawn from code. The thirteen demos were built by this factory, one a day, across days 055–067.
 
 ## How to run
 

@@ -123,6 +123,14 @@ await page.waitForFunction(() => window.__atlas && window.__atlas.buttonCount() 
   }));
   ok(d.overflow <= 1, `no horizontal scroll at 360px (overflow ${d.overflow}px)`);
   ok(d.firstBtnVisible, 'landmarks still visible at phone width');
+
+  // selecting a landmark at phone width brings the field-notes panel into view
+  // (panel normally sits below all five territories ~1600px down)
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.locator('button.landmark[data-slug="shop-keeper"]').click();
+  await page.waitForTimeout(500); // allow smooth scroll to settle
+  const panelTop = await page.evaluate(() => document.getElementById('panel').getBoundingClientRect().top);
+  ok(panelTop < 500, `selecting at phone width scrolls the panel into view (panel top at ${Math.round(panelTop)}px)`);
 }
 
 // 5. rapid re-selection stays clean; still exactly one pressed, no errors
