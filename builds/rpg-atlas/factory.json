@@ -1,0 +1,5 @@
+{
+  "description": "An interactive atlas of a 2D role-playing game, built from thirteen small demos — one for each subsystem, laid out the way they fit together.",
+  "topics": ["rpg", "atlas", "map", "portfolio", "showcase", "inline-svg", "accessibility", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
