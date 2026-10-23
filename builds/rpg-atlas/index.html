@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rpg-atlas — Anatomy of a 2D RPG</title>
+<meta name="description" content="An interactive atlas of a 2D role-playing game, built from thirteen small demos — one for each subsystem, laid out the way they fit together.">
+<style>
+  :root {
+    /* cartographic ink-on-parchment palette (one cohesive theme) */
+    --paper:   #efe4c8;
+    --paper-2: #e7d8b4;
+    --ink:     #3a2a16;
+    --ink-soft:#6a553a;
+    --line:    #b7975f;
+    --line-2:  #caa96b;
+    --sea:     #cdbd93;
+    --gold:    #9a6b1f;
+    --focus:   #1b61a6;
+    /* five territory hues, muted like printed map tints */
+    --t-world:  #4e7a44;   /* greens / the ground */
+    --t-living: #a6702a;   /* ochre / people */
+    --t-enc:    #9d3f36;   /* clay-red / fights */
+    --t-story:  #6a4a86;   /* plum / narrative */
+    --t-ledger: #2f6f77;   /* teal / systems */
+    --shadow: 0 1px 0 rgba(255,255,255,.35), 0 2px 10px rgba(58,42,22,.14);
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+    --sans: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--serif);
+    color: var(--ink);
+    background:
+      radial-gradient(130% 90% at 20% -10%, var(--paper) 0%, var(--paper-2) 60%, #ddc999 100%);
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  /* faint printed-paper fibre + contour wash, purely decorative */
+  .backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .5; }
+  .wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 22px 16px 56px; }
+
+  header.masthead { text-align: center; padding: 10px 6px 4px; }
+  .cartouche {
+    display: inline-block; padding: 14px 26px; border: 2px double var(--line);
+    background: rgba(255,250,235,.45); box-shadow: var(--shadow); border-radius: 4px;
+    max-width: 100%;
+  }
+  .kicker { font-family: var(--sans); letter-spacing: .32em; text-transform: uppercase;
+    font-size: 11px; color: var(--gold); margin: 0 0 4px; }
+  h1 { margin: 0; font-size: clamp(26px, 5.4vw, 42px); font-weight: 700; letter-spacing: .01em;
+    font-variant: small-caps; }
+  .subtitle { margin: 8px auto 0; max-width: 62ch; color: var(--ink-soft); font-size: clamp(14px,2.4vw,16px); }
+  .stats { margin: 12px 0 0; font-family: var(--sans); font-size: 12px; color: var(--ink-soft); }
+  .stats b { color: var(--ink); }
+
+  /* legend / map key */
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center;
+    margin: 18px auto 6px; padding: 10px 12px; max-width: 920px;
+    font-family: var(--sans); font-size: 12.5px; }
+  .legend .key { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-soft); }
+  .legend .swatch { width: 13px; height: 13px; border-radius: 3px; border: 1px solid rgba(0,0,0,.25); }
+
+  /* main two-column: map + field notes */
+  .atlas { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; margin-top: 10px; }
+  @media (max-width: 860px) { .atlas { grid-template-columns: 1fr; } }
+
+  .regions { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+  @media (max-width: 560px) { .regions { grid-template-columns: 1fr; } }
+
+  .territory {
+    position: relative; border: 1.5px solid var(--line); border-radius: 10px;
+    padding: 12px 12px 14px; background: rgba(255,251,240,.4);
+    box-shadow: var(--shadow); border-top-width: 4px;
+  }
+  .territory h2 {
+    margin: 0 0 2px; font-size: 16px; font-variant: small-caps; letter-spacing: .02em;
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .territory .tnum { font-family: var(--sans); font-size: 10px; letter-spacing: .18em;
+    color: var(--ink-soft); text-transform: uppercase; }
+  .territory p.desc { margin: 0 0 10px; font-size: 12.5px; color: var(--ink-soft); font-family: var(--sans); }
+
+  .landmarks { display: flex; flex-direction: column; gap: 8px; }
+  button.landmark {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    font-family: var(--serif); font-size: 15px; color: var(--ink); cursor: pointer;
+    background: rgba(255,253,246,.7); border: 1.3px solid var(--line-2); border-radius: 8px;
+    padding: 9px 11px; transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+  }
+  button.landmark:hover { background: #fffef8; box-shadow: var(--shadow); transform: translateY(-1px); }
+  button.landmark:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  button.landmark[aria-pressed="true"] {
+    background: #fff9e9; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(154,107,31,.3), var(--shadow);
+  }
+  .pin { flex: 0 0 auto; width: 20px; height: 20px; }
+  .landmark .lm-name { flex: 1 1 auto; font-weight: 600; }
+  .landmark .lm-day { flex: 0 0 auto; font-family: var(--sans); font-size: 10px; letter-spacing: .06em;
+    color: #fff; background: var(--ink-soft); border-radius: 999px; padding: 2px 7px; }
+
+  /* field notes panel */
+  .panel-col { position: sticky; top: 14px; }
+  @media (max-width: 860px) { .panel-col { position: static; } }
+  .panel {
+    border: 2px solid var(--line); border-radius: 10px; background: rgba(255,251,240,.7);
+    box-shadow: var(--shadow); padding: 16px 16px 18px; min-height: 230px;
+  }
+  .panel .ribbon { font-family: var(--sans); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold); margin: 0 0 6px; }
+  .panel h3 { margin: 0 0 2px; font-size: 22px; font-variant: small-caps; }
+  .panel .meta { font-family: var(--sans); font-size: 12px; color: var(--ink-soft); margin: 0 0 12px;
+    display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+  .panel .meta .terr-tag { display: inline-flex; align-items: center; gap: 6px; }
+  .panel .meta .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(0,0,0,.25); }
+  .panel .blurb { margin: 0 0 16px; font-size: 15.5px; }
+  .panel .links { display: flex; flex-wrap: wrap; gap: 10px; }
+  .panel a.link {
+    font-family: var(--sans); font-size: 13px; font-weight: 600; text-decoration: none;
+    border: 1.5px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 7px 14px;
+    display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.4);
+  }
+  .panel a.link.primary { background: var(--gold); color: #fff6e2; }
+  .panel a.link:hover { filter: brightness(1.06); }
+  .panel a.link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .panel .hint { font-family: var(--sans); font-size: 12px; color: var(--ink-soft); margin: 14px 0 0; }
+
+  /* compass, decorative */
+  .compass { position: absolute; right: 16px; top: 14px; width: 54px; height: 54px; opacity: .8; }
+  @media (max-width: 680px) { .compass { display: none; } }
+
+  footer.foot { margin-top: 34px; text-align: center; font-family: var(--sans);
+    font-size: 12.5px; color: var(--ink-soft); }
+  footer.foot a { color: var(--gold); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    button.landmark { transition: none; }
+    button.landmark:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<!-- decorative contour backdrop; aria-hidden, no information here -->
+<svg class="backdrop" aria-hidden="true" preserveAspectRatio="xMidYMid slice" viewBox="0 0 800 600">
+  <g fill="none" stroke="#b7975f" stroke-width="1">
+    <path d="M-40 120 C 140 60, 320 170, 480 110 S 820 60, 900 150"/>
+    <path d="M-40 200 C 150 150, 330 250, 500 190 S 820 150, 900 230"/>
+    <path d="M-40 300 C 160 250, 340 350, 520 290 S 830 250, 900 330"/>
+    <path d="M-40 400 C 150 360, 350 450, 540 390 S 830 360, 900 440"/>
+    <path d="M-40 500 C 160 460, 360 540, 560 490 S 840 470, 900 540"/>
+  </g>
+  <g fill="none" stroke="#caa96b" stroke-width="1" opacity=".7">
+    <circle cx="180" cy="150" r="46"/><circle cx="180" cy="150" r="72"/><circle cx="180" cy="150" r="100"/>
+    <circle cx="620" cy="430" r="40"/><circle cx="620" cy="430" r="66"/>
+  </g>
+</svg>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="cartouche">
+      <p class="kicker">Anatomy of a 2D RPG</p>
+      <h1>rpg&middot;atlas</h1>
+      <p class="subtitle">Thirteen small demos, one for each subsystem of a role-playing game, laid out the way they fit together. Choose a landmark to see what it does — and go play it.</p>
+      <p class="stats"><b id="count-systems">13</b> subsystems &middot; <b>5</b> territories &middot; <b>13</b> shipped demos &middot; piece <b>14</b> of a <b>15</b>-part arc</p>
+    </div>
+  </header>
+
+  <div class="legend" id="legend" aria-hidden="true"><!-- filled from DATA --></div>
+
+  <main class="atlas">
+    <section class="regions" id="regions" aria-label="The atlas — subsystems of a 2D RPG, grouped into five territories">
+      <!-- territories + landmarks injected here -->
+    </section>
+
+    <div class="panel-col">
+      <section class="panel" id="panel" aria-live="polite" aria-label="Field notes for the selected landmark">
+        <svg class="compass" aria-hidden="true" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="#b7975f" stroke-width="1.5"/>
+          <circle cx="50" cy="50" r="38" fill="none" stroke="#caa96b" stroke-width=".8"/>
+          <polygon points="50,8 57,50 50,44 43,50" fill="#9d3f36"/>
+          <polygon points="50,92 43,50 50,56 57,50" fill="#3a2a16"/>
+          <text x="50" y="22" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#3a2a16">N</text>
+          <circle cx="50" cy="50" r="2.6" fill="#3a2a16"/>
+        </svg>
+        <!-- panel contents injected -->
+      </section>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <p><em>Day 068 of an autonomous build factory — <a href="https://github.com/yinggarykairui/factory-hub">factory-hub</a></em></p>
+    <p>Every demo and this atlas are drawn from code: no image files, no fonts, no network.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var OWNER = "yinggarykairui";
+  var demo = function (slug) { return "https://" + OWNER + ".github.io/" + slug + "/"; };
+  var repo = function (slug) { return "https://github.com/" + OWNER + "/" + slug; };
+
+  // Five territories of a 2D RPG. Hues mirror the CSS tokens.
+  var TERRITORIES = [
+    { id: "world",  name: "The World",       hue: "var(--t-world)",  color: "#4e7a44",
+      desc: "The ground itself — where it is drawn, how it builds itself, and how you move through it." },
+    { id: "living", name: "The Living World", hue: "var(--t-living)", color: "#a6702a",
+      desc: "Who lives there and what hunts you — minds that keep their own time." },
+    { id: "enc",    name: "Encounters",       hue: "var(--t-enc)",    color: "#9d3f36",
+      desc: "Where it comes to a head — fights that resolve by rule, and prices that move." },
+    { id: "story",  name: "The Story",        hue: "var(--t-story)",  color: "#6a4a86",
+      desc: "Why you are here — what people say, what you are doing, and how it ends." },
+    { id: "ledger", name: "The Ledger",       hue: "var(--t-ledger)", color: "#2f6f77",
+      desc: "What the game remembers — what you carry, and keeping none of it lost." }
+  ];
+
+  // The thirteen shipped arc demos (days 055–067), each one subsystem.
+  var SYSTEMS = [
+    { terr: "world", name: "Tilemap", slug: "tile-forge", day: "055", issue: 74,
+      blurb: "Where the world is drawn. Paint a tile grid with a procedural palette, flood-fill and undo, and export the map as JSON." },
+    { terr: "world", name: "Dungeon generation", slug: "dungeon-sprout", day: "060", issue: 79,
+      blurb: "Where the world builds itself. One seed number grows rooms and corridors; fog of war uncovers a disc of them as you walk." },
+    { terr: "world", name: "Exploration", slug: "overworld-express", day: "067", issue: 86,
+      blurb: "Where you move through it. A camera follows you across a map bigger than the screen; terrain blocks your path and crossings are announced." },
+
+    { terr: "living", name: "NPC schedules", slug: "npc-clockwork", day: "061", issue: 80,
+      blurb: "Who lives there. Four villagers keep daily routines on a 24-hour clock — pause time, fast-forward, or hold someone to interrupt their errand." },
+    { terr: "living", name: "Enemy AI", slug: "battle-brains", day: "066", issue: 85,
+      blurb: "What hunts you. Three enemy minds — the aggressor, the coward, the pack — share one arena, and each breaks its own way." },
+
+    { terr: "enc", name: "Turn combat", slug: "turn-clash", day: "057", issue: 76,
+      blurb: "How fights resolve. Read a speed-driven turn queue, pick a target, and strike into the element it fears." },
+    { terr: "enc", name: "Timing duel", slug: "parley", day: "062", issue: 81,
+      blurb: "Combat with no board. Read a telegraphed STRIKE, LUNGE, or CRUSH and answer in time to parry, dodge, brace, or trade." },
+    { terr: "enc", name: "Economy", slug: "shop-keeper", day: "063", issue: 82,
+      blurb: "What things cost. Buy low and sell high across seeded market days, haggling each trade toward a fair price as supply and demand swing." },
+
+    { terr: "story", name: "Dialogue", slug: "dialogue-loom", day: "056", issue: 75,
+      blurb: "How people talk. Build a branching conversation — nodes, choices, flags, procedural portraits — then play it back and export it." },
+    { terr: "story", name: "Quests", slug: "quest-thread", day: "059", issue: 78,
+      blurb: "What you're doing here. A quest log driven by a state machine — fire world events, chained objectives advance, and quests that waited unlock." },
+    { terr: "story", name: "Branching endings", slug: "ink-quest", day: "065", issue: 84,
+      blurb: "How the story ends. One hand-inked wayshrine and a single choice — take the sword, light the lantern, or follow the raven — each a distinct ending." },
+
+    { terr: "ledger", name: "Inventory", slug: "pocket-inventory", day: "058", issue: 77,
+      blurb: "What you carry. Drag items on a grid, equip them into typed slots, and watch Attack, Defense, and Luck change." },
+    { terr: "ledger", name: "Saves", slug: "save-crystal", day: "064", issue: 83,
+      blurb: "So none of it is lost. Named save slots with checksum-guarded snapshots, schema migration, and a guard that refuses a corrupt save instead of loading garbage." }
+  ];
+
+  var terrById = {};
+  TERRITORIES.forEach(function (t) { terrById[t.id] = t; });
+
+  // ---- SVG pin, tinted per territory ----
+  function pinSVG(color) {
+    return '<svg class="pin" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M12 2c-3.9 0-7 3.1-7 7 0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z" ' +
+      'fill="' + color + '" stroke="#3a2a16" stroke-width="1.1"/>' +
+      '<circle cx="12" cy="9" r="2.6" fill="#fff6e2"/></svg>';
+  }
+
+  // ---- build the legend (map key) ----
+  var legendEl = document.getElementById("legend");
+  TERRITORIES.forEach(function (t) {
+    var k = document.createElement("span");
+    k.className = "key";
+    k.innerHTML = '<span class="swatch" style="background:' + t.color + '"></span>' + t.name;
+    legendEl.appendChild(k);
+  });
+
+  // ---- render territories + landmarks ----
+  var regionsEl = document.getElementById("regions");
+  var buttons = []; // for keyboard / tests
+
+  TERRITORIES.forEach(function (t, ti) {
+    var sec = document.createElement("section");
+    sec.className = "territory";
+    sec.style.borderTopColor = t.color;
+    var items = SYSTEMS.filter(function (s) { return s.terr === t.id; });
+
+    var head = document.createElement("h2");
+    head.innerHTML = '<span class="tnum">' + romanish(ti + 1) + '</span> ' + t.name;
+    sec.appendChild(head);
+
+    var d = document.createElement("p");
+    d.className = "desc";
+    d.textContent = t.desc;
+    sec.appendChild(d);
+
+    var list = document.createElement("div");
+    list.className = "landmarks";
+
+    items.forEach(function (s) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "landmark";
+      b.setAttribute("aria-pressed", "false");
+      b.dataset.slug = s.slug;
+      b.innerHTML = pinSVG(t.color) +
+        '<span class="lm-name">' + esc(s.name) + '</span>' +
+        '<span class="lm-day">day ' + s.day + '</span>';
+      b.addEventListener("click", function () { select(s.slug); });
+      list.appendChild(b);
+      buttons.push(b);
+    });
+
+    sec.appendChild(list);
+    regionsEl.appendChild(sec);
+  });
+
+  // ---- the field-notes panel ----
+  var panelEl = document.getElementById("panel");
+  var compass = panelEl.querySelector(".compass");
+  var currentSlug = null;
+
+  function select(slug) {
+    var s = findSystem(slug);
+    if (!s) return;
+    currentSlug = slug;
+    var t = terrById[s.terr];
+
+    buttons.forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.slug === slug));
+    });
+
+    // rebuild panel body (keep the decorative compass node)
+    while (panelEl.lastChild && panelEl.lastChild !== compass) {
+      panelEl.removeChild(panelEl.lastChild);
+    }
+    var frag = document.createDocumentFragment();
+
+    var ribbon = el("p", "ribbon", t.name);
+    frag.appendChild(ribbon);
+
+    var h = el("h3", null, s.name);
+    frag.appendChild(h);
+
+    var meta = document.createElement("p");
+    meta.className = "meta";
+    meta.innerHTML =
+      '<span class="terr-tag"><span class="dot" style="background:' + t.color + '"></span>' + esc(t.name) + '</span>' +
+      '<span>&middot;</span><span>' + esc(s.slug) + '</span>' +
+      '<span>&middot;</span><span>day ' + s.day + '</span>';
+    frag.appendChild(meta);
+
+    frag.appendChild(el("p", "blurb", s.blurb));
+
+    var links = document.createElement("div");
+    links.className = "links";
+    links.appendChild(link(demo(s.slug), "Play demo ↗", true));
+    links.appendChild(link(repo(s.slug), "Source ↗", false));
+    frag.appendChild(links);
+
+    frag.appendChild(el("p", "hint", "Built on day " + s.day + " of the arc (issue #" + s.issue + ")."));
+
+    panelEl.appendChild(frag);
+  }
+
+  function showWelcome() {
+    while (panelEl.lastChild && panelEl.lastChild !== compass) {
+      panelEl.removeChild(panelEl.lastChild);
+    }
+    var frag = document.createDocumentFragment();
+    frag.appendChild(el("p", "ribbon", "Field notes"));
+    frag.appendChild(el("h3", null, "Read the map"));
+    frag.appendChild(el("p", "blurb",
+      "A 2D role-playing game is a stack of small systems. This atlas lays out thirteen of them — one demo each — across five territories. " +
+      "Pick a landmark to see what that subsystem does and open its live demo."));
+    frag.appendChild(el("p", "hint", "Every landmark is a real button: Tab to it, then Enter or Space."));
+    panelEl.appendChild(frag);
+  }
+
+  // ---- helpers ----
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function link(href, text, primary) {
+    var a = document.createElement("a");
+    a.className = "link" + (primary ? " primary" : "");
+    a.href = href;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = text;
+    return a;
+  }
+  function esc(s) { var d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+  function findSystem(slug) {
+    for (var i = 0; i < SYSTEMS.length; i++) if (SYSTEMS[i].slug === slug) return SYSTEMS[i];
+    return null;
+  }
+  function romanish(n) {
+    return ["I", "II", "III", "IV", "V", "VI", "VII"][n - 1] || String(n);
+  }
+
+  showWelcome();
+
+  // Test / introspection hook — never required for the page to work.
+  window.__atlas = {
+    territories: TERRITORIES,
+    systems: SYSTEMS,
+    select: select,
+    get current() { return currentSlug; },
+    buttonCount: function () { return buttons.length; },
+    demoUrl: demo,
+    repoUrl: repo
+  };
+})();
+</script>
+</body>
+</html>
