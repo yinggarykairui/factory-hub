@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>overworld-express</title>
 <style>
   :root {
@@ -278,10 +278,12 @@
   }
 
   // ---- map validation / import ----------------------------------------
-  // Accepts tile-forge's schema; normalizes out-of-range indices to EMPTY
-  // rather than trusting them, and rejects anything structurally wrong.
+  // Accepts tile-forge's schema (v1); normalizes out-of-range indices to
+  // EMPTY rather than trusting them, and rejects an unknown schema version
+  // or anything structurally wrong.
   function validate(obj) {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) throw new Error("not a map object");
+    if (obj.version != null && obj.version !== 1) throw new Error("unsupported map version " + obj.version);
     var w = obj.width, h = obj.height, tiles = obj.tiles;
     if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1 || w > 512 || h > 512)
       throw new Error("bad width/height");
@@ -466,7 +468,7 @@
     var res; try { res = validate(obj); } catch (e) { setStatus("Not a tile-forge map: " + e.message + ".", "err"); return false; }
     loadMap(res.map, true);
     setStatus("Loaded a " + res.map.width + "×" + res.map.height + " map" +
-      (res.clamped ? " (" + res.clamped + " unknown tiles cleared)" : "") + ".", "ok");
+      (res.clamped ? " (" + res.clamped + " unknown " + (res.clamped === 1 ? "tile" : "tiles") + " cleared)" : "") + ".", "ok");
     return true;
   }
   document.getElementById("example").addEventListener("click", function () {

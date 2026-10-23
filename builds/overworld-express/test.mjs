@@ -166,6 +166,8 @@ const api = () => page.evaluate.bind(page);
     [JSON.stringify({ version: 1, width: -4, height: 3, tiles: [] }), 'negative dimension'],
     [JSON.stringify(null), 'null'],
     [JSON.stringify({ version: 1, width: 3, height: 3, tiles: [[2,2,2],[2,8,2],[2,2,2]] }), 'no walkable ground'],
+    [JSON.stringify({ version: 2, width: 2, height: 1, tiles: [[1,1]] }), 'unsupported schema version'],
+    [JSON.stringify({ version: 'banana', width: 2, height: 1, tiles: [[1,1]] }), 'non-numeric version'],
   ];
   for (const [text, label] of cases) {
     const r = await page.evaluate((t) => {
