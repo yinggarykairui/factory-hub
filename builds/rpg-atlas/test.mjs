@@ -152,6 +152,21 @@ await page.waitForFunction(() => window.__atlas && window.__atlas.buttonCount() 
   ok(after === before, 'selecting an unknown slug is a safe no-op');
 }
 
+// gold accent text must meet WCAG AA (4.5:1) on the parchment surface — guards
+// the one piece of the palette that sat marginally sub-AA (evening polish, #87).
+{
+  const toks = await page.evaluate(() => {
+    const cs = getComputedStyle(document.documentElement);
+    return { gold: cs.getPropertyValue('--gold').trim(), paper: cs.getPropertyValue('--paper').trim() };
+  });
+  const rgb = h => { h = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
+  const lum = c => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+  const L = ([r, g, b]) => 0.2126 * lum(r) + 0.7152 * lum(g) + 0.0722 * lum(b);
+  const Lg = L(rgb(toks.gold)), Lp = L(rgb(toks.paper));
+  const ratio = (Math.max(Lg, Lp) + 0.05) / (Math.min(Lg, Lp) + 0.05);
+  ok(ratio >= 4.5, `--gold accent meets AA on --paper (${ratio.toFixed(2)}:1 for ${toks.gold} on ${toks.paper})`);
+}
+
 ok(errors.length === 0, 'no console/page errors across the whole run: ' + JSON.stringify(errors.slice(0, 4)));
 
 await browser.close();
