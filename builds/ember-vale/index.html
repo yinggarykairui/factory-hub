@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ember Vale</title>
+<style>
+  /* Full-bleed canvas game. No page scroll at any width: the world lives in the
+     canvas and the camera clamps, so the document itself never overflows. */
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #140e18; }
+  body {
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #f3e6d0; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+  }
+  #screen { position: fixed; inset: 0; touch-action: none; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  /* Touch controls. Shown by default (so narrow/phone always has them) and
+     hidden only on a wide screen with a real pointer, where keys are expected. */
+  .touch { position: absolute; z-index: 5; -webkit-user-select: none; user-select: none; touch-action: none; }
+  .dpad { left: 14px; bottom: 14px; display: grid;
+    grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 5px; }
+  .act { right: 18px; bottom: 34px; }
+  .touch button {
+    font: inherit; font-size: 22px; line-height: 1; color: #f3e6d0;
+    background: rgba(32,22,38,.72); border: 1px solid rgba(240,200,120,.35);
+    border-radius: 12px; cursor: pointer; touch-action: none;
+    -webkit-user-select: none; user-select: none; backdrop-filter: blur(2px);
+  }
+  .touch button:active { background: rgba(230,150,60,.85); color: #2a1405; border-color: #ffd27a; }
+  .dpad .up { grid-area: 1 / 2; } .dpad .left { grid-area: 2 / 1; }
+  .dpad .right { grid-area: 2 / 3; } .dpad .down { grid-area: 3 / 2; }
+  .act button { width: 74px; height: 74px; border-radius: 50%; font-size: 24px; font-weight: 700; }
+  @media (min-width: 760px) and (hover: hover) and (pointer: fine) { .touch { display: none; } }
+</style>
+</head>
+<body>
+<div id="screen">
+  <canvas id="view" role="img" aria-label="Ember Vale — a dusk valley you walk and read."></canvas>
+  <div class="touch dpad" aria-hidden="true">
+    <button class="up"    data-dir="up"    aria-label="Move up">&#9650;</button>
+    <button class="left"  data-dir="left"  aria-label="Move left">&#9664;</button>
+    <button class="right" data-dir="right" aria-label="Move right">&#9654;</button>
+    <button class="down"  data-dir="down"  aria-label="Move down">&#9660;</button>
+  </div>
+  <div class="touch act" aria-hidden="true">
+    <button id="btnA" aria-label="Action: begin, read, or dismiss">A</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  // ===================================================================
+  // EMBER VALE — increment 1: the overworld.
+  // A hand-authored dusk valley you walk and read. Vanilla JS + <canvas>,
+  // zero dependencies, no network, no images, no fonts. Everything is drawn
+  // from code so it runs offline from file://.
+  // State: "title" -> "play" <-> "reading". No people/items/quests yet.
+  // ===================================================================
+
+  var TILE = 32;              // world tile size, px
+  var SPEED = 0.125;          // player speed, px per ms
+  var HW = 11, HH = 11;       // player half-extents (22px box fits a 32px corridor)
+
+  // --- tile ids -----------------------------------------------------
+  var GRASS = 0, PATH = 1, WATER = 2, TREE = 3, CLIFF = 4,
+      WALL = 5, BRIDGE = 6, FLOOR = 7, SIGN = 8, EMBER = 9;
+  // Solid tiles block the AABB. Water, trees, cliffs, cottage walls,
+  // signposts and the Ember are all solid; grass/path/bridge/floor are not.
+  var SOLID = { 2:1, 3:1, 4:1, 5:1, 8:1, 9:1 };
+
+  // --- the hand-authored valley ------------------------------------
+  // Fixed, designed world. Painted feature-by-feature with explicit
+  // coordinates (no import, no procedural generation). W*H tiles; the
+  // world (1280x960) is larger than the viewport in both dimensions.
+  var W = 40, H = 30;
+  var EMBER_TX = 20, EMBER_TY = 4;          // the heart-fire
+  var SPAWN_TX = 20, SPAWN_TY = 26;         // where the traveler arrives
+  var MAP = [];
+  var READS = {};                            // "tx,ty" -> story line (signposts + Ember)
+
+  function set(x, y, v) { if (x >= 0 && y >= 0 && x < W && y < H) MAP[y][x] = v; }
+  function hline(y, x0, x1, v) { for (var x = x0; x <= x1; x++) set(x, y, v); }
+  function vline(x, y0, y1, v) { for (var y = y0; y <= y1; y++) set(x, y, v); }
+
+  function cottage(x0, y0, w, h, door) {
+    // a timber box (walls solid) with a walkable interior and one doorway.
+    for (var y = y0; y < y0 + h; y++) for (var x = x0; x < x0 + w; x++) {
+      var edge = (y === y0 || y === y0 + h - 1 || x === x0 || x === x0 + w - 1);
+      set(x, y, edge ? WALL : FLOOR);
+    }
+    if (door) set(door[0], door[1], FLOOR);
+  }
+
+  function buildValley() {
+    var x, y;
+    for (y = 0; y < H; y++) { MAP[y] = []; for (x = 0; x < W; x++) MAP[y][x] = GRASS; }
+
+    // valley walls: cliffs across the top, a thick ring of trees elsewhere.
+    for (x = 0; x < W; x++) { set(x, 0, CLIFF); set(x, 1, CLIFF); }
+    for (x = 0; x < W; x++) { set(x, H - 1, TREE); set(x, H - 2, TREE); }
+    for (y = 0; y < H; y++) { set(0, y, TREE); set(1, y, TREE); set(W - 1, y, TREE); set(W - 2, y, TREE); }
+
+    // the stream, running the width of the vale (two rows deep).
+    hline(14, 2, W - 3, WATER); hline(15, 2, W - 3, WATER);
+
+    // the winding path: spawn -> up -> west -> across the bridge -> east -> the heart.
+    vline(20, 21, 27, PATH);   // from the entrance
+    hline(21, 13, 20, PATH);   // west along the lower meadow
+    vline(13, 13, 21, PATH);   // up toward the stream (crosses it)
+    hline(13, 13, 20, PATH);   // east on the north bank
+    vline(20, 5, 13, PATH);    // up to the Ember clearing
+    set(13, 14, BRIDGE); set(13, 15, BRIDGE); // the crossing
+
+    // the village: a cluster of darkened cottages flanking the lower vale.
+    cottage(4, 18, 5, 5, [6, 22]);
+    cottage(30, 18, 5, 5, [32, 22]);
+    cottage(8, 24, 4, 4, [9, 24]);
+    cottage(24, 23, 5, 4, [26, 23]);
+
+    // a cliff outcrop on the eastern heights.
+    [[32, 5], [33, 5], [33, 6], [34, 6], [31, 6]].forEach(function (p) {
+      if (MAP[p[1]][p[0]] === GRASS) set(p[0], p[1], CLIFF);
+    });
+
+    // hand-placed trees — only ever dropped on open grass, so features win.
+    var trees = [
+      [3,3],[4,3],[3,4],[6,2],[7,3],[9,2],[10,3],[12,2],[14,4],[8,5],[5,6],
+      [27,3],[28,2],[29,3],[31,4],[34,3],[35,2],[36,4],[26,5],[30,7],[24,6],
+      [3,8],[4,9],[5,8],[7,9],[9,8],[11,9],[16,8],[17,9],[24,8],[26,9],[28,8],
+      [30,9],[33,8],[35,9],[36,8],[3,11],[5,12],[7,11],[9,12],[16,11],[24,11],
+      [26,12],[28,11],[30,12],[33,11],[35,12],[3,25],[4,26],[16,25],[18,26],
+      [21,26],[16,26],[35,25],[36,26],[34,27],[14,25],[13,25],[2,20],[37,20]
+    ];
+    trees.forEach(function (p) { if (MAP[p[1]][p[0]] === GRASS) set(p[0], p[1], TREE); });
+
+    // signposts + the Ember (solid, readable). Each sits on grass beside the
+    // path, so the traveler stands on the path and faces it to read.
+    function sign(x, y, text) { set(x, y, SIGN); READS[x + "," + y] = text; }
+    sign(21, 26, "EMBER VALE. You came a long way for a dying light. Tread softly — the valley is still listening.");
+    sign(12, 21, "The village. The ones who stayed latched their shutters the night the Ember began to fail.");
+    sign(14, 16, "The stream runs cold from the heights. The old bridge still holds — cross while the light lasts.");
+    sign(12, 13, "North lies the heart of the vale, where the Ember was first struck. Few walk here now.");
+    sign(19, 5,  "Here the firekeepers knelt each dusk. The warmth has nearly gone out of the stones.");
+    set(EMBER_TX, EMBER_TY, EMBER);
+    READS[EMBER_TX + "," + EMBER_TY] =
+      "The Ember is barely a glow now — a single coal where a hearth once roared. It is waiting to be relit.";
+  }
+  buildValley();
+
+  var SIGN_COUNT = Object.keys(READS).length; // readable objects
+
+  // --- state --------------------------------------------------------
+  var state = "title";                  // "title" | "play" | "reading"
+  var player = { px: (SPAWN_TX + 0.5) * TILE, py: (SPAWN_TY + 0.5) * TILE, facing: "up", moving: false };
+  var cam = { x: 0, y: 0 };
+  var held = { up: false, down: false, left: false, right: false };
+  var signText = "";
+  var viewW = 1, viewH = 1, dpr = 1;
+  var animT = 0, walkPhase = 0;
+  var reduced = false;
+  try { reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+  var DIR = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+  var screenEl = document.getElementById("screen");
+  var cv = document.getElementById("view");
+  var ctx = cv.getContext("2d");
+
+  // --- collision: axis-separated AABB vs the tile grid --------------
+  function solid(tx, ty) {
+    if (tx < 0 || ty < 0 || tx >= W || ty >= H) return true; // outside the vale is wall
+    return !!SOLID[MAP[ty][tx]];
+  }
+  function hits(cx, cy) {
+    // any solid tile overlapping the player's box centred at (cx,cy)?
+    var x0 = Math.floor((cx - HW) / TILE), x1 = Math.floor((cx + HW - 1e-6) / TILE);
+    var y0 = Math.floor((cy - HH) / TILE), y1 = Math.floor((cy + HH - 1e-6) / TILE);
+    for (var ty = y0; ty <= y1; ty++) for (var tx = x0; tx <= x1; tx++) if (solid(tx, ty)) return true;
+    return false;
+  }
+  // Move one axis in small sub-steps, stopping flush at the first solid. Doing
+  // X and Y independently is what lets the traveler slide along a wall instead
+  // of sticking, and stops a diagonal push from clipping a corner.
+  function moveAxis(dx, dy) {
+    var dist = Math.abs(dx || dy), sx = dx ? (dx > 0 ? 1 : -1) : 0, sy = dy ? (dy > 0 ? 1 : -1) : 0;
+    while (dist > 0) {
+      var s = Math.min(3, dist);
+      var nx = player.px + sx * s, ny = player.py + sy * s;
+      if (hits(nx, ny)) break;
+      player.px = nx; player.py = ny; dist -= s;
+    }
+  }
+
+  function tileOf(v) { return Math.floor(v / TILE); }
+  function front() {
+    var d = DIR[player.facing];
+    return { tx: tileOf(player.px) + d[0], ty: tileOf(player.py) + d[1] };
+  }
+
+  // --- the readable object in front of the player -------------------
+  function tryRead() {
+    var f = front();
+    var line = READS[f.tx + "," + f.ty];
+    if (line != null) { signText = line; state = "reading"; }
+  }
+
+  // --- camera: follow the player, clamp to the world edge -----------
+  function clampCam() {
+    var mx = W * TILE - viewW, my = H * TILE - viewH;
+    cam.x = mx <= 0 ? mx / 2 : Math.max(0, Math.min(mx, player.px - viewW / 2));
+    cam.y = my <= 0 ? my / 2 : Math.max(0, Math.min(my, player.py - viewH / 2));
+  }
+
+  // --- actions (shared by keys, touch and test hooks) ---------------
+  function start() { if (state === "title") { state = "play"; clampCam(); } }
+  function action() {
+    if (state === "title") { start(); return; }
+    if (state === "reading") { dismiss(); return; }
+    tryRead();
+  }
+  function dismiss() { if (state === "reading") { state = "play"; signText = ""; } }
+  function press(dir) { if (DIR[dir]) { held[dir] = true; if (state === "play") player.facing = dir; } }
+  function release(dir) { if (DIR[dir]) held[dir] = false; }
+
+  // --- update (fixed-ish step; dt clamped so a stall never teleports) ---
+  function update(dt) {
+    if (dt > 40) dt = 40;
+    animT += dt;
+    if (state !== "play") { player.moving = false; return; }
+    var vx = (held.right ? 1 : 0) - (held.left ? 1 : 0);
+    var vy = (held.down ? 1 : 0) - (held.up ? 1 : 0);
+    if (vx && vy) { vx *= 0.70711; vy *= 0.70711; } // no diagonal speed bonus
+    if (vx) moveAxis(vx * SPEED * dt, 0);
+    if (vy) moveAxis(0, vy * SPEED * dt);
+    player.moving = !!(vx || vy);
+    if (player.moving && !reduced) walkPhase += dt * 0.012;
+    clampCam();
+  }
+
+  // --- render -------------------------------------------------------
+  function hash(x, y) { var n = (x * 73856093) ^ (y * 19349663); n = (n ^ (n >>> 13)) >>> 0; return n / 4294967296; }
+
+  function drawTile(id, sx, sy, tx, ty) {
+    var s = TILE;
+    switch (id) {
+      case GRASS: {
+        ctx.fillStyle = "#223b2e"; ctx.fillRect(sx, sy, s, s);
+        ctx.fillStyle = "rgba(60,96,70,.55)";
+        for (var i = 0; i < 4; i++) { var gx = sx + hash(tx * 9 + i, ty) * s, gy = sy + hash(tx, ty * 7 + i) * s; ctx.fillRect(gx | 0, gy | 0, 2, 2); }
+        break;
+      }
+      case PATH: {
+        ctx.fillStyle = "#4a3a2b"; ctx.fillRect(sx, sy, s, s);
+        ctx.fillStyle = "rgba(96,74,52,.7)";
+        for (var j = 0; j < 5; j++) { var px = sx + hash(tx * 3 + j, ty * 5) * s, py = sy + hash(tx * 5, ty * 3 + j) * s; ctx.fillRect(px | 0, py | 0, 3, 3); }
+        break;
+      }
+      case WATER: {
+        ctx.fillStyle = "#17334a"; ctx.fillRect(sx, sy, s, s);
+        ctx.strokeStyle = "rgba(90,140,180,.5)"; ctx.lineWidth = 1.5;
+        var w = reduced ? 0 : Math.sin(animT / 600 + tx) * 2;
+        for (var yy = 7; yy < s; yy += 11) { ctx.beginPath(); for (var xx = 0; xx <= s; xx += 4) ctx.lineTo(sx + xx, sy + yy + Math.sin((xx + tx * 9) / 5) * 1.4 + w); ctx.stroke(); }
+        break;
+      }
+      case BRIDGE: {
+        ctx.fillStyle = "#3a2b1e"; ctx.fillRect(sx, sy, s, s);
+        ctx.fillStyle = "#6b4a2e"; for (var p = 2; p < s; p += 7) ctx.fillRect(sx + 1, sy + p, s - 2, 4);
+        ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.strokeRect(sx + 0.5, sy + 0.5, s - 1, s - 1);
+        break;
+      }
+      case FLOOR: {
+        ctx.fillStyle = "#2b2622"; ctx.fillRect(sx, sy, s, s); break;
+      }
+      case TREE: {
+        ctx.fillStyle = "#223b2e"; ctx.fillRect(sx, sy, s, s);            // grass ground (no visible tile square)
+        var jx = (hash(tx, ty) - 0.5) * 4, jr = hash(ty, tx) * 2;          // per-tree jitter so the canopy never reads as a grid
+        var cx = sx + s / 2 + jx, cy = sy + s / 2;
+        ctx.fillStyle = "#3a2516"; ctx.fillRect(cx - 2, cy + 2, 4, 10);   // trunk
+        ctx.fillStyle = "#1f3a28"; ctx.beginPath(); ctx.arc(cx, cy - 2, 10.5 + jr, 0, 6.3); ctx.fill();
+        ctx.fillStyle = "#2b5038"; ctx.beginPath(); ctx.arc(cx - 3, cy - 5, 5.5 + jr * 0.5, 0, 6.3); ctx.fill();
+        break;
+      }
+      case CLIFF: {
+        ctx.fillStyle = "#3a3340"; ctx.fillRect(sx, sy, s, s);
+        ctx.fillStyle = "#2b2531"; ctx.fillRect(sx, sy + s - 10, s, 10);
+        ctx.strokeStyle = "rgba(20,16,24,.7)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(sx + 6, sy + 3); ctx.lineTo(sx + 12, sy + 14); ctx.lineTo(sx + 8, sy + s); ctx.stroke();
+        break;
+      }
+      case WALL: {
+        ctx.fillStyle = "#3a2b30"; ctx.fillRect(sx, sy, s, s);
+        ctx.strokeStyle = "rgba(20,14,18,.6)"; ctx.lineWidth = 1;
+        for (var by = 8; by < s; by += 10) { ctx.beginPath(); ctx.moveTo(sx, sy + by); ctx.lineTo(sx + s, sy + by); ctx.stroke(); }
+        // a faint, cold-lit window on some walls so the village reads as dwellings
+        if (hash(tx, ty) > 0.62) { ctx.fillStyle = "rgba(120,110,70,.35)"; ctx.fillRect(sx + 10, sy + 9, 12, 12); }
+        break;
+      }
+      case SIGN: {
+        ctx.fillStyle = "#223b2e"; ctx.fillRect(sx, sy, s, s);
+        var mx = sx + s / 2;
+        ctx.fillStyle = "#6b4a2e"; ctx.fillRect(mx - 2, sy + 12, 4, 16);  // post
+        ctx.fillStyle = "#8a6038"; ctx.fillRect(sx + 6, sy + 6, s - 12, 11); // board
+        ctx.strokeStyle = "rgba(20,14,8,.7)"; ctx.strokeRect(sx + 6.5, sy + 6.5, s - 13, 10);
+        break;
+      }
+      case EMBER: {
+        ctx.fillStyle = "#2b2230"; ctx.fillRect(sx, sy, s, s);
+        var ex = sx + s / 2, ey = sy + s / 2;
+        ctx.fillStyle = "#5a4538"; ctx.beginPath(); ctx.arc(ex, ey + 4, 11, 0, Math.PI); ctx.fill(); // brazier bowl
+        var glow = reduced ? 1 : 0.85 + Math.sin(animT / 650) * 0.15;
+        ctx.fillStyle = "rgba(255,150,60," + (0.9 * glow) + ")";
+        ctx.beginPath(); ctx.arc(ex, ey, 5 * glow, 0, 6.3); ctx.fill();
+        ctx.fillStyle = "rgba(255,220,150,.95)"; ctx.beginPath(); ctx.arc(ex, ey - 1, 2.2 * glow, 0, 6.3); ctx.fill();
+        break;
+      }
+    }
+  }
+
+  function drawPlayer() {
+    var x = player.px - cam.x, y = player.py - cam.y;
+    var bob = (reduced || !player.moving) ? 0 : Math.sin(walkPhase) * 2.2;
+    y += bob;
+    ctx.fillStyle = "rgba(0,0,0,.4)";
+    ctx.beginPath(); ctx.ellipse(x, y + 11, 9, 3.5, 0, 0, 6.3); ctx.fill();   // shadow
+    // cloak
+    ctx.fillStyle = "#7a2f3a"; ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x - 9, y + 9); ctx.lineTo(x + 9, y + 9); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // hood / head
+    ctx.fillStyle = "#e8b36a"; ctx.beginPath(); ctx.arc(x, y - 7, 4.5, 0, 6.3); ctx.fill();
+    ctx.fillStyle = "#4a2c1c"; ctx.beginPath(); ctx.arc(x, y - 9, 4.8, Math.PI, 0); ctx.fill();
+    // facing mark
+    var f = DIR[player.facing];
+    ctx.fillStyle = "#ffe9c2"; ctx.beginPath(); ctx.arc(x + f[0] * 4, y - 7 + f[1] * 3, 1.5, 0, 6.3); ctx.fill();
+  }
+
+  function wrap(text, maxw) {
+    var words = text.split(" "), lines = [], line = "";
+    for (var i = 0; i < words.length; i++) {
+      var t = line ? line + " " + words[i] : words[i];
+      if (ctx.measureText(t).width > maxw && line) { lines.push(line); line = words[i]; }
+      else line = t;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function render() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = "#0e0a12"; ctx.fillRect(0, 0, viewW, viewH);
+
+    // tiles in view
+    var x0 = Math.floor(cam.x / TILE), y0 = Math.floor(cam.y / TILE);
+    var x1 = Math.ceil((cam.x + viewW) / TILE), y1 = Math.ceil((cam.y + viewH) / TILE);
+    for (var ty = y0; ty < y1; ty++) for (var tx = x0; tx < x1; tx++) {
+      if (tx < 0 || ty < 0 || tx >= W || ty >= H) continue;
+      drawTile(MAP[ty][tx], Math.round(tx * TILE - cam.x), Math.round(ty * TILE - cam.y), tx, ty);
+    }
+
+    // the Ember's warm radial glow, falling off with distance (additive).
+    var egx = (EMBER_TX + 0.5) * TILE - cam.x, egy = (EMBER_TY + 0.5) * TILE - cam.y;
+    var gr = 150 + (reduced ? 0 : Math.sin(animT / 650) * 22);
+    var g = ctx.createRadialGradient(egx, egy, 6, egx, egy, gr);
+    g.addColorStop(0, "rgba(255,150,60,.55)");
+    g.addColorStop(0.5, "rgba(230,110,50,.22)");
+    g.addColorStop(1, "rgba(230,110,50,0)");
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(egx, egy, gr, 0, 6.3); ctx.fill();
+
+    // a few fireflies near the heart (drift only when motion is allowed).
+    for (var k = 0; k < 9; k++) {
+      var bx = (EMBER_TX + 0.5) * TILE + Math.cos(k * 2.1) * (60 + k * 9);
+      var by = (EMBER_TY + 2.5) * TILE + Math.sin(k * 1.7) * (50 + k * 7);
+      if (!reduced) { bx += Math.sin(animT / 900 + k) * 10; by += Math.cos(animT / 1100 + k) * 8; }
+      var fa = 0.4 + (reduced ? 0.2 : (Math.sin(animT / 500 + k * 2) * 0.5 + 0.5) * 0.5);
+      ctx.fillStyle = "rgba(255,210,120," + fa + ")";
+      ctx.beginPath(); ctx.arc(bx - cam.x, by - cam.y, 1.6, 0, 6.3); ctx.fill();
+    }
+    ctx.globalCompositeOperation = "source-over";
+
+    drawPlayer();
+
+    // dusk: a sky-to-ground tint plus a breathing vignette over the whole view.
+    var sky = ctx.createLinearGradient(0, 0, 0, viewH);
+    sky.addColorStop(0, "rgba(70,40,80,.30)");
+    sky.addColorStop(0.55, "rgba(30,20,45,.12)");
+    sky.addColorStop(1, "rgba(10,6,16,.45)");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, viewW, viewH);
+    var vr = Math.max(viewW, viewH) * (0.72 + (reduced ? 0 : Math.sin(animT / 2600) * 0.03));
+    var vg = ctx.createRadialGradient(viewW / 2, viewH / 2, vr * 0.42, viewW / 2, viewH / 2, vr);
+    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(6,3,10,.7)");
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, viewW, viewH);
+
+    if (state === "title") drawTitle();
+    if (state === "reading") drawBox(signText);
+  }
+
+  function drawTitle() {
+    ctx.fillStyle = "rgba(10,6,16,.5)"; ctx.fillRect(0, 0, viewW, viewH);
+    var cx = viewW / 2, cy = viewH / 2;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffcf8a";
+    ctx.font = "700 " + Math.min(64, viewW * 0.12) + "px system-ui, sans-serif";
+    ctx.fillText("EMBER VALE", cx, cy - 26);
+    ctx.fillStyle = "#d8c3b0";
+    ctx.font = "16px system-ui, sans-serif";
+    ctx.fillText("A valley at dusk, and a heart-fire going out.", cx, cy + 8);
+    var blink = reduced ? 1 : (Math.sin(animT / 450) * 0.5 + 0.5);
+    ctx.fillStyle = "rgba(255,220,150," + (0.35 + 0.65 * blink) + ")";
+    ctx.font = "15px system-ui, sans-serif";
+    ctx.fillText("Press Enter / tap to begin", cx, cy + 44);
+    ctx.textAlign = "left";
+  }
+
+  function drawBox(text) {
+    var pad = 16, boxH = Math.max(108, Math.min(170, viewH * 0.28));
+    var top = viewH - boxH - 12, left = 12, right = viewW - 12;
+    ctx.fillStyle = "rgba(14,9,18,.9)";
+    roundRect(left, top, right - left, boxH, 12); ctx.fill();
+    ctx.strokeStyle = "rgba(255,180,90,.6)"; ctx.lineWidth = 2;
+    roundRect(left, top, right - left, boxH, 12); ctx.stroke();
+    ctx.fillStyle = "#f3e6d0"; ctx.font = "17px system-ui, sans-serif";
+    var lines = wrap(text, right - left - pad * 2);
+    for (var i = 0; i < lines.length; i++) ctx.fillText(lines[i], left + pad, top + pad + 20 + i * 24);
+    ctx.fillStyle = "rgba(220,190,150,.7)"; ctx.font = "13px system-ui, sans-serif";
+    ctx.fillText("▸ press action again or Esc to close", left + pad, top + boxH - 14);
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  // --- sizing: cap DPR at 2 so hi-dpi backing stores stay sane -------
+  function resize() {
+    var r = screenEl.getBoundingClientRect();
+    viewW = Math.max(1, Math.round(r.width));
+    viewH = Math.max(1, Math.round(r.height));
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.max(1, Math.round(viewW * dpr));
+    cv.height = Math.max(1, Math.round(viewH * dpr));
+    clampCam();
+  }
+
+  // --- loop ---------------------------------------------------------
+  var last = 0;
+  function frame(now) {
+    if (!last) last = now;
+    update(now - last); last = now;
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // --- input: keyboard ----------------------------------------------
+  var KEYMAP = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+                 w: "up", s: "down", a: "left", d: "right", W: "up", S: "down", A: "left", D: "right" };
+  addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); if (state === "title") start(); else action(); return; }
+    if (e.key === " " || e.code === "Space") { e.preventDefault(); action(); return; }
+    if (e.key === "Escape") { e.preventDefault(); dismiss(); return; }
+    var dir = KEYMAP[e.key];
+    if (dir) { e.preventDefault(); if (state === "title") start(); press(dir); }
+  }, { passive: false });
+  addEventListener("keyup", function (e) { var dir = KEYMAP[e.key]; if (dir) release(dir); });
+  addEventListener("blur", function () { held.up = held.down = held.left = held.right = false; });
+
+  // --- input: touch / click -----------------------------------------
+  function bindHold(btn, dir) {
+    function on(e) { e.preventDefault(); if (state === "title") start(); press(dir); }
+    function off(e) { if (e) e.preventDefault(); release(dir); }
+    btn.addEventListener("pointerdown", on);
+    btn.addEventListener("pointerup", off);
+    btn.addEventListener("pointercancel", off);
+    btn.addEventListener("pointerleave", off);
+    btn.addEventListener("touchstart", on, { passive: false });
+    btn.addEventListener("touchend", off);
+    btn.addEventListener("mousedown", on);
+    btn.addEventListener("mouseup", off);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".dpad button"), function (b) {
+    bindHold(b, b.getAttribute("data-dir"));
+  });
+  var btnA = document.getElementById("btnA");
+  function doAction(e) { if (e) e.preventDefault(); action(); }
+  btnA.addEventListener("pointerdown", doAction);
+  btnA.addEventListener("touchstart", doAction, { passive: false });
+  // a finger sliding off a held d-pad button never fires its own pointerup
+  addEventListener("pointerup", function () { if (state !== "play") return; });
+  addEventListener("touchend", function () { held.up = held.down = held.left = held.right = false; });
+
+  // tap / click on the world begins the game (and dismisses a box).
+  cv.addEventListener("pointerdown", function () {
+    if (state === "title") start(); else if (state === "reading") dismiss();
+  });
+
+  // --- boot ---------------------------------------------------------
+  resize();
+  addEventListener("resize", resize);
+  if (window.ResizeObserver) { try { new ResizeObserver(resize).observe(screenEl); } catch (e) {} }
+  requestAnimationFrame(frame);
+
+  // --- test hooks: a read-only snapshot + minimal pokes --------------
+  // These synthesize the same code paths as real input and never change
+  // gameplay balance; they exist so the headless suite can assert state.
+  window.__ev = {
+    get state() { return state; },
+    get player() { return { x: player.px, y: player.py, tx: tileOf(player.px), ty: tileOf(player.py), facing: player.facing }; },
+    get map() { return { w: W, h: H, tile: TILE }; },
+    get camera() { return { x: cam.x, y: cam.y }; },
+    get view() { return { w: viewW, h: viewH }; },
+    get reading() { return state === "reading"; },
+    get signText() { return signText; },
+    get signCount() { return SIGN_COUNT; },
+    get reduced() { return reduced; },
+    solid: solid,
+    front: front,
+    start: start,
+    press: press,
+    release: release,
+    action: action,
+    dismiss: dismiss,
+    step: function (ms) { update(ms || 16); },
+    setReducedMotion: function (b) { reduced = !!b; },
+    // place the traveler on a tile centre (test convenience for the scenic
+    // screenshot and for reach-independent read checks); does not alter balance.
+    place: function (tx, ty, facing) {
+      player.px = (tx + 0.5) * TILE; player.py = (ty + 0.5) * TILE;
+      if (facing && DIR[facing]) player.facing = facing;
+      player.moving = false; clampCam();
+    },
+    // introspection the reduced-motion test reads:
+    emberGlowRadius: function () { return 150 + (reduced ? 0 : Math.sin(animT / 650) * 22); },
+    walkBob: function () { return (reduced || !player.moving) ? 0 : Math.sin(walkPhase) * 2.2; }
+  };
+})();
+</script>
+</body>
+</html>
