@@ -247,9 +247,20 @@
     var s = TILE;
     switch (id) {
       case GRASS: {
-        ctx.fillStyle = "#223b2e"; ctx.fillRect(sx, sy, s, s);
-        ctx.fillStyle = "rgba(60,96,70,.55)";
+        var gt = hash(tx * 5 + 2, ty * 5 + 2);
+        ctx.fillStyle = gt > 0.5 ? "#223b2e" : "#20372b";                 // faint per-tile tone so the meadow isn't a flat slab
+        ctx.fillRect(sx, sy, s, s);
+        ctx.fillStyle = "rgba(60,96,70,.5)";
         for (var i = 0; i < 4; i++) { var gx = sx + hash(tx * 9 + i, ty) * s, gy = sy + hash(tx, ty * 7 + i) * s; ctx.fillRect(gx | 0, gy | 0, 2, 2); }
+        var gd = hash(tx * 7 + 3, ty * 11 + 5);
+        if (gd > 0.82) {                                                  // a sparse grass tuft, placed off-grid within the tile
+          var ux = sx + 6 + hash(tx, ty + 9) * (s - 12), uy = sy + 12 + hash(tx + 9, ty) * (s - 18);
+          ctx.strokeStyle = "rgba(70,110,78,.7)"; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.moveTo(ux, uy); ctx.lineTo(ux - 2, uy - 5); ctx.moveTo(ux, uy); ctx.lineTo(ux, uy - 6); ctx.moveTo(ux, uy); ctx.lineTo(ux + 2, uy - 5); ctx.stroke();
+        } else if (gd < 0.05) {                                           // a rare dusk wildflower for warmth
+          var fx = sx + 8 + hash(tx + 4, ty) * (s - 16), fy = sy + 11 + hash(tx, ty + 4) * (s - 20);
+          ctx.fillStyle = "rgba(150,130,200,.75)"; ctx.beginPath(); ctx.arc(fx, fy, 1.8, 0, 6.3); ctx.fill();
+        }
         break;
       }
       case PATH: {
@@ -276,11 +287,17 @@
       }
       case TREE: {
         ctx.fillStyle = "#223b2e"; ctx.fillRect(sx, sy, s, s);            // grass ground (no visible tile square)
-        var jx = (hash(tx, ty) - 0.5) * 4, jr = hash(ty, tx) * 2;          // per-tree jitter so the canopy never reads as a grid
-        var cx = sx + s / 2 + jx, cy = sy + s / 2;
-        ctx.fillStyle = "#3a2516"; ctx.fillRect(cx - 2, cy + 2, 4, 10);   // trunk
-        ctx.fillStyle = "#1f3a28"; ctx.beginPath(); ctx.arc(cx, cy - 2, 10.5 + jr, 0, 6.3); ctx.fill();
-        ctx.fillStyle = "#2b5038"; ctx.beginPath(); ctx.arc(cx - 3, cy - 5, 5.5 + jr * 0.5, 0, 6.3); ctx.fill();
+        // Per-tree jitter + size variation so canopies never read as a grid
+        // lattice; the draw spills past the tile so neighbours knit into a thicket.
+        var h1 = hash(tx, ty), h2 = hash(ty, tx), h3 = hash(tx * 2 + 1, ty * 3 + 1);
+        var jx = (h1 - 0.5) * 14, jy = (h2 - 0.5) * 10, sz = 1 + h3 * 0.5;
+        var cx = sx + s / 2 + jx, cy = sy + s / 2 + jy;
+        ctx.fillStyle = "rgba(8,16,12,.45)";                              // soft ground shadow
+        ctx.beginPath(); ctx.ellipse(cx, cy + 9 * sz, 10 * sz, 3.5, 0, 0, 6.3); ctx.fill();
+        ctx.fillStyle = "#2f1d12"; ctx.fillRect(cx - 2, cy + 1, 4, 11 * sz); // trunk
+        ctx.fillStyle = "#1c3524"; ctx.beginPath(); ctx.arc(cx, cy - 2, (11 + h2 * 3) * sz, 0, 6.3); ctx.fill();
+        ctx.fillStyle = "#24442f"; ctx.beginPath(); ctx.arc(cx - 4 * sz, cy - 4, (7 + h1 * 3) * sz, 0, 6.3); ctx.fill();
+        ctx.fillStyle = "#2f5a3c"; ctx.beginPath(); ctx.arc(cx + 3 * sz, cy - 6 * sz, (4 + h3 * 2) * sz, 0, 6.3); ctx.fill(); // sunset-side highlight
         break;
       }
       case CLIFF: {
@@ -415,15 +432,19 @@
   }
 
   function drawBox(text) {
-    var pad = 16, boxH = Math.max(108, Math.min(170, viewH * 0.28));
-    var top = viewH - boxH - 12, left = 12, right = viewW - 12;
+    var pad = 16, left = 12, right = viewW - 12, lineH = 24;
+    ctx.font = "17px system-ui, sans-serif";
+    var lines = wrap(text, right - left - pad * 2);
+    // Size the box to the wrapped text so it never overflows the footer hint on
+    // a short landscape phone; cap it so it never eats the whole view.
+    var boxH = Math.min(viewH - 24, Math.max(92, pad + 16 + lines.length * lineH + 22));
+    var top = viewH - boxH - 12;
     ctx.fillStyle = "rgba(14,9,18,.9)";
     roundRect(left, top, right - left, boxH, 12); ctx.fill();
     ctx.strokeStyle = "rgba(255,180,90,.6)"; ctx.lineWidth = 2;
     roundRect(left, top, right - left, boxH, 12); ctx.stroke();
     ctx.fillStyle = "#f3e6d0"; ctx.font = "17px system-ui, sans-serif";
-    var lines = wrap(text, right - left - pad * 2);
-    for (var i = 0; i < lines.length; i++) ctx.fillText(lines[i], left + pad, top + pad + 20 + i * 24);
+    for (var i = 0; i < lines.length; i++) ctx.fillText(lines[i], left + pad, top + pad + 16 + i * lineH);
     ctx.fillStyle = "rgba(220,190,150,.7)"; ctx.font = "13px system-ui, sans-serif";
     ctx.fillText("▸ press action again or Esc to close", left + pad, top + boxH - 14);
   }
@@ -482,13 +503,17 @@
   Array.prototype.forEach.call(document.querySelectorAll(".dpad button"), function (b) {
     bindHold(b, b.getAttribute("data-dir"));
   });
+  // The action button. Pointer events unify mouse/touch/pen and pointerdown
+  // fires once per tap, so action() is bound to pointerdown ALONE — the earlier
+  // build also bound touchstart, and a tap raises both, so action() ran twice
+  // and the read box opened then immediately closed (a no-op on phones). The
+  // touchstart handler only preventDefaults, to swallow the compatibility
+  // mousedown/click a tap would otherwise also raise. Direction release is
+  // handled per-button in bindHold and by the window `blur` reset; there is
+  // deliberately no global touchend clear (it stopped two-finger play).
   var btnA = document.getElementById("btnA");
-  function doAction(e) { if (e) e.preventDefault(); action(); }
-  btnA.addEventListener("pointerdown", doAction);
-  btnA.addEventListener("touchstart", doAction, { passive: false });
-  // a finger sliding off a held d-pad button never fires its own pointerup
-  addEventListener("pointerup", function () { if (state !== "play") return; });
-  addEventListener("touchend", function () { held.up = held.down = held.left = held.right = false; });
+  btnA.addEventListener("pointerdown", function (e) { e.preventDefault(); action(); });
+  btnA.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
 
   // tap / click on the world begins the game (and dismisses a box).
   cv.addEventListener("pointerdown", function () {

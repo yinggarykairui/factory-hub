@@ -163,8 +163,15 @@ async function main() {
   });
   check('reduced motion freezes the walk bob', bobR === 0);
   await ev(() => window.__ev.setReducedMotion(false));
-  const vary = await ev(() => { const a = window.__ev.emberGlowRadius(); window.__ev.step(500); const b = window.__ev.emberGlowRadius(); return Math.abs(a - b); });
-  check('the Ember pulses when motion is allowed', vary > 0.01);
+  // Sample the glow across a full pulse period (step() clamps dt to 40ms, so
+  // 120 steps ≈ 4.8s > the ~4.1s period) and assert the spread — deterministic
+  // regardless of the starting phase, unlike a single two-sample delta.
+  const spread = await ev(() => {
+    let mn = Infinity, mx = -Infinity;
+    for (let i = 0; i < 120; i++) { window.__ev.step(40); const r = window.__ev.emberGlowRadius(); if (r < mn) mn = r; if (r > mx) mx = r; }
+    return mx - mn;
+  });
+  check('the Ember pulses when motion is allowed', spread > 20);
   const bobOn = await ev(() => {
     window.__ev.place(10, 10, 'right'); window.__ev.press('right');
     let m = 0; for (let i = 0; i < 24; i++) { window.__ev.step(40); m = Math.max(m, Math.abs(window.__ev.walkBob())); }
@@ -186,6 +193,27 @@ async function main() {
   });
   for (let i = 0; i < 10; i++) { await page.setViewportSize({ width: 300 + i * 48, height: 380 + i * 36 }); }
   check('survives garbage input without crashing', (await ev(() => window.__ev.state)) != null);
+
+  // 7b — the A button works on a REAL touch tap. A tap fires both a pointer
+  // event and a touch event; the first build bound action() to both and the
+  // read box opened then closed (net no-op on phones). Needs a touch context;
+  // a synthetic pointerdown (above) fires only one handler and cannot catch it.
+  {
+    const tctx = await browser.newContext({ viewport: { width: 360, height: 720 }, hasTouch: true, isMobile: true });
+    const tp = await tctx.newPage();
+    tp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(touch): ' + m.text()); });
+    tp.on('pageerror', e => consoleErrors.push('pageerror(touch): ' + e.message));
+    await tp.goto(url);
+    await tp.waitForFunction(() => window.__ev && window.__ev.state);
+    await tp.locator('#btnA').tap();
+    check('tap on A begins the game from the title', (await tp.evaluate(() => window.__ev.state)) === 'play');
+    await tp.evaluate(() => { window.__ev.dismiss(); window.__ev.place(20, 26, 'right'); });
+    await tp.locator('#btnA').tap();
+    check('tap on A opens a read (single-fire, not a toggle no-op)', (await tp.evaluate(() => window.__ev.reading)) === true);
+    await tp.locator('#btnA').tap();
+    check('tap on A again dismisses the read', (await tp.evaluate(() => window.__ev.reading === false && window.__ev.state === 'play')));
+    await tctx.close();
+  }
 
   // Console / page errors must be clean across the whole run.
   check('zero console errors across the run', consoleErrors.length === 0);
