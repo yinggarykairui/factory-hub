@@ -1,0 +1,5 @@
+{
+  "description": "A short 2D role-playing game built one piece at a time. Arrive in a valley at dusk where the heart-fire is going out; increment 1 is the overworld you walk and read.",
+  "topics": ["game", "rpg", "overworld", "tilemap", "camera", "collision", "dialogue", "canvas", "vanilla-js", "zero-dependency"],
+  "pages": true
+}
