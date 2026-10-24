@@ -44,11 +44,12 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
 
 ## Done-map — increments (one working, rubric-passing increment per factory day)
 
-- [ ] **1/6 — The Vale (overworld).** Title screen; the hand-authored dusk
+- [x] **1/6 — The Vale (overworld).** Title screen; the hand-authored dusk
   valley; 4-way movement with axis-separated collision; a camera that follows
   and clamps; readable signposts and the dimming Ember (the first taste of the
   dialogue box); dusk atmosphere (vignette + ember glow); phone-width touch
-  controls; reduced-motion; `window.__ev` hooks. *(this increment)*
+  controls; reduced-motion; `window.__ev` hooks. **Shipped day 069** (32/32
+  headless; fixer cycle 1 closed the touch-read BLOCKER).
 - [ ] **2/6 — The people who stayed (NPCs + dialogue).** Walk-up NPCs with
   branching, flag-gated dialogue (the dialogue-loom pattern); the Warden sets
   the main quest — the Ember is dying and needs three emberseeds.
