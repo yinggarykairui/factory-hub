@@ -210,6 +210,24 @@ async function main() {
     await tp.evaluate(() => { window.__ev.dismiss(); window.__ev.place(20, 26, 'right'); });
     await tp.locator('#btnA').tap();
     check('tap on A opens a read (single-fire, not a toggle no-op)', (await tp.evaluate(() => window.__ev.reading)) === true);
+    // The read box must not sit behind the on-screen controls on a phone
+    // (the day-069 evening MAJOR): the D-pad hides while reading, and the box
+    // bottom lifts clear of the action button's top. Checked portrait + landscape.
+    const clears = async () => tp.evaluate(() => {
+      const dpadHidden = getComputedStyle(document.querySelector('.dpad')).display === 'none';
+      const box = window.__ev.readBox();
+      const aTop = document.getElementById('btnA').getBoundingClientRect().top;
+      return { dpadHidden, boxBottom: box && box.bottom, aTop };
+    });
+    let ov = await clears();
+    check('reading hides the dead D-pad (phone portrait)', ov.dpadHidden);
+    check('read box clears the action button (phone portrait)', ov.boxBottom != null && ov.boxBottom <= ov.aTop);
+    await tp.setViewportSize({ width: 740, height: 360 });  // landscape phone
+    await tp.waitForTimeout(50);
+    ov = await clears();
+    check('read box clears the action button (phone landscape)', ov.boxBottom != null && ov.boxBottom <= ov.aTop);
+    await tp.setViewportSize({ width: 360, height: 720 });
+    await tp.waitForTimeout(50);
     await tp.locator('#btnA').tap();
     check('tap on A again dismisses the read', (await tp.evaluate(() => window.__ev.reading === false && window.__ev.state === 'play')));
     await tctx.close();
