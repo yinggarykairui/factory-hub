@@ -35,13 +35,16 @@
   @media (min-width: 760px) and (hover: hover) and (pointer: fine) { .touch { display: none; } }
   /* While a read box is open, movement is frozen, so the D-pad is dead weight —
      hide it so it never sits on top of the bottom text box on a phone. The
-     action button stays (it dismisses the box) and the box lifts clear of it. */
-  #screen.reading .dpad { display: none; }
+     action button stays (it dismisses the box) and the box lifts clear of it.
+     A conversation (.talking) is the same case: movement frozen, box at the
+     bottom, D-pad hidden — the action button advances/confirms and choices are
+     tapped directly on the box. */
+  #screen.reading .dpad, #screen.talking .dpad { display: none; }
 </style>
 </head>
 <body>
 <div id="screen">
-  <canvas id="view" role="img" aria-label="Ember Vale — a dusk valley you walk and read."></canvas>
+  <canvas id="view" role="img" aria-label="Ember Vale — a dusk valley you walk, read, and the people who stayed, who you can talk to."></canvas>
   <div class="touch dpad" aria-hidden="true">
     <button class="up"    data-dir="up"    aria-label="Move up">&#9650;</button>
     <button class="left"  data-dir="left"  aria-label="Move left">&#9664;</button>
@@ -57,11 +60,17 @@
 "use strict";
 (function () {
   // ===================================================================
-  // EMBER VALE — increment 1: the overworld.
-  // A hand-authored dusk valley you walk and read. Vanilla JS + <canvas>,
-  // zero dependencies, no network, no images, no fonts. Everything is drawn
-  // from code so it runs offline from file://.
-  // State: "title" -> "play" <-> "reading". No people/items/quests yet.
+  // EMBER VALE — increments 1–2.
+  //   1: the overworld — a hand-authored dusk valley you walk and read.
+  //   2: the people who stayed — NPCs you can walk up to and talk with,
+  //      branching flag-gated dialogue, and the Warden setting the main quest
+  //      (find three emberseeds for the dying Ember).
+  // Vanilla JS + <canvas>, zero dependencies, no network, no images, no fonts.
+  // Everything is drawn from code so it runs offline from file://.
+  // State: "title" -> "play" <-> "reading" (signposts/Ember, one-shot read)
+  //                           <-> "dialog"  (people, pages + choices).
+  // Quest state is the in-memory `flags` object only — no items, no log, and
+  // not persisted; the save blob arrives in increment 6. No combat yet.
   // ===================================================================
 
   var TILE = 32;              // world tile size, px
@@ -156,12 +165,99 @@
 
   var SIGN_COUNT = Object.keys(READS).length; // readable objects
 
+  // --- the people who stayed (increment 2) --------------------------
+  // Each NPC stands on a tile that is otherwise grass; the tile becomes solid
+  // (you cannot walk through a person) and is reached from an adjacent walkable
+  // tile by facing it and pressing the one interact button. `dialog(flags)`
+  // chooses the opening node, so a person's lines change with what you've done.
+  var NPCS = [
+    { id: "warden", name: "The Warden", tx: 21, ty: 8,  facing: "left", color: "#caa2e8",
+      dialog: function (f) { return f.questStarted ? "warden_recap" : "warden_intro"; } },
+    { id: "mira",   name: "Mira",       tx: 6,  ty: 23, facing: "down", color: "#7fb7c8",
+      dialog: function (f) { return f.questStarted ? "mira_open" : "mira_wary"; } },
+    { id: "bram",   name: "Bram",       tx: 16, ty: 22, facing: "down", color: "#e3a06a",
+      dialog: function (f) { return f.bramEased ? "bram_after" : (f.questStarted ? "bram_quest" : "bram_intro"); } }
+  ];
+  var NPC_AT = {};
+  NPCS.forEach(function (n) { NPC_AT[n.tx + "," + n.ty] = n; });
+
+  // The dialogue graph. A node shows its `lines` one page at a time; on the
+  // last page it either presents `choices` (branch, maybe set flags) or applies
+  // its own `set` and goes `to` the next node (or ends). A choice ends the turn
+  // unless it names a `to`. Flags are the whole of quest state for now.
+  var DIALOG = {
+    warden_intro: { speaker: "The Warden", lines: [
+      "You came when the light was almost gone. Few do.",
+      "I am the Warden of this vale. The Ember you passed, failing in its clearing, was the first fire struck here — and the last, if it goes dark tonight."
+    ], choices: [
+      { label: "What is killing the Ember?", to: "warden_why" },
+      { label: "How can I help?",            to: "warden_charge" },
+      { label: "(keep your own counsel)",    end: true }
+    ] },
+    warden_why: { speaker: "The Warden", lines: [
+      "Nothing killed it. It was fed, in better years, by emberseeds — bright stones the valley grew the way an orchard grows fruit. We stopped gathering them, and it guttered.",
+      "Three would be enough to wake it. Three are still out there, if you have the legs for the dark."
+    ], to: "warden_charge" },
+    warden_charge: { speaker: "The Warden", lines: [
+      "Then take the charge: find three emberseeds and bring them to the heart before the dark settles for good.",
+      "The ones who stayed know the valley better than I do. Ask them — they have been waiting a long while for someone to ask."
+    ], set: { questStarted: true, wardenHeard: true }, end: true },
+    warden_recap: { speaker: "The Warden", lines: [
+      "Three emberseeds, traveler, and the heart wakes. The valley is listening for your step.",
+      "Mira, by the west cottage, keeps count of such things. Start with her."
+    ], end: true },
+
+    mira_wary: { speaker: "Mira", lines: [
+      "...I don't know you. We latched the shutters the night the Ember began to fail, and we have not opened them since.",
+      "Whatever you are carrying, we have no coin for it and no fire to warm the deal. Go on."
+    ], end: true },
+    mira_open: { speaker: "Mira", lines: [
+      "The Warden sent you? Then you mean it. Good — I am so tired of the dark.",
+      "Emberseeds, then. I have seen one glint by the stream, up where the old bridge crosses. The other two I cannot swear to — but the valley keeps what it grows. Look where things are oldest."
+    ], set: { miraTold: true }, end: true },
+
+    bram_intro: { speaker: "Bram", lines: [
+      "Are you a firekeeper? You don't look like one. The firekeepers had warm hands.",
+      "Mum says if the big fire goes out the little fires go too. Is that true?"
+    ], choices: [
+      { label: "“The big fire isn't going out. Not tonight.”", to: "bram_reassure" },
+      { label: "“Then we'd best keep the big one lit, hadn't we.”", to: "bram_honest" }
+    ] },
+    bram_quest: { speaker: "Bram", lines: [
+      "The Warden talked to you! Are you going to find the emberseeds? They glow like a cat's eyes in the dark.",
+      "I found one once and Mum made me put it back. I'd help you look, but I'm not allowed past the stream."
+    ], choices: [
+      { label: "“Stay this side of the stream, then. Promise me.”", to: "bram_reassure" },
+      { label: "“Keep your eyes open from here. That helps plenty.”", to: "bram_honest" }
+    ] },
+    bram_reassure: { speaker: "Bram", lines: [
+      "...okay. I'll tell Mum you said so. She'll still want to know who you are, though."
+    ], set: { bramEased: true }, end: true },
+    bram_honest: { speaker: "Bram", lines: [
+      "That's what the Warden says too. I like that better than a promise. Promises go out, Mum says."
+    ], set: { bramEased: true }, end: true },
+    bram_after: { speaker: "Bram", lines: [
+      "Find them all and I get to watch the Ember wake — Mum promised. So hurry, traveler. Hurry!"
+    ], end: true }
+  };
+
+  // Quest state. In memory only (increment 6 adds the save blob); read when an
+  // NPC picks its opening node, written when a node or a choice resolves.
+  var flags = { questStarted: false, wardenHeard: false, miraTold: false, bramEased: false };
+
   // --- state --------------------------------------------------------
-  var state = "title";                  // "title" | "play" | "reading"
+  var state = "title";                  // "title" | "play" | "reading" | "dialog"
   var player = { px: (SPAWN_TX + 0.5) * TILE, py: (SPAWN_TY + 0.5) * TILE, facing: "up", moving: false };
   var cam = { x: 0, y: 0 };
   var held = { up: false, down: false, left: false, right: false };
   var signText = "";
+
+  // conversation runtime (state === "dialog")
+  var dlgNode = null;    // the current DIALOG node object
+  var dlgPage = 0;       // which line of dlgNode.lines is showing
+  var dlgChoices = null; // the choices array while the player is choosing, else null
+  var dlgSel = 0;        // highlighted choice index
+  var dlgChoiceRects = []; // view-space hit rects for tapping a choice, rebuilt each draw
   var viewW = 1, viewH = 1, dpr = 1;
   var animT = 0, walkPhase = 0, playT = 0;
   var hasRead = false;                  // the first read retires the discovery cue
@@ -178,7 +274,7 @@
   // --- collision: axis-separated AABB vs the tile grid --------------
   function solid(tx, ty) {
     if (tx < 0 || ty < 0 || tx >= W || ty >= H) return true; // outside the vale is wall
-    return !!SOLID[MAP[ty][tx]];
+    return !!SOLID[MAP[ty][tx]] || !!NPC_AT[tx + "," + ty];   // a person blocks their tile
   }
   function hits(cx, cy) {
     // any solid tile overlapping the player's box centred at (cx,cy)?
@@ -206,11 +302,53 @@
     return { tx: tileOf(player.px) + d[0], ty: tileOf(player.py) + d[1] };
   }
 
-  // --- the readable object in front of the player -------------------
-  function tryRead() {
+  // --- interact: one button, dispatched by the tile you face --------
+  // A person opens a conversation; a signpost or the Ember opens a plain read.
+  // The two never overlap — reading is left exactly as it was in increment 1.
+  function tryInteract() {
     var f = front();
+    var npc = NPC_AT[f.tx + "," + f.ty];
+    if (npc) { openDialog(npc); return; }
     var line = READS[f.tx + "," + f.ty];
     if (line != null) { signText = line; state = "reading"; hasRead = true; screenEl.classList.add("reading"); }
+  }
+
+  // --- conversation runtime -----------------------------------------
+  function enterNode(id) {
+    dlgNode = DIALOG[id]; dlgPage = 0; dlgChoices = null; dlgSel = 0;
+  }
+  function openDialog(npc) {
+    enterNode(npc.dialog(flags));
+    state = "dialog"; hasRead = true; screenEl.classList.add("talking");
+  }
+  function closeDialog() {
+    state = "play"; dlgNode = null; dlgChoices = null; dlgChoiceRects = [];
+    screenEl.classList.remove("talking");
+  }
+  function applySet(set) { if (set) for (var k in set) if (set.hasOwnProperty(k)) flags[k] = set[k]; }
+  // resolve the current node once its last page has been read.
+  function resolveNode() {
+    if (dlgNode.choices) { dlgChoices = dlgNode.choices; dlgSel = 0; return; }
+    applySet(dlgNode.set);
+    if (dlgNode.to) enterNode(dlgNode.to); else closeDialog();
+  }
+  function pickChoice(i) {
+    if (!dlgChoices || i < 0 || i >= dlgChoices.length) return;
+    var c = dlgChoices[i];
+    dlgChoices = null; dlgChoiceRects = [];
+    applySet(c.set);
+    if (c.to) enterNode(c.to); else closeDialog();
+  }
+  // action inside a conversation: confirm a choice, turn a page, or resolve.
+  function dialogAdvance() {
+    if (state !== "dialog") return;
+    if (dlgChoices) { pickChoice(dlgSel); return; }
+    if (dlgPage < dlgNode.lines.length - 1) { dlgPage++; return; }
+    resolveNode();
+  }
+  function dialogMove(delta) {
+    if (state !== "dialog" || !dlgChoices) return;
+    dlgSel = (dlgSel + delta + dlgChoices.length) % dlgChoices.length;
   }
 
   // --- camera: follow the player, clamp to the world edge -----------
@@ -225,9 +363,15 @@
   function action() {
     if (state === "title") { start(); return; }
     if (state === "reading") { dismiss(); return; }
-    tryRead();
+    if (state === "dialog") { dialogAdvance(); return; }
+    tryInteract();
   }
-  function dismiss() { if (state === "reading") { state = "play"; signText = ""; screenEl.classList.remove("reading"); } }
+  // Dismiss closes whatever box is open. A read clears; a conversation is
+  // abandoned (any flags already resolved stay — abandoning only stops the turn).
+  function dismiss() {
+    if (state === "reading") { state = "play"; signText = ""; screenEl.classList.remove("reading"); }
+    else if (state === "dialog") { closeDialog(); }
+  }
   function press(dir) { if (DIR[dir]) { held[dir] = true; if (state === "play") player.facing = dir; } }
   function release(dir) { if (DIR[dir]) held[dir] = false; }
 
@@ -343,6 +487,37 @@
     }
   }
 
+  // Draw the villagers. A person is a smaller, hooded figure in their own
+  // colour so they never read as a second traveler; a gentle idle sway (gated
+  // by reduced motion) keeps them from looking like furniture. When the player
+  // is facing a person in open play, a soft chevron bobs over them to say
+  // "press action to talk" without a word of UI.
+  function drawNpcs() {
+    var f = (state === "play") ? front() : null;
+    for (var i = 0; i < NPCS.length; i++) {
+      var n = NPCS[i];
+      var cx = (n.tx + 0.5) * TILE - cam.x, cy = (n.ty + 0.5) * TILE - cam.y;
+      if (cx < -TILE || cy < -TILE || cx > viewW + TILE || cy > viewH + TILE) continue; // off-screen
+      var sway = reduced ? 0 : Math.sin(animT / 900 + n.tx * 1.3) * 1.4;
+      var y = cy + sway;
+      ctx.fillStyle = "rgba(0,0,0,.4)";
+      ctx.beginPath(); ctx.ellipse(cx, cy + 10, 8, 3, 0, 0, 6.3); ctx.fill();   // shadow (unswayed)
+      // robe
+      ctx.fillStyle = n.color; ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(cx, y - 7); ctx.lineTo(cx - 7, y + 9); ctx.lineTo(cx + 7, y + 9); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // head
+      ctx.fillStyle = "#e8c79a"; ctx.beginPath(); ctx.arc(cx, y - 7, 3.8, 0, 6.3); ctx.fill();
+      ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.arc(cx, y - 8.5, 4, Math.PI, 0); ctx.fill(); // hair/hood shade
+      // talk cue when the player faces this person
+      if (f && f.tx === n.tx && f.ty === n.ty) {
+        var bob = reduced ? 0 : Math.sin(animT / 220) * 1.6;
+        ctx.fillStyle = "rgba(255,224,160,.92)";
+        var ay = y - 17 + bob;
+        ctx.beginPath(); ctx.moveTo(cx - 4, ay); ctx.lineTo(cx + 4, ay); ctx.lineTo(cx, ay + 5); ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+
   function drawPlayer() {
     var x = player.px - cam.x, y = player.py - cam.y;
     var bob = (reduced || !player.moving) ? 0 : Math.sin(walkPhase) * 2.2;
@@ -372,9 +547,10 @@
   }
 
   function render() {
-    // Keep the DOM in step with game state: the #screen.reading class hides the
-    // D-pad (idempotent, so toggling every frame is cheap and always correct).
+    // Keep the DOM in step with game state: the .reading / .talking classes hide
+    // the D-pad (idempotent, so toggling every frame is cheap and always correct).
     screenEl.classList.toggle("reading", state === "reading");
+    screenEl.classList.toggle("talking", state === "dialog");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = "#0e0a12"; ctx.fillRect(0, 0, viewW, viewH);
 
@@ -407,6 +583,7 @@
     }
     ctx.globalCompositeOperation = "source-over";
 
+    drawNpcs();
     drawPlayer();
 
     // dusk: a sky-to-ground tint plus a breathing vignette over the whole view.
@@ -423,6 +600,7 @@
     if (state === "play" && !hasRead && playT < HINT_MS) drawHint();
     if (state === "title") drawTitle();
     if (state === "reading") drawBox(signText);
+    if (state === "dialog") drawDialog();
   }
 
   function drawTitle() {
@@ -473,6 +651,83 @@
     ctx.fillText("▸ press action again or Esc to close", left + pad, top + boxH - 14);
   }
 
+  function speakerColor(name) {
+    for (var i = 0; i < NPCS.length; i++) if (NPCS[i].name === name) return NPCS[i].color;
+    return "#ffcf8a";
+  }
+  // Geometry of the conversation box, shared by the draw and the test hook so
+  // there is one source of truth for "does the box clear the phone controls".
+  // Like the read box, the bottom lifts to clear the action button's cluster
+  // when the on-screen controls show.
+  function dialogLayout() {
+    var pad = 16, left = 12, right = viewW - 12, lineH = 23, speakerH = 24, gap = 8, footerH = 20;
+    var innerW = right - left - pad * 2;
+    ctx.font = "17px system-ui, sans-serif";
+    var body = wrap(dlgNode.lines[dlgPage], innerW);
+    var choiceWrap = [], choiceRowH = [], choicesH = 0;
+    if (dlgChoices) {
+      ctx.font = "14px system-ui, sans-serif";
+      for (var i = 0; i < dlgChoices.length; i++) {
+        var cl = wrap(dlgChoices[i].label, innerW - 26);
+        choiceWrap.push(cl);
+        var h = 10 + cl.length * 18 + 8;
+        choiceRowH.push(h); choicesH += h + 6;
+      }
+    }
+    var contentH = speakerH + body.length * lineH + (dlgChoices ? gap + choicesH : footerH);
+    var bInset = controlsVisible() ? 120 : 12;
+    var boxH = Math.min(viewH - bInset - 12, Math.max(80, pad + contentH + pad - 4));
+    var top = viewH - boxH - bInset;
+    return { pad: pad, left: left, right: right, lineH: lineH, speakerH: speakerH, gap: gap,
+             body: body, choiceWrap: choiceWrap, choiceRowH: choiceRowH, boxH: boxH, top: top };
+  }
+  // The conversation box: a speaker name, the current page, and — once the last
+  // page is read — a list of tappable choices (one highlighted). A cooler border
+  // than the signpost read box, so talking to a person looks different from
+  // reading a sign. Choice hit-rects are rebuilt here so a tap can pick one.
+  function drawDialog() {
+    if (!dlgNode) return;
+    var L = dialogLayout(), pad = L.pad, left = L.left, right = L.right, top = L.top, boxH = L.boxH;
+
+    ctx.fillStyle = "rgba(13,10,20,.92)";
+    roundRect(left, top, right - left, boxH, 12); ctx.fill();
+    ctx.strokeStyle = "rgba(150,170,230,.6)"; ctx.lineWidth = 2;
+    roundRect(left, top, right - left, boxH, 12); ctx.stroke();
+
+    var ty = top + pad + 4;
+    ctx.fillStyle = speakerColor(dlgNode.speaker);
+    ctx.font = "700 15px system-ui, sans-serif";
+    ctx.fillText(dlgNode.speaker, left + pad, ty);
+    ty += L.speakerH - 4;
+
+    ctx.fillStyle = "#f3e6d0"; ctx.font = "17px system-ui, sans-serif";
+    for (var b = 0; b < L.body.length; b++) { ctx.fillText(L.body[b], left + pad, ty); ty += L.lineH; }
+
+    dlgChoiceRects = [];
+    if (dlgChoices) {
+      ty += L.gap - 6;
+      for (var c = 0; c < dlgChoices.length; c++) {
+        var rh = L.choiceRowH[c], rx = left + pad - 4, rw = right - left - pad * 2 + 8;
+        var sel = c === dlgSel;
+        ctx.fillStyle = sel ? "rgba(150,170,230,.22)" : "rgba(255,255,255,.04)";
+        roundRect(rx, ty, rw, rh, 8); ctx.fill();
+        if (sel) { ctx.strokeStyle = "rgba(180,196,240,.85)"; ctx.lineWidth = 1.5; roundRect(rx, ty, rw, rh, 8); ctx.stroke(); }
+        ctx.fillStyle = sel ? "#eef1ff" : "rgba(220,224,236,.75)";
+        ctx.font = "14px system-ui, sans-serif";
+        var lineY = ty + 10 + 4;
+        for (var k = 0; k < L.choiceWrap[c].length; k++) {
+          ctx.fillText((k === 0 ? (sel ? "▸ " : "  ") : "   ") + L.choiceWrap[c][k], rx + 10, lineY);
+          lineY += 18;
+        }
+        dlgChoiceRects.push({ x: rx, y: ty, w: rw, h: rh, i: c });
+        ty += rh + 6;
+      }
+    } else {
+      ctx.fillStyle = "rgba(200,206,230,.7)"; ctx.font = "13px system-ui, sans-serif";
+      ctx.fillText("▸ action to continue", left + pad, top + boxH - 13);
+    }
+  }
+
   // A one-time discovery cue at the top (clear of the bottom controls): until the
   // first read, tell a newcomer how to read the valley. It fades out after a few
   // seconds or the moment they read something; under reduced motion it just shows.
@@ -484,7 +739,7 @@
       else if (playT > HINT_MS - 900) alpha = Math.max(0, (HINT_MS - playT) / 900);
     }
     if (alpha <= 0) return;
-    var msg = "Face a signpost or the Ember and press " + (controlsVisible() ? "A" : "Space") + " to read";
+    var msg = "Face someone, a signpost, or the Ember and press " + (controlsVisible() ? "A" : "Space") + " to talk or read";
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "14px system-ui, sans-serif";
@@ -532,7 +787,14 @@
     if (e.key === " " || e.code === "Space") { e.preventDefault(); action(); return; }
     if (e.key === "Escape") { e.preventDefault(); dismiss(); return; }
     var dir = KEYMAP[e.key];
-    if (dir) { e.preventDefault(); if (state === "title") start(); press(dir); }
+    if (dir) {
+      e.preventDefault();
+      // In a conversation the up/down keys move the choice highlight, not the
+      // traveler — left/right do nothing (the list is vertical).
+      if (state === "dialog") { if (dir === "up") dialogMove(-1); else if (dir === "down") dialogMove(1); return; }
+      if (state === "title") start();
+      press(dir);
+    }
   }, { passive: false });
   addEventListener("keyup", function (e) { var dir = KEYMAP[e.key]; if (dir) release(dir); });
   addEventListener("blur", function () { held.up = held.down = held.left = held.right = false; });
@@ -565,9 +827,24 @@
   btnA.addEventListener("pointerdown", function (e) { e.preventDefault(); action(); });
   btnA.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
 
-  // tap / click on the world begins the game (and dismisses a box).
-  cv.addEventListener("pointerdown", function () {
-    if (state === "title") start(); else if (state === "reading") dismiss();
+  // tap / click on the world begins the game, dismisses a read, and drives a
+  // conversation: tapping a choice row picks it, tapping elsewhere turns the
+  // page (while choosing, a tap off the choices does nothing — A / Esc still work).
+  cv.addEventListener("pointerdown", function (e) {
+    if (state === "title") { start(); return; }
+    if (state === "reading") { dismiss(); return; }
+    if (state === "dialog") {
+      if (dlgChoices) {
+        var r = cv.getBoundingClientRect();
+        var px = e.clientX - r.left, py = e.clientY - r.top;   // CSS px == view coords
+        for (var i = 0; i < dlgChoiceRects.length; i++) {
+          var c = dlgChoiceRects[i];
+          if (px >= c.x && px <= c.x + c.w && py >= c.y && py <= c.y + c.h) { pickChoice(c.i); return; }
+        }
+        return;
+      }
+      dialogAdvance();
+    }
   });
 
   // --- boot ---------------------------------------------------------
@@ -611,7 +888,27 @@
     // read-box geometry in CSS px (view coords), for the phone-overlap guard:
     // its bottom must sit above the action button's top so no text hides behind it.
     readBox: function () { if (state !== "reading") return null; var L = boxLayout(signText); return { top: L.top, bottom: L.top + L.boxH }; },
-    hintShowing: function () { return state === "play" && !hasRead && playT < HINT_MS; }
+    hintShowing: function () { return state === "play" && !hasRead && playT < HINT_MS; },
+
+    // --- increment 2: people, flags, conversation ---
+    get flags() { return { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard, miraTold: flags.miraTold, bramEased: flags.bramEased }; },
+    get npcs() { return NPCS.map(function (n) { return { id: n.id, tx: n.tx, ty: n.ty, name: n.name }; }); },
+    // live conversation snapshot, or null unless state === "dialog".
+    dialog: function () {
+      if (state !== "dialog" || !dlgNode) return null;
+      return {
+        speaker: dlgNode.speaker, page: dlgPage, pages: dlgNode.lines.length,
+        text: dlgNode.lines[dlgPage], choosing: !!dlgChoices,
+        choices: dlgChoices ? dlgChoices.map(function (c) { return c.label; }) : null,
+        selected: dlgSel
+      };
+    },
+    dialogMove: dialogMove,   // move the choice highlight (-1 / +1)
+    dialogPick: pickChoice,   // confirm a choice by index
+    // view-space hit rects of the choices currently drawn (for the tap test):
+    dialogChoiceRects: function () { return dlgChoiceRects.map(function (r) { return { x: r.x, y: r.y, w: r.w, h: r.h, i: r.i }; }); },
+    // conversation-box geometry in view coords, for the phone-overlap guard:
+    dialogBox: function () { if (state !== "dialog" || !dlgNode) return null; var L = dialogLayout(); return { top: L.top, bottom: L.top + L.boxH }; }
   };
 })();
 </script>

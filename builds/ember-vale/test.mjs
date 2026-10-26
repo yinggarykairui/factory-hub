@@ -1,6 +1,8 @@
-// Headless checks for Ember Vale (increment 1). Drives the SHIPPED index.html
-// over a file:// URL — never a replica. Fails on any console error or page
-// error, at any point. Prints "PASS n/n" and exits non-zero on any failure.
+// Headless checks for Ember Vale (increments 1-2). Drives the SHIPPED
+// index.html over a file:// URL — never a replica. Fails on any console error
+// or page error, at any point. Prints "PASS n/n" and exits non-zero on any
+// failure. Sections 1-8/7b cover the overworld (increment 1); 9-13 cover the
+// people and the branching, flag-gated dialogue (increment 2).
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { createRequire } from 'module';
@@ -194,6 +196,92 @@ async function main() {
   for (let i = 0; i < 10; i++) { await page.setViewportSize({ width: 300 + i * 48, height: 380 + i * 36 }); }
   check('survives garbage input without crashing', (await ev(() => window.__ev.state)) != null);
 
+  // ================= increment 2: the people who stayed =================
+
+  // 9 — NPCs placed, solid, approachable; you cannot walk through a person.
+  await ev(() => window.__ev.dismiss());
+  const npcs = await ev(() => window.__ev.npcs);
+  check('three NPCs are placed', npcs.length === 3 && npcs.every(n => n.id && n.name));
+  check('every NPC tile is solid (cannot be walked through)',
+    await ev(() => window.__ev.npcs.every(n => window.__ev.solid(n.tx, n.ty) === true)));
+  check('every NPC is reachable (a walkable orthogonal neighbour)', await ev(() =>
+    window.__ev.npcs.every(n => [[1,0],[-1,0],[0,1],[0,-1]].some(d => !window.__ev.solid(n.tx + d[0], n.ty + d[1])))));
+  const blockedByNpc = await ev(() => {
+    const w = window.__ev.npcs.find(n => n.id === 'warden');
+    const dirs = { '1,0': 'right', '-1,0': 'left', '0,1': 'down', '0,-1': 'up' };
+    for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+      const nx = w.tx - dx, ny = w.ty - dy;                 // a free tile on the opposite side
+      if (!window.__ev.solid(nx, ny)) {
+        const dir = dirs[dx + ',' + dy];
+        window.__ev.place(nx, ny, dir); window.__ev.press(dir);
+        for (let i = 0; i < 40; i++) window.__ev.step(40);
+        window.__ev.release(dir);
+        return window.__ev.player.tx === w.tx && window.__ev.player.ty === w.ty;
+      }
+    }
+    return true;
+  });
+  check('cannot walk onto a person\'s tile', blockedByNpc === false);
+
+  // 10 — one interact button, dispatched by the front tile.
+  const faceWarden = await ev(() => {
+    window.__ev.dismiss(); window.__ev.place(20, 8, 'right');      // faces the Warden at (21,8)
+    window.__ev.action(); const d = window.__ev.dialog();
+    return { state: window.__ev.state, speaker: d && d.speaker, reading: window.__ev.reading };
+  });
+  check('facing a person + action opens a conversation', faceWarden.state === 'dialog' && faceWarden.speaker === 'The Warden');
+  check('a conversation is not a read (states never overlap)', faceWarden.reading === false);
+  await ev(() => window.__ev.dismiss());
+  const faceSign = await ev(() => {
+    window.__ev.place(20, 26, 'right'); window.__ev.action();      // the signpost at (21,26)
+    return { reading: window.__ev.reading, dialog: window.__ev.dialog() };
+  });
+  check('facing a signpost still opens a plain read', faceSign.reading === true && faceSign.dialog === null);
+  await ev(() => window.__ev.dismiss());
+  check('action facing no one does nothing', await ev(() => {
+    window.__ev.place(20, 10, 'left'); window.__ev.action();       // faces open ground
+    return window.__ev.state === 'play' && window.__ev.dialog() === null && !window.__ev.reading;
+  }));
+
+  // 11 — pages advance; a node with choices branches, and the branch changes the text.
+  const paged = await ev(() => {
+    window.__ev.dismiss(); window.__ev.place(20, 8, 'right'); window.__ev.action();
+    const p0 = window.__ev.dialog().page, pages = window.__ev.dialog().pages;
+    window.__ev.action();                                          // page 2
+    const p1 = window.__ev.dialog().page;
+    window.__ev.action();                                          // past the last page -> choices
+    const d = window.__ev.dialog();
+    return { p0, pages, p1, choosing: d.choosing, n: d.choices ? d.choices.length : 0 };
+  });
+  check('a multi-page node advances page by page', paged.p0 === 0 && paged.pages === 2 && paged.p1 === 1);
+  check('the last page reveals the choices', paged.choosing === true && paged.n === 3);
+  const branchWhy = await ev(() => { window.__ev.dialogPick(0); return window.__ev.dialog().text; });
+  check('picking a choice branches into its node', /Nothing killed it/.test(branchWhy));
+  const abandoned = await ev(() => { window.__ev.dismiss(); return { state: window.__ev.state, quest: window.__ev.flags.questStarted }; });
+  check('Esc/dismiss abandons a conversation', abandoned.state === 'play');
+  check('abandoning before the charge leaves the quest unset', abandoned.quest === false);
+  const endChoice = await ev(() => {
+    window.__ev.place(20, 8, 'right'); window.__ev.action(); window.__ev.action(); window.__ev.action(); // to the choices
+    window.__ev.dialogPick(2);                                     // "(keep your own counsel)" — end:true
+    return window.__ev.state;
+  });
+  check('an end-choice closes the conversation', endChoice === 'play');
+
+  // 12 — flag-gating: capture pre-quest openings, complete the Warden, confirm they changed.
+  const preMira = await ev(() => { window.__ev.place(6, 24, 'up'); window.__ev.action(); const t = window.__ev.dialog().text; window.__ev.dismiss(); return t; });
+  const preBram = await ev(() => { window.__ev.place(16, 23, 'up'); window.__ev.action(); const t = window.__ev.dialog().text; window.__ev.dismiss(); return t; });
+  const questSet = await ev(() => {
+    window.__ev.place(20, 8, 'right'); window.__ev.action(); window.__ev.action(); window.__ev.action(); // to the choices
+    window.__ev.dialogPick(1);                                     // "How can I help?" -> the charge
+    window.__ev.action(); window.__ev.action();                    // read the charge, resolve
+    return { state: window.__ev.state, quest: window.__ev.flags.questStarted, heard: window.__ev.flags.wardenHeard };
+  });
+  check('the Warden\'s charge sets the main-quest flag', questSet.quest === true && questSet.heard === true && questSet.state === 'play');
+  const postMira = await ev(() => { window.__ev.place(6, 24, 'up'); window.__ev.action(); const t = window.__ev.dialog().text; window.__ev.dismiss(); return t; });
+  const postBram = await ev(() => { window.__ev.place(16, 23, 'up'); window.__ev.action(); const t = window.__ev.dialog().text; window.__ev.dismiss(); return t; });
+  check('Mira\'s opening changes after the quest starts', preMira !== postMira && /latched the shutters/.test(preMira) && /Warden sent you/.test(postMira));
+  check('Bram\'s opening changes after the quest starts', preBram !== postBram && /firekeeper/.test(preBram) && /emberseeds/.test(postBram));
+
   // 7b — the A button works on a REAL touch tap. A tap fires both a pointer
   // event and a touch event; the first build bound action() to both and the
   // read box opened then closed (net no-op on phones). Needs a touch context;
@@ -233,15 +321,58 @@ async function main() {
     await tctx.close();
   }
 
+  // 13 — a conversation on a phone: choices are tappable, the box clears the
+  // controls, and tapping a choice row takes that branch (fresh flags: Bram's
+  // pre-quest intro, which has two choices).
+  {
+    const dc = await browser.newContext({ viewport: { width: 360, height: 720 }, hasTouch: true, isMobile: true });
+    const dp = await dc.newPage();
+    dp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(dialog): ' + m.text()); });
+    dp.on('pageerror', e => consoleErrors.push('pageerror(dialog): ' + e.message));
+    await dp.goto(url);
+    await dp.waitForFunction(() => window.__ev && window.__ev.state);
+    await dp.locator('#btnA').tap();                               // begin
+    await dp.evaluate(() => window.__ev.place(16, 23, 'up'));       // face Bram at (16,22)
+    await dp.locator('#btnA').tap();                               // open the conversation
+    check('tap opens a conversation on a phone', (await dp.evaluate(() => { const d = window.__ev.dialog(); return d && d.speaker; })) === 'Bram');
+    for (let i = 0; i < 4 && !(await dp.evaluate(() => { const d = window.__ev.dialog(); return d && d.choosing; })); i++) await dp.locator('#btnA').tap();
+    check('a phone conversation reaches its choices', await dp.evaluate(() => window.__ev.dialog().choosing === true));
+    const ov = await dp.evaluate(() => {
+      const box = window.__ev.dialogBox();
+      const aTop = document.getElementById('btnA').getBoundingClientRect().top;
+      const dpadHidden = getComputedStyle(document.querySelector('.dpad')).display === 'none';
+      return { bottom: box && box.bottom, aTop, dpadHidden };
+    });
+    check('the conversation box clears the action button (phone)', ov.bottom != null && ov.bottom <= ov.aTop);
+    check('talking hides the dead D-pad (phone)', ov.dpadHidden);
+    const rect = await dp.evaluate(() => window.__ev.dialogChoiceRects()[0]);
+    await dp.touchscreen.tap(rect.x + rect.w / 2, rect.y + rect.h / 2);
+    const afterPick = await dp.evaluate(() => { const d = window.__ev.dialog(); return { choosing: d && d.choosing, text: d && d.text }; });
+    check('tapping a choice row takes that branch', afterPick.choosing === false && /I'll tell Mum/.test(afterPick.text));
+    await dp.locator('#btnA').tap();                               // resolve the branch's end node
+    check('resolving the branch sets its flag and closes', await dp.evaluate(() => window.__ev.flags.bramEased === true && window.__ev.state === 'play'));
+    await dc.close();
+  }
+
   // Console / page errors must be clean across the whole run.
   check('zero console errors across the run', consoleErrors.length === 0);
   if (consoleErrors.length) consoleErrors.forEach(e => console.log('    ! ' + e));
 
-  // Screenshot — the real running build, framed near the Ember at dusk.
-  await page.setViewportSize({ width: 960, height: 640 });
-  await ev(() => { window.__ev.setReducedMotion(false); window.__ev.dismiss(); window.__ev.place(20, 6, 'up'); });
-  await wait(300); // let the glow and fireflies settle into a frame
-  await page.screenshot({ path: shot });
+  // Screenshot — a real running frame on a fresh page (clean flags): meeting the
+  // Warden by the heart at dusk, the conversation open on its branching choices.
+  {
+    const sp = await browser.newPage({ viewport: { width: 960, height: 640 } });
+    await sp.goto(url);
+    await sp.waitForFunction(() => window.__ev && window.__ev.state);
+    await sp.evaluate(() => {
+      window.__ev.start(); window.__ev.setReducedMotion(false);
+      window.__ev.place(20, 8, 'right');                    // stand before the Warden
+      window.__ev.action(); window.__ev.action(); window.__ev.action(); // open -> page 2 -> choices
+    });
+    await sp.waitForTimeout(340);                           // let the glow settle into a frame
+    await sp.screenshot({ path: shot });
+    await sp.close();
+  }
   console.log('  screenshot ->', shot);
 
   await browser.close();
