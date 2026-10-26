@@ -321,9 +321,9 @@ async function main() {
     await tctx.close();
   }
 
-  // 13 — a conversation on a phone: choices are tappable, the box clears the
-  // controls, and tapping a choice row takes that branch (fresh flags: Bram's
-  // pre-quest intro, which has two choices).
+  // 13 — a conversation on a phone: pages clear the action button, choices are
+  // tappable, and (the day-071 critic's MAJOR) a tall multi-choice reply never
+  // spills out of the box or over the controls — portrait and landscape.
   {
     const dc = await browser.newContext({ viewport: { width: 360, height: 720 }, hasTouch: true, isMobile: true });
     const dp = await dc.newPage();
@@ -333,24 +333,56 @@ async function main() {
     await dp.waitForFunction(() => window.__ev && window.__ev.state);
     await dp.locator('#btnA').tap();                               // begin
     await dp.evaluate(() => window.__ev.place(16, 23, 'up'));       // face Bram at (16,22)
-    await dp.locator('#btnA').tap();                               // open the conversation
+    await dp.locator('#btnA').tap();                               // open the conversation (page 0)
     check('tap opens a conversation on a phone', (await dp.evaluate(() => { const d = window.__ev.dialog(); return d && d.speaker; })) === 'Bram');
+    // while reading pages the action button shows and the box clears it; D-pad hidden.
+    const reading = await dp.evaluate(() => {
+      const box = window.__ev.dialogBox();
+      const a = document.getElementById('btnA');
+      return { bottom: box && box.bottom, aTop: a.getBoundingClientRect().top,
+               aShown: getComputedStyle(a).display !== 'none',
+               dpadHidden: getComputedStyle(document.querySelector('.dpad')).display === 'none' };
+    });
+    check('a page box clears the action button (phone)', reading.aShown && reading.bottom != null && reading.bottom <= reading.aTop);
+    check('talking hides the dead D-pad (phone)', reading.dpadHidden);
     for (let i = 0; i < 4 && !(await dp.evaluate(() => { const d = window.__ev.dialog(); return d && d.choosing; })); i++) await dp.locator('#btnA').tap();
     check('a phone conversation reaches its choices', await dp.evaluate(() => window.__ev.dialog().choosing === true));
-    const ov = await dp.evaluate(() => {
-      const box = window.__ev.dialogBox();
-      const aTop = document.getElementById('btnA').getBoundingClientRect().top;
-      const dpadHidden = getComputedStyle(document.querySelector('.dpad')).display === 'none';
-      return { bottom: box && box.bottom, aTop, dpadHidden };
+    await dp.waitForTimeout(60);                                   // let a frame apply the .choosing class
+    // while choosing the action button hides (choices are tapped), so no control
+    // can overlap and the box has the whole bottom to itself.
+    const choosing = await dp.evaluate(() => {
+      const box = window.__ev.dialogBox(), vh = window.__ev.view.h;
+      const rects = window.__ev.dialogChoiceRects();
+      const aHidden = getComputedStyle(document.querySelector('.act')).display === 'none' &&
+                      document.getElementById('btnA').getBoundingClientRect().width === 0;
+      const inBox = rects.every(r => r.y >= box.top - 0.5 && r.y + r.h <= box.bottom + 0.5);
+      return { aHidden, top: box.top, bottom: box.bottom, vh, inBox, n: rects.length };
     });
-    check('the conversation box clears the action button (phone)', ov.bottom != null && ov.bottom <= ov.aTop);
-    check('talking hides the dead D-pad (phone)', ov.dpadHidden);
+    check('while choosing, the action button hides (no control overlaps the box)', choosing.aHidden);
+    check('the choosing box stays fully on-screen (phone portrait)', choosing.top >= 0 && choosing.bottom <= choosing.vh && choosing.inBox);
     const rect = await dp.evaluate(() => window.__ev.dialogChoiceRects()[0]);
     await dp.touchscreen.tap(rect.x + rect.w / 2, rect.y + rect.h / 2);
     const afterPick = await dp.evaluate(() => { const d = window.__ev.dialog(); return { choosing: d && d.choosing, text: d && d.text }; });
     check('tapping a choice row takes that branch', afterPick.choosing === false && /I'll tell Mum/.test(afterPick.text));
     await dp.locator('#btnA').tap();                               // resolve the branch's end node
     check('resolving the branch sets its flag and closes', await dp.evaluate(() => window.__ev.flags.bramEased === true && window.__ev.state === 'play'));
+
+    // the regression: the Warden's 3-choice reply on a short landscape phone.
+    // (fresh flags on this page: questStarted is still false, so warden_intro — 3 choices.)
+    await dp.setViewportSize({ width: 568, height: 320 });
+    await dp.waitForTimeout(40);
+    await dp.evaluate(() => { window.__ev.dismiss(); window.__ev.place(20, 8, 'right'); });  // face the Warden
+    await dp.locator('#btnA').tap(); await dp.locator('#btnA').tap(); await dp.locator('#btnA').tap(); // to the 3 choices
+    await dp.waitForTimeout(60);
+    const land = await dp.evaluate(() => {
+      const d = window.__ev.dialog(); if (!d || !d.choosing) return { ok: false };
+      const box = window.__ev.dialogBox(), vh = window.__ev.view.h, rects = window.__ev.dialogChoiceRects();
+      const bottom = box.bottom;
+      const allInBox = rects.length === 3 && rects.every(r => r.y >= box.top - 0.5 && r.y + r.h <= bottom + 0.5);
+      const onScreen = box.top >= 0 && bottom <= vh && rects.every(r => r.y + r.h <= vh);
+      return { ok: true, n: rects.length, allInBox, onScreen, bottom, vh };
+    });
+    check('the Warden\'s 3-choice reply fits the box on a landscape phone', land.ok && land.n === 3 && land.allInBox && land.onScreen);
     await dc.close();
   }
 

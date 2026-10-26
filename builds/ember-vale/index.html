@@ -40,6 +40,11 @@
      bottom, D-pad hidden — the action button advances/confirms and choices are
      tapped directly on the box. */
   #screen.reading .dpad, #screen.talking .dpad { display: none; }
+  /* While choosing a reply, the action button is dead weight too — you tap the
+     choice directly (or use the keyboard) — so hide it and let the box reclaim
+     the full height. This is what keeps a tall 3-choice reply inside the box on
+     a short landscape phone instead of spilling over the controls. */
+  #screen.choosing .act { display: none; }
 </style>
 </head>
 <body>
@@ -551,6 +556,9 @@
     // the D-pad (idempotent, so toggling every frame is cheap and always correct).
     screenEl.classList.toggle("reading", state === "reading");
     screenEl.classList.toggle("talking", state === "dialog");
+    // While choosing, the action button hides (choices are tapped directly), so
+    // dialogLayout's controlsVisible() reads false and the box uses full height.
+    screenEl.classList.toggle("choosing", state === "dialog" && !!dlgChoices);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = "#0e0a12"; ctx.fillRect(0, 0, viewW, viewH);
 
@@ -675,7 +683,11 @@
       }
     }
     var contentH = speakerH + body.length * lineH + (dlgChoices ? gap + choicesH : footerH);
-    var bInset = controlsVisible() ? 120 : 12;
+    // While choosing, the action button is hidden (.choosing), so the box needs
+    // no clearance and takes the full height — forced here on dlgChoices rather
+    // than read back from the button, so the geometry never lags the class by a
+    // frame. While reading pages, lift to clear the visible action button.
+    var bInset = (controlsVisible() && !dlgChoices) ? 120 : 12;
     var boxH = Math.min(viewH - bInset - 12, Math.max(80, pad + contentH + pad - 4));
     var top = viewH - boxH - bInset;
     return { pad: pad, left: left, right: right, lineH: lineH, speakerH: speakerH, gap: gap,
