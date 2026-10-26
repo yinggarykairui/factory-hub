@@ -60,9 +60,15 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   dialogue box); dusk atmosphere (vignette + ember glow); phone-width touch
   controls; reduced-motion; `window.__ev` hooks. **Shipped day 069** (32/32
   headless; fixer cycle 1 closed the touch-read BLOCKER).
-- [ ] **2/6 — The people who stayed (NPCs + dialogue).** Walk-up NPCs with
+- [x] **2/6 — The people who stayed (NPCs + dialogue).** Walk-up NPCs with
   branching, flag-gated dialogue (the dialogue-loom pattern); the Warden sets
-  the main quest — the Ember is dying and needs three emberseeds.
+  the main quest — the Ember is dying and needs three emberseeds. **Shipped
+  day 071** (61/61 headless; fixer cycle 1 closed a landscape-phone MAJOR — a
+  tall 3-choice reply overflowed the lifted box; now the action button hides
+  while choosing so the box reclaims full height). Three NPCs (Warden, Mira,
+  Bram); a `dialog` state separate from `reading` so signposts are untouched;
+  one interact button dispatched by the front tile; choices tapped on phone,
+  keyboard ↑/↓+action on desktop; flags in memory only (save is 6/6).
 - [ ] **3/6 — What you carry (inventory + items).** Items placed in the world
   you can pick up; an inventory panel (the pocket-inventory pattern); the
   emberseeds and a key item or two that gate progress.
