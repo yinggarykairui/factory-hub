@@ -27,9 +27,19 @@ purpose-built for this one story, never imported as a library.
 - A tile grid (`MAP`, a 2D array of tile ids) with a `TILES` table giving each
   id its draw routine and its `solid` / `interact` flags. Tiles are drawn from
   code — no image files, no fonts.
-- A `state` string gates input and update: `title` → `play` → (later) `dialog`,
-  `menu`, `combat`, `over`. Increment 1 uses `title`, `play`, and `reading`
-  (signpost text box).
+- A `state` string gates input and update: `title` → `play` → (later) `menu`,
+  `combat`, `over`. Increment 1 uses `title`, `play`, and `reading` (signpost
+  text box). Increment 2 adds `dialog` — a people conversation with pages and
+  branching choices — kept *separate* from `reading` so signposts and the Ember
+  behave exactly as they did (a plain one-shot read), and only people get the
+  page/choice machinery.
+- People and talk (increment 2): an `NPCS` table (`{id, tx, ty, facing, name,
+  color}`, each tile solid so you cannot walk through a person) and a `DIALOG`
+  graph of nodes (`{speaker, lines[], choices?, set?, to?/end}`). A `flags`
+  object is the whole of quest state for now — set by resolving a node or a
+  choice, read when an NPC picks its opening node, so a person's lines change
+  with what you have done. `flags` lives in memory only; it is **not** persisted
+  until the save blob arrives in increment 6.
 - Axis-separated AABB collision: resolve X then Y against solid tiles so the
   player slides along walls instead of sticking.
 - A camera `{x,y}` in world pixels, centered on the player and clamped to the
@@ -68,9 +78,16 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
 
 ## Open threads
 
-- Increment 2 must re-confirm the NPC walk-up interaction does not fight the
+- ~~Increment 2 must re-confirm the NPC walk-up interaction does not fight the
   signpost "face + action" interaction from increment 1 — one interact button,
-  dispatched by what you face.
+  dispatched by what you face.~~ **Resolved (increment 2):** one interact
+  button, dispatched by the front tile — a person opens `dialog`, a signpost or
+  the Ember opens `reading`, and the two states never overlap. `reading` is left
+  byte-for-byte in behaviour so increment 1's checks all still hold.
+- Choices must be reachable on a phone, where the D-pad is hidden while a box is
+  open (the day-069 overlap fix). Increment 2 makes each choice a tappable row
+  in the box (canvas hit-test), with keyboard up/down + action as the desktop
+  path — no D-pad needed to converse.
 - The save blob (increment 6) must version itself from increment 6's first
   commit so a later change can refuse an unknown schema (the overworld-express
   lesson).
