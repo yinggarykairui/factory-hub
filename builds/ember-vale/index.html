@@ -967,7 +967,9 @@
     var rows = n ? Math.ceil(n / cols) : 0;
     function geom() {
       var gridW = n ? cols * slot + (cols - 1) * gap : 0;
-      var panelW = Math.min(maxW, Math.max(220, gridW + pad * 2));
+      // a floor on width so the selected item's one-line description has room to
+      // read (it wraps, but shouldn't be squeezed to a sliver), capped at maxW.
+      var panelW = Math.min(maxW, Math.max(Math.min(maxW, 284), gridW + pad * 2));
       var left = Math.round((viewW - panelW) / 2);
       return { gridW: gridW, panelW: panelW, left: left, right: left + panelW };
     }
@@ -987,7 +989,7 @@
     } catch (e) {}
     var availTop = topInset, availBot = viewH - botInset;
     var availH = Math.max(90, availBot - availTop);
-    var titleH = 26, descH = 46;
+    var titleH = 26, descH = 52;
     var fixed = pad + titleH + gap + descH + pad;   // everything but the slot rows
     for (var guard = 0; guard < 16 && n; guard++) {
       var need = fixed + gap + rows * (slot + gap) - gap;
@@ -1039,7 +1041,7 @@
       roundRect(sx, sy, L.slot, L.slot, 10); ctx.stroke();
       drawItemIcon(bag[i].kind, sx + L.slot / 2, sy + L.slot * 0.40, 1.1);
       ctx.textAlign = "center";
-      ctx.fillStyle = sel ? "#ffe9c2" : "rgba(220,214,196,.82)"; ctx.font = "11px system-ui, sans-serif";
+      ctx.fillStyle = sel ? "#ffe9c2" : "rgba(220,214,196,.82)"; ctx.font = "10px system-ui, sans-serif";
       ctx.fillText(bag[i].kind === "seed" ? "emberseed" : "iron key", sx + L.slot / 2, sy + L.slot - 7);
       invSlotRects.push({ x: sx, y: sy, w: L.slot, h: L.slot, i: i });
     }
