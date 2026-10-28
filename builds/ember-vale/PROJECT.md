@@ -32,7 +32,10 @@ purpose-built for this one story, never imported as a library.
   text box). Increment 2 adds `dialog` — a people conversation with pages and
   branching choices — kept *separate* from `reading` so signposts and the Ember
   behave exactly as they did (a plain one-shot read), and only people get the
-  page/choice machinery.
+  page/choice machinery. Increment 3 adds `inventory` — the "what you carry"
+  pouch — a fourth box state that freezes movement like `reading`; the four
+  box-states never overlap. Pickup and the locked-door unlock happen in `play`
+  (walking onto an item; facing a `DOOR` + action with the key).
 - People and talk (increment 2): an `NPCS` table (`{id, tx, ty, facing, name,
   color}`, each tile solid so you cannot walk through a person) and a `DIALOG`
   graph of nodes (`{speaker, lines[], choices?, set?, to?/end}`). A `flags`
@@ -69,9 +72,18 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   Bram); a `dialog` state separate from `reading` so signposts are untouched;
   one interact button dispatched by the front tile; choices tapped on phone,
   keyboard ↑/↓+action on desktop; flags in memory only (save is 6/6).
-- [ ] **3/6 — What you carry (inventory + items).** Items placed in the world
+- [x] **3/6 — What you carry (inventory + items).** Items placed in the world
   you can pick up; an inventory panel (the pocket-inventory pattern); the
-  emberseeds and a key item or two that gate progress.
+  emberseeds and a key item or two that gate progress. **Shipped day 073**
+  (107/107 headless; 61 increment-1/2 checks preserved; no defect found —
+  zero fixer/polish commits). An `ITEMS` table on non-solid tiles, walked onto
+  to pick up (toast + into `bag`); three emberseeds (one by the bridge at
+  (14,13), one in the eastern heights at (32,6), one at (26,24) sealed behind a
+  locked `DOOR` at (26,23)) and an iron key at (33,21); the door unlocks only
+  with the key in hand (the MAP tile becomes FLOOR — one source of truth, no
+  second flag); a new `inventory` state (the pouch, opened by `I`/a tap on the
+  `#btnBag` HUD, movement frozen) with keyboard + tap slot selection; a
+  persistent "✦ n/3" seed HUD that doubles as the pouch button. In-memory only.
 - [ ] **4/6 — The thread of the quest (quests).** A quest log with steps and
   objectives (the quest-thread pattern), main plus a side errand; quest state
   tracked and reflected by NPCs and the world.
