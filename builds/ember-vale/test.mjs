@@ -386,22 +386,254 @@ async function main() {
     await dc.close();
   }
 
+  // ================= increment 3: what you carry =================
+  // Items placed in the world, picked up by walking onto them; a bag/inventory
+  // panel; a persistent seed HUD; and a locked door the iron key gates.
+
+  // 14 — items exist on non-solid, reachable tiles; seed C is sealed by the door.
+  await ev(() => window.__ev.dismiss());
+  const items = await ev(() => window.__ev.items);
+  check('four items placed (three emberseeds + an iron key)',
+    items.length === 4 && items.filter(i => i.kind === 'seed').length === 3 && items.filter(i => i.kind === 'key').length === 1);
+  check('every world item sits on a non-solid (walkable) tile',
+    await ev(() => window.__ev.items.every(it => window.__ev.solid(it.tx, it.ty) === false)));
+  // BFS over non-solid tiles from the spawn, with the door first shut then open.
+  const reach = await ev(() => {
+    const doors = window.__ev.doors;
+    const isDoor = (x, y) => doors.some(d => d.tx === x && d.ty === y);
+    function bfs(doorOpen) {
+      const seen = new Set(['20,26']); const q = [[20, 26]];
+      while (q.length) { const [x, y] = q.shift();
+        for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+          const nx = x + dx, ny = y + dy, k = nx + ',' + ny;
+          if (seen.has(k)) continue;
+          let s = window.__ev.solid(nx, ny);
+          if (doorOpen && isDoor(nx, ny)) s = false;
+          if (!s) { seen.add(k); q.push([nx, ny]); }
+        }
+      }
+      return seen;
+    }
+    const closed = bfs(false), open = bfs(true);
+    const it = window.__ev.items, at = id => it.find(i => i.id === id);
+    const r = (id, set) => { const i = at(id); return i ? set.has(i.tx + ',' + i.ty) : null; };
+    return {
+      aClosed: r('seedA', closed), bClosed: r('seedB', closed), keyClosed: r('ironKey', closed),
+      cClosed: r('seedC', closed), cOpen: r('seedC', open)
+    };
+  });
+  check('seeds A & B and the iron key are reachable on foot', reach.aClosed === true && reach.bClosed === true && reach.keyClosed === true);
+  check('seed C is sealed — reachable only after the door opens', reach.cClosed === false && reach.cOpen === true);
+
+  // walk onto an item to pick it up: gone from the world, into the bag, toast.
+  const pickA = await ev(() => {
+    window.__ev.dismiss();
+    window.__ev.place(15, 13, 'left');                 // one tile east of seed A (14,13)
+    const nBefore = window.__ev.items.length, bagBefore = window.__ev.bag.length;
+    window.__ev.press('left'); for (let i = 0; i < 30; i++) window.__ev.step(40); window.__ev.release('left');
+    return { nBefore, bagBefore, nAfter: window.__ev.items.length, bagAfter: window.__ev.bag.length,
+             toast: window.__ev.toast, seeds: window.__ev.seeds,
+             inBag: window.__ev.bag.some(b => b.id === 'seedA'), inWorld: window.__ev.items.some(i => i.id === 'seedA') };
+  });
+  check('walking onto an item removes it from the world', pickA.nAfter === pickA.nBefore - 1 && pickA.inWorld === false);
+  check('walking onto an item adds it to the bag', pickA.bagAfter === pickA.bagBefore + 1 && pickA.inBag === true);
+  check('a pickup floats a toast', /Picked up an emberseed/.test(pickA.toast));
+  check('the seed HUD rises to 1/3 on pickup', pickA.seeds === 1);
+
+  // a locked door without the key stays shut, names what is needed, and blocks.
+  const noKey = await ev(() => {
+    window.__ev.dismiss();
+    const hadKey = window.__ev.bag.some(b => b.kind === 'key');
+    window.__ev.place(26, 22, 'down'); window.__ev.action();       // face the door (26,23), try it
+    const toast = window.__ev.toast, locked = window.__ev.doorLocked(26, 23), solidD = window.__ev.solid(26, 23);
+    window.__ev.press('down'); for (let i = 0; i < 20; i++) window.__ev.step(40); window.__ev.release('down');
+    return { hadKey, toast, locked, solidD, blockedTy: window.__ev.player.ty, cInWorld: window.__ev.items.some(i => i.id === 'seedC') };
+  });
+  check('a locked door without the key stays shut and names what is needed',
+    noKey.hadKey === false && noKey.locked === true && noKey.solidD === true && /lock/i.test(noKey.toast) && /iron/i.test(noKey.toast));
+  check('the locked door blocks the way to seed C', noKey.blockedTy === 22 && noKey.cInWorld === true);
+
+  // collect seed B and the key, then the key turns the door, then seed C.
+  const run = await ev(() => {
+    const log = {};
+    window.__ev.dismiss();
+    window.__ev.place(32, 7, 'up'); window.__ev.press('up'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('up');   // seed B (32,6)
+    log.seedsB = window.__ev.seeds; log.bGone = !window.__ev.items.some(i => i.id === 'seedB');
+    window.__ev.place(32, 21, 'right'); window.__ev.press('right'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('right'); // key (33,21)
+    log.hasKey = window.__ev.bag.some(b => b.kind === 'key');
+    log.lockedBefore = window.__ev.doorLocked(26, 23);
+    window.__ev.place(26, 22, 'down'); window.__ev.action();       // key turns the door
+    log.unlockToast = window.__ev.toast; log.lockedAfter = window.__ev.doorLocked(26, 23); log.solidAfter = window.__ev.solid(26, 23);
+    log.keyStays = window.__ev.bag.some(b => b.kind === 'key');     // not consumed
+    window.__ev.place(26, 22, 'down'); window.__ev.press('down'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('down'); // seed C (26,24)
+    log.seedsC = window.__ev.seeds; log.cGone = !window.__ev.items.some(i => i.id === 'seedC');
+    log.remaining = window.__ev.items.length;
+    return log;
+  });
+  check('the second emberseed is collected (HUD 2/3)', run.seedsB === 2 && run.bGone === true);
+  check('the iron key is collected', run.hasKey === true);
+  check('the iron key turns the locked door (solid while shut, walkable after)',
+    run.lockedBefore === true && run.lockedAfter === false && run.solidAfter === false && /iron key turns/.test(run.unlockToast));
+  check('the key stays in the bag after use (not consumed)', run.keyStays === true);
+  check('seed C, sealed behind the door, is collected only after unlocking (HUD 3/3)', run.seedsC === 3 && run.cGone === true);
+  check('all three seeds collected and the world emptied of items', run.remaining === 0);
+
+  // 15 — the inventory panel (desktop paths): open/close, listing, freeze, select.
+  await ev(() => window.__ev.dismiss());
+  await page.keyboard.press('i');
+  check('the I key opens the bag', await ev(() => window.__ev.inventoryOpen === true && window.__ev.state === 'inventory'));
+  check('the bag lists what you carry with names and one-line descriptions',
+    await ev(() => { const b = window.__ev.bag; return b.length === 4 && b.every(it => it.name.length > 0 && it.desc.length > 0) && window.__ev.seeds === 3; }));
+  check('movement is frozen while the bag is open', await ev(() => {
+    const x0 = window.__ev.player.x;
+    window.__ev.press('right'); for (let i = 0; i < 20; i++) window.__ev.step(40); window.__ev.release('right');
+    return window.__ev.player.x === x0 && window.__ev.inventoryOpen === true;
+  }));
+  const selKb = await ev(() => {
+    window.__ev.inventorySelect(0); const s0 = window.__ev.inventorySel;
+    window.__ev.inventoryMove(1); const s1 = window.__ev.inventorySel;
+    window.__ev.inventoryMove(-1); window.__ev.inventoryMove(-1); const sw = window.__ev.inventorySel;   // wrap past 0
+    return { s0, s1, sw, n: window.__ev.bag.length };
+  });
+  check('bag selection moves and wraps with the keyboard pokes', selKb.s0 === 0 && selKb.s1 === 1 && selKb.sw === selKb.n - 1);
+  await ev(() => window.__ev.inventorySelect(0));
+  await page.keyboard.press('ArrowRight');
+  check('arrow keys move the bag selection', (await ev(() => window.__ev.inventorySel)) === 1);
+  await wait(50);
+  check('the bag exposes a view-space hit-rect per slot',
+    await ev(() => { const r = window.__ev.inventorySlotRects(); return r.length === 4 && r.every(s => s.w > 0 && s.h > 0); }));
+  await page.keyboard.press('Escape');
+  check('Esc closes the bag', await ev(() => window.__ev.state === 'play' && window.__ev.inventoryOpen === false));
+  await page.keyboard.press('i');
+  await ev(() => window.__ev.action());
+  check('action closes the bag', await ev(() => window.__ev.state === 'play'));
+  await page.keyboard.press('i');
+  check('I reopens the bag', await ev(() => window.__ev.inventoryOpen === true));
+  await page.keyboard.press('i');
+  check('the I key also closes the bag', await ev(() => window.__ev.state === 'play'));
+
+  // 16 — reduced motion freezes the seed glow and the panel; motion lets it breathe.
+  const seedRM = await ev(() => {
+    window.__ev.setReducedMotion(true);
+    const a = window.__ev.seedGlowRadius(); window.__ev.step(300); const b = window.__ev.seedGlowRadius(); window.__ev.step(400); const c = window.__ev.seedGlowRadius();
+    if (window.__ev.state === 'play') window.__ev.toggleInventory();
+    const p0 = window.__ev.inventoryBox(); window.__ev.step(500); const p1 = window.__ev.inventoryBox();
+    window.__ev.dismiss();
+    window.__ev.setReducedMotion(false);
+    let mn = Infinity, mx = -Infinity;
+    for (let i = 0; i < 120; i++) { window.__ev.step(40); const r = window.__ev.seedGlowRadius(); if (r < mn) mn = r; if (r > mx) mx = r; }
+    return { rmConst: a === b && b === c, panelConst: !!(p0 && p1) && p0.top === p1.top && p0.bottom === p1.bottom, spread: mx - mn };
+  });
+  check('reduced motion freezes the emberseed glow', seedRM.rmConst === true);
+  check('the bag panel geometry is static under reduced motion', seedRM.panelConst === true);
+  check('the emberseed glow breathes when motion is allowed', seedRM.spread > 2);
+
+  // 17 — empty bag opens and renders cleanly ("Nothing yet.", no slots).
+  {
+    const ep = await browser.newPage({ viewport: { width: 900, height: 600 } });
+    ep.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(empty): ' + m.text()); });
+    ep.on('pageerror', e => consoleErrors.push('pageerror(empty): ' + e.message));
+    await ep.goto(url);
+    await ep.waitForFunction(() => window.__ev && window.__ev.state);
+    await ep.evaluate(() => { window.__ev.start(); window.__ev.toggleInventory(); });
+    await ep.waitForTimeout(80);
+    const empty = await ep.evaluate(() => ({ open: window.__ev.inventoryOpen, n: window.__ev.bag.length,
+      rects: window.__ev.inventorySlotRects().length, box: window.__ev.inventoryBox(), sel: window.__ev.inventorySel }));
+    check('an empty bag opens and renders with no slots', empty.open === true && empty.n === 0 && empty.rects === 0 && empty.box && empty.box.bottom > empty.box.top);
+    await ep.close();
+  }
+
+  // 18 — the bag on a phone, portrait + landscape: the HUD opens it, the panel
+  // fits and clears the controls, no horizontal scroll, slots are tappable.
+  const noOverlap = (p, c) => p.right <= c.left || p.left >= c.right || p.bottom <= c.top || p.top >= c.bottom;
+  {
+    const ic = await browser.newContext({ viewport: { width: 360, height: 720 }, hasTouch: true, isMobile: true });
+    const ip = await ic.newPage();
+    ip.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(bag): ' + m.text()); });
+    ip.on('pageerror', e => consoleErrors.push('pageerror(bag): ' + e.message));
+    await ip.goto(url);
+    await ip.waitForFunction(() => window.__ev && window.__ev.state);
+    await ip.locator('#btnA').tap();                               // begin
+    await ip.evaluate(() => {
+      window.__ev.place(15, 13, 'left'); window.__ev.press('left'); for (let i = 0; i < 30; i++) window.__ev.step(40); window.__ev.release('left');   // seed A
+      window.__ev.place(32, 21, 'right'); window.__ev.press('right'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('right'); // key
+    });
+    check('the seed HUD shows the count on a phone', (await ip.evaluate(() => document.getElementById('btnBag').textContent)).indexOf('/3') >= 0);
+
+    const probe = async (label) => {
+      await ip.locator('#btnBag').tap();                           // open the bag via the HUD
+      await ip.waitForTimeout(60);
+      const d = await ip.evaluate(() => {
+        const box = window.__ev.inventoryBox(), rects = window.__ev.inventorySlotRects();
+        const a = document.getElementById('btnA').getBoundingClientRect();
+        const hud = document.getElementById('btnBag').getBoundingClientRect();
+        return { open: window.__ev.inventoryOpen, box, rects, vw: window.__ev.view.w, vh: window.__ev.view.h,
+          a: { left: a.left, right: a.right, top: a.top, bottom: a.bottom },
+          hud: { left: hud.left, right: hud.right, top: hud.top, bottom: hud.bottom },
+          scrollW: document.documentElement.scrollWidth, innerW: window.innerWidth };
+      });
+      check('tapping the HUD opens the bag (' + label + ')', d.open === true);
+      check('the bag panel fits on-screen (' + label + ')',
+        d.box.top >= 0 && d.box.bottom <= d.vh && d.box.left >= 0 && d.box.right <= d.vw);
+      check('the bag panel clears the controls (' + label + ')',
+        noOverlap(d.box, d.a) && noOverlap(d.box, d.hud));
+      check('no horizontal page scroll with the bag open (' + label + ')', d.scrollW <= d.innerW);
+      check('slots sit inside the panel (' + label + ')',
+        d.rects.length >= 2 && d.rects.every(r => r.y >= d.box.top - 0.5 && r.y + r.h <= d.box.bottom + 0.5 && r.x >= d.box.left - 0.5 && r.x + r.w <= d.box.right + 0.5));
+      const r1 = d.rects[1];
+      await ip.touchscreen.tap(r1.x + r1.w / 2, r1.y + r1.h / 2);
+      check('tapping a slot selects it (' + label + ')', (await ip.evaluate(() => window.__ev.inventorySel)) === 1);
+      await ip.locator('#btnBag').tap();                           // close via the HUD
+      check('tapping the HUD again closes the bag (' + label + ')', (await ip.evaluate(() => window.__ev.state === 'play')));
+    };
+    await probe('phone portrait');
+    await ip.setViewportSize({ width: 568, height: 320 });
+    await ip.waitForTimeout(50);
+    await probe('phone landscape');
+    await ic.close();
+  }
+
+  // 19 — garbage input around the new systems: mash toggles, pickups, door tries
+  // and resizes mid-panel. State never goes null and no error escapes.
+  await ev(() => {
+    const dirs = ['up', 'down', 'left', 'right'];
+    for (let i = 0; i < 160; i++) {
+      if (Math.random() < 0.5) window.__ev.toggleInventory();
+      window.__ev.inventoryMove((Math.random() * 3 | 0) - 1);
+      window.__ev.inventorySelect((Math.random() * 6 | 0));
+      window.__ev.place((Math.random() * 38 | 0) + 1, (Math.random() * 28 | 0) + 1, dirs[Math.random() * 4 | 0]);
+      window.__ev.action();
+      window.__ev.step(16);
+    }
+    ['i', 'I', 'Escape', ' ', 'ArrowLeft', 'ArrowRight'].forEach(k => window.dispatchEvent(new KeyboardEvent('keydown', { key: k })));
+    window.__ev.dismiss();
+  });
+  for (let i = 0; i < 8; i++) {
+    await page.setViewportSize({ width: 320 + i * 40, height: 360 + i * 30 });
+    if (i % 2) await ev(() => window.__ev.toggleInventory());
+  }
+  check('survives bag / door / pickup garbage input', (await ev(() => window.__ev.state)) != null);
+  await ev(() => window.__ev.dismiss());
+
   // Console / page errors must be clean across the whole run.
   check('zero console errors across the run', consoleErrors.length === 0);
   if (consoleErrors.length) consoleErrors.forEach(e => console.log('    ! ' + e));
 
-  // Screenshot — a real running frame on a fresh page (clean flags): meeting the
-  // Warden by the heart at dusk, the conversation open on its branching choices.
+  // Screenshot — a real running frame on a fresh page (clean flags): the bag
+  // open at dusk, showing a collected emberseed and the iron key, the "✦ n/3"
+  // seed HUD in the corner — increment 3's pocket-inventory on display.
   {
     const sp = await browser.newPage({ viewport: { width: 960, height: 640 } });
     await sp.goto(url);
     await sp.waitForFunction(() => window.__ev && window.__ev.state);
     await sp.evaluate(() => {
       window.__ev.start(); window.__ev.setReducedMotion(false);
-      window.__ev.place(20, 8, 'right');                    // stand before the Warden
-      window.__ev.action(); window.__ev.action(); window.__ev.action(); // open -> page 2 -> choices
+      // walk onto the stream-side emberseed, then the east-cottage iron key
+      window.__ev.place(15, 13, 'left'); window.__ev.press('left'); for (let i = 0; i < 30; i++) window.__ev.step(40); window.__ev.release('left');
+      window.__ev.place(32, 21, 'right'); window.__ev.press('right'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('right');
+      window.__ev.toggleInventory(); window.__ev.inventorySelect(0);   // open the bag on the seed
     });
-    await sp.waitForTimeout(340);                           // let the glow settle into a frame
+    await sp.waitForTimeout(240);                           // let the frame settle
     await sp.screenshot({ path: shot });
     await sp.close();
   }

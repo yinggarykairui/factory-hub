@@ -1279,7 +1279,7 @@
     get inventoryOpen() { return state === "inventory"; },
     get inventorySel() { return invSel; },
     inventorySlotRects: function () { return invSlotRects.map(function (r) { return { x: r.x, y: r.y, w: r.w, h: r.h, i: r.i }; }); },
-    inventoryBox: function () { if (state !== "inventory") return null; var L = inventoryLayout(); return { top: L.top, bottom: L.top + L.boxH }; },
+    inventoryBox: function () { if (state !== "inventory") return null; var L = inventoryLayout(); return { top: L.top, bottom: L.top + L.boxH, left: L.left, right: L.left + L.panelW }; },
     // pokes (same code paths as real input; never change balance):
     toggleInventory: toggleInventory,
     inventoryMove: inventoryMove,
