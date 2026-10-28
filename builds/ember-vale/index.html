@@ -32,6 +32,20 @@
   .dpad .up { grid-area: 1 / 2; } .dpad .left { grid-area: 2 / 1; }
   .dpad .right { grid-area: 2 / 3; } .dpad .down { grid-area: 3 / 2; }
   .act button { width: 74px; height: 74px; border-radius: 50%; font-size: 24px; font-weight: 700; }
+  /* The emberseed HUD / bag button (increment 3). A persistent pill in the top-
+     left corner (clear of the top-centre discovery cue and the bottom controls)
+     that shows seeds carried and, tapped, opens the bag. It is NOT a .touch
+     control — it stays visible on desktop too, as a real DOM button so a tap
+     test can hit it. Absolutely positioned inside #screen (overflow:hidden), so
+     it never adds page scroll. Styled to match the .touch buttons. */
+  .hud { position: absolute; left: 14px; top: 14px; z-index: 6; }
+  .hud button {
+    font: inherit; font-size: 16px; font-weight: 700; line-height: 1; color: #ffcf8a;
+    background: rgba(32,22,38,.72); border: 1px solid rgba(240,200,120,.35);
+    border-radius: 12px; padding: 8px 12px; cursor: pointer; touch-action: none;
+    -webkit-user-select: none; user-select: none; backdrop-filter: blur(2px); white-space: nowrap;
+  }
+  .hud button:active { background: rgba(230,150,60,.85); color: #2a1405; border-color: #ffd27a; }
   @media (min-width: 760px) and (hover: hover) and (pointer: fine) { .touch { display: none; } }
   /* While a read box is open, movement is frozen, so the D-pad is dead weight —
      hide it so it never sits on top of the bottom text box on a phone. The
@@ -40,6 +54,10 @@
      bottom, D-pad hidden — the action button advances/confirms and choices are
      tapped directly on the box. */
   #screen.reading .dpad, #screen.talking .dpad { display: none; }
+  /* The inventory panel (increment 3) freezes movement like a read, so the
+     D-pad is dead weight — hide it. The action button stays (it closes the
+     panel) and the panel sizes itself to clear whatever controls are showing. */
+  #screen.inv .dpad { display: none; }
   /* While choosing a reply, the action button is dead weight too — you tap the
      choice directly (or use the keyboard) — so hide it and let the box reclaim
      the full height. This is what keeps a tall 3-choice reply inside the box on
@@ -59,23 +77,31 @@
   <div class="touch act" aria-hidden="true">
     <button id="btnA" aria-label="Action: begin, read, or dismiss">A</button>
   </div>
+  <div class="hud">
+    <button id="btnBag" aria-label="What you carry — open the bag">&#10022; 0/3</button>
+  </div>
 </div>
 
 <script>
 "use strict";
 (function () {
   // ===================================================================
-  // EMBER VALE — increments 1–2.
+  // EMBER VALE — increments 1–3.
   //   1: the overworld — a hand-authored dusk valley you walk and read.
   //   2: the people who stayed — NPCs you can walk up to and talk with,
   //      branching flag-gated dialogue, and the Warden setting the main quest
   //      (find three emberseeds for the dying Ember).
+  //   3: what you carry — collectible items (three emberseeds + an iron key)
+  //      you walk onto to pick up, a bag/inventory panel, a persistent seed
+  //      HUD, and a locked door the key gates (a seed sealed behind it).
   // Vanilla JS + <canvas>, zero dependencies, no network, no images, no fonts.
   // Everything is drawn from code so it runs offline from file://.
-  // State: "title" -> "play" <-> "reading" (signposts/Ember, one-shot read)
-  //                           <-> "dialog"  (people, pages + choices).
-  // Quest state is the in-memory `flags` object only — no items, no log, and
-  // not persisted; the save blob arrives in increment 6. No combat yet.
+  // State: "title" -> "play" <-> "reading"   (signposts/Ember, one-shot read)
+  //                           <-> "dialog"    (people, pages + choices)
+  //                           <-> "inventory" (the bag panel; movement frozen).
+  // Quest state is the in-memory `flags` object; the bag + the door's unlocked
+  // state are in memory only too — the save blob arrives in increment 6. The
+  // three box-states never overlap. No quest-log, no combat, no save yet.
   // ===================================================================
 
   var TILE = 32;              // world tile size, px
@@ -84,10 +110,12 @@
 
   // --- tile ids -----------------------------------------------------
   var GRASS = 0, PATH = 1, WATER = 2, TREE = 3, CLIFF = 4,
-      WALL = 5, BRIDGE = 6, FLOOR = 7, SIGN = 8, EMBER = 9;
+      WALL = 5, BRIDGE = 6, FLOOR = 7, SIGN = 8, EMBER = 9, DOOR = 10;
   // Solid tiles block the AABB. Water, trees, cliffs, cottage walls,
-  // signposts and the Ember are all solid; grass/path/bridge/floor are not.
-  var SOLID = { 2:1, 3:1, 4:1, 5:1, 8:1, 9:1 };
+  // signposts, the Ember and a *locked* door are all solid; grass/path/bridge/
+  // floor are not. Unlocking a door rewrites its MAP tile to FLOOR, so the very
+  // same solid() check that sealed the pocket now lets the traveler through.
+  var SOLID = { 2:1, 3:1, 4:1, 5:1, 8:1, 9:1, 10:1 };
 
   // --- the hand-authored valley ------------------------------------
   // Fixed, designed world. Painted feature-by-feature with explicit
@@ -137,6 +165,10 @@
     cottage(30, 18, 5, 5, [32, 22]);
     cottage(8, 24, 4, 4, [9, 24]);
     cottage(24, 23, 5, 4, [26, 23]);
+    // Seal the south-east cottage: its doorway (carved to FLOOR by cottage())
+    // becomes a locked DOOR, so the interior is a sealed pocket you can only
+    // enter once the iron key turns it. The third emberseed waits inside.
+    set(26, 23, DOOR);
 
     // a cliff outcrop on the eastern heights.
     [[32, 5], [33, 5], [33, 6], [34, 6], [31, 6]].forEach(function (p) {
@@ -250,8 +282,41 @@
   // NPC picks its opening node, written when a node or a choice resolves.
   var flags = { questStarted: false, wardenHeard: false, miraTold: false, bramEased: false };
 
+  // --- what you carry (increment 3): items, the bag, the locked door ---
+  // Collectibles sit on non-solid (walkable) tiles. Walking onto an item's tile
+  // picks it up — it leaves the world and joins the bag — and a toast says so.
+  // Every item is a designed, reachable spot (verified by BFS from the spawn):
+  //   seedA (14,13) — path on the north bank by the old bridge (Mira's hint);
+  //   seedB (32,6)  — the eastern heights, in the old cliff outcrop;
+  //   seedC (26,24) — a FLOOR tile sealed inside the locked south-east cottage,
+  //                   reachable only after the iron key turns the door;
+  //   ironKey (33,21) — a FLOOR tile inside the open east cottage (NOT sealed).
+  var ITEMS = [
+    { id: "seedA", tx: 14, ty: 13, name: "an emberseed", kind: "seed",
+      desc: "A bright valley-stone. Three of these will wake the Ember." },
+    { id: "seedB", tx: 32, ty: 6,  name: "an emberseed", kind: "seed",
+      desc: "A bright valley-stone. Three of these will wake the Ember." },
+    { id: "seedC", tx: 26, ty: 24, name: "an emberseed", kind: "seed",
+      desc: "A bright valley-stone. Three of these will wake the Ember." },
+    { id: "ironKey", tx: 33, ty: 21, name: "an iron key", kind: "key",
+      desc: "Small, cold, and old. It was cut to turn one lock." }
+  ];
+  // The live world list (drained on pickup) and the bag (what you carry). Both
+  // in memory only — no save until increment 6.
+  var worldItems = ITEMS.map(function (it) { return it; });
+  var bag = [];
+  // The door tile(s). `locked` is just "is the MAP tile still DOOR" — unlocking
+  // rewrites it to FLOOR, so there is one source of truth and no second flag.
+  var DOORS = [{ tx: 26, ty: 23 }];
+
+  // A brief floating toast ("Picked up an emberseed.", "The iron key turns.").
+  // `toast` keeps the last text (for the test hook); `toastT` is its fade timer.
+  var TOAST_MS = 2400;
+  var toast = "", toastT = 0;
+  function setToast(t) { toast = t; toastT = TOAST_MS; }
+
   // --- state --------------------------------------------------------
-  var state = "title";                  // "title" | "play" | "reading" | "dialog"
+  var state = "title";                  // "title" | "play" | "reading" | "dialog" | "inventory"
   var player = { px: (SPAWN_TX + 0.5) * TILE, py: (SPAWN_TY + 0.5) * TILE, facing: "up", moving: false };
   var cam = { x: 0, y: 0 };
   var held = { up: false, down: false, left: false, right: false };
@@ -263,6 +328,9 @@
   var dlgChoices = null; // the choices array while the player is choosing, else null
   var dlgSel = 0;        // highlighted choice index
   var dlgChoiceRects = []; // view-space hit rects for tapping a choice, rebuilt each draw
+  // inventory runtime (state === "inventory")
+  var invSel = 0;          // highlighted slot index
+  var invSlotRects = [];   // view-space hit rects for tapping a slot, rebuilt each draw
   var viewW = 1, viewH = 1, dpr = 1;
   var animT = 0, walkPhase = 0, playT = 0;
   var hasRead = false;                  // the first read retires the discovery cue
@@ -275,6 +343,8 @@
   var cv = document.getElementById("view");
   var ctx = cv.getContext("2d");
   var actBox = document.querySelector(".act");   // the on-screen action button's container
+  var hudEl = document.querySelector(".hud");     // the seed-HUD / bag-button container
+  var bagBtn = document.getElementById("btnBag"); // the HUD pill, doubling as the bag button
 
   // --- collision: axis-separated AABB vs the tile grid --------------
   function solid(tx, ty) {
@@ -314,8 +384,17 @@
     var f = front();
     var npc = NPC_AT[f.tx + "," + f.ty];
     if (npc) { openDialog(npc); return; }
+    if (MAP[f.ty] && MAP[f.ty][f.tx] === DOOR) { tryDoor(f.tx, f.ty); return; }
     var line = READS[f.tx + "," + f.ty];
     if (line != null) { signText = line; state = "reading"; hasRead = true; screenEl.classList.add("reading"); }
+  }
+  // Facing a locked door + action: the iron key turns it (the MAP tile becomes
+  // FLOOR, so solid() lets you through from here on) and the key stays in the
+  // bag; without the key it stays shut, the toast naming what would open it.
+  function tryDoor(tx, ty) {
+    var hasKey = bag.some(function (it) { return it.kind === "key"; });
+    if (hasKey) { MAP[ty][tx] = FLOOR; setToast("The iron key turns."); }
+    else { setToast("It's locked. Something small and iron would turn it."); }
   }
 
   // --- conversation runtime -----------------------------------------
@@ -356,6 +435,28 @@
     dlgSel = (dlgSel + delta + dlgChoices.length) % dlgChoices.length;
   }
 
+  // --- the bag / inventory panel (increment 3) ----------------------
+  // A pocket-inventory: open from play, movement frozen while it is up, close
+  // back to play. Only ever toggles between "play" and "inventory" — it never
+  // opens over a read or a conversation, so the three box-states never overlap.
+  function toggleInventory() {
+    if (state === "play") { if (invSel >= bag.length) invSel = 0; state = "inventory"; }
+    else if (state === "inventory") { state = "play"; }
+  }
+  function inventoryMove(delta) {
+    if (state !== "inventory" || bag.length === 0) return;
+    invSel = (invSel + delta + bag.length) % bag.length;   // wrap
+  }
+  function inventorySelect(i) {
+    if (state !== "inventory" || i < 0 || i >= bag.length) return;
+    invSel = i;
+  }
+  function seedCount() {
+    var n = 0;
+    for (var i = 0; i < bag.length; i++) if (bag[i].kind === "seed") n++;
+    return n;
+  }
+
   // --- camera: follow the player, clamp to the world edge -----------
   function clampCam() {
     var mx = W * TILE - viewW, my = H * TILE - viewH;
@@ -369,13 +470,16 @@
     if (state === "title") { start(); return; }
     if (state === "reading") { dismiss(); return; }
     if (state === "dialog") { dialogAdvance(); return; }
+    if (state === "inventory") { toggleInventory(); return; }   // action closes the bag
     tryInteract();
   }
   // Dismiss closes whatever box is open. A read clears; a conversation is
-  // abandoned (any flags already resolved stay — abandoning only stops the turn).
+  // abandoned (any flags already resolved stay — abandoning only stops the
+  // turn); the bag just closes back to play.
   function dismiss() {
     if (state === "reading") { state = "play"; signText = ""; screenEl.classList.remove("reading"); }
     else if (state === "dialog") { closeDialog(); }
+    else if (state === "inventory") { state = "play"; }
   }
   function press(dir) { if (DIR[dir]) { held[dir] = true; if (state === "play") player.facing = dir; } }
   function release(dir) { if (DIR[dir]) held[dir] = false; }
@@ -384,6 +488,7 @@
   function update(dt) {
     if (dt > 40) dt = 40;
     animT += dt;
+    if (toastT > 0) toastT = Math.max(0, toastT - dt);   // toast fades in every state
     if (state !== "play") { player.moving = false; return; }
     playT += dt;
     var vx = (held.right ? 1 : 0) - (held.left ? 1 : 0);
@@ -393,7 +498,22 @@
     if (vy) moveAxis(0, vy * SPEED * dt);
     player.moving = !!(vx || vy);
     if (player.moving && !reduced) walkPhase += dt * 0.012;
+    pickupHere();
     clampCam();
+  }
+  // Pick up any item on the tile the traveler now stands on (the update step,
+  // so it fires whether you arrived by key, touch or a test poke): drop it from
+  // the world, add it to the bag, and float a toast.
+  function pickupHere() {
+    var ptx = tileOf(player.px), pty = tileOf(player.py);
+    for (var i = 0; i < worldItems.length; i++) {
+      if (worldItems[i].tx === ptx && worldItems[i].ty === pty) {
+        var it = worldItems.splice(i, 1)[0];
+        bag.push(it);
+        setToast("Picked up " + it.name + ".");
+        return;
+      }
+    }
   }
 
   // --- render -------------------------------------------------------
@@ -489,6 +609,21 @@
         ctx.fillStyle = "rgba(255,220,150,.95)"; ctx.beginPath(); ctx.arc(ex, ey - 1, 2.2 * glow, 0, 6.3); ctx.fill();
         break;
       }
+      case DOOR: {
+        ctx.fillStyle = "#3a2b30"; ctx.fillRect(sx, sy, s, s);                       // timber frame
+        ctx.fillStyle = "#5a3a22"; ctx.fillRect(sx + 5, sy + 3, s - 10, s - 5);      // the planked door
+        ctx.fillStyle = "#3a2516";
+        for (var dp = 9; dp < s - 2; dp += 7) ctx.fillRect(sx + 6, sy + dp, s - 12, 2); // plank seams
+        ctx.strokeStyle = "rgba(20,14,8,.75)"; ctx.lineWidth = 1;
+        ctx.strokeRect(sx + 5.5, sy + 3.5, s - 11, s - 6);
+        ctx.fillStyle = "#8a7a55"; ctx.fillRect(sx + 7, sy + 6, s - 14, 2);          // iron band
+        ctx.fillStyle = "#8a7a55"; ctx.fillRect(sx + 7, sy + s - 6, s - 14, 2);
+        // the lock: a pale plate with a keyhole, so a locked door reads at a glance
+        ctx.fillStyle = "#b9a98c"; ctx.fillRect(sx + s - 13, sy + s / 2 - 4, 6, 10);
+        ctx.fillStyle = "#1c120a"; ctx.beginPath(); ctx.arc(sx + s - 10, sy + s / 2 - 1, 1.7, 0, 6.3); ctx.fill();
+        ctx.fillRect(sx + s - 10.6, sy + s / 2 - 1, 1.2, 4);
+        break;
+      }
     }
   }
 
@@ -497,6 +632,56 @@
   // by reduced motion) keeps them from looking like furniture. When the player
   // is facing a person in open play, a soft chevron bobs over them to say
   // "press action to talk" without a word of UI.
+  // The emberseed's glow radius. Gated by reduced motion (constant then), the
+  // same contract as emberGlowRadius/walkBob so the reduced-motion test can read
+  // it. A gentle breathe otherwise.
+  function seedGlowRadius() { return reduced ? 13 : 13 + Math.sin(animT / 500) * 4; }
+
+  // Draw an item's icon from code at (cx,cy): an emberseed is a small faceted
+  // orange gem; the iron key is a little ringed key. Shared by the world draw
+  // and the inventory slots (scale lets the panel draw it a touch larger).
+  function drawItemIcon(kind, cx, cy, scale) {
+    scale = scale || 1;
+    if (kind === "seed") {
+      var r = 7 * scale;
+      ctx.fillStyle = "#ff9a3c";
+      ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.8, cy); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r * 0.8, cy); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "rgba(255,224,150,.95)";
+      ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.4, cy - r * 0.15); ctx.lineTo(cx, cy + r * 0.2); ctx.lineTo(cx - r * 0.4, cy - r * 0.15); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(110,46,10,.7)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.8, cy); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r * 0.8, cy); ctx.closePath(); ctx.stroke();
+    } else { // key
+      var k = 5.5 * scale;
+      ctx.strokeStyle = "#cfc6b0"; ctx.fillStyle = "#cfc6b0"; ctx.lineWidth = 2 * scale;
+      ctx.beginPath(); ctx.arc(cx - k, cy, k * 0.95, 0, 6.3); ctx.stroke();        // bow (ring)
+      ctx.beginPath(); ctx.moveTo(cx - k * 0.1, cy); ctx.lineTo(cx + k * 2, cy); ctx.stroke(); // shaft
+      ctx.fillRect(cx + k * 1.3, cy, 2 * scale, k);          // tooth
+      ctx.fillRect(cx + k * 1.85, cy, 2 * scale, k * 0.7);   // tooth
+    }
+  }
+
+  // Draw the collectibles still in the world. Seeds carry a soft additive glow
+  // (gated by reduced motion); both sit on a faint ground shadow.
+  function drawItems() {
+    var gr = seedGlowRadius();
+    for (var i = 0; i < worldItems.length; i++) {
+      var it = worldItems[i];
+      var cx = (it.tx + 0.5) * TILE - cam.x, cy = (it.ty + 0.5) * TILE - cam.y;
+      if (cx < -TILE || cy < -TILE || cx > viewW + TILE || cy > viewH + TILE) continue;
+      if (it.kind === "seed") {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        var g = ctx.createRadialGradient(cx, cy, 1, cx, cy, gr);
+        g.addColorStop(0, "rgba(255,160,70,.6)");
+        g.addColorStop(1, "rgba(255,120,40,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, gr, 0, 6.3); ctx.fill();
+        ctx.restore();
+      }
+      ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(cx, cy + 8, 6, 2.2, 0, 0, 6.3); ctx.fill();
+      drawItemIcon(it.kind, cx, cy, 1);
+    }
+  }
+
   function drawNpcs() {
     var f = (state === "play") ? front() : null;
     for (var i = 0; i < NPCS.length; i++) {
@@ -559,6 +744,11 @@
     // While choosing, the action button hides (choices are tapped directly), so
     // dialogLayout's controlsVisible() reads false and the box uses full height.
     screenEl.classList.toggle("choosing", state === "dialog" && !!dlgChoices);
+    screenEl.classList.toggle("inv", state === "inventory");   // hides the dead D-pad
+    // Keep the seed HUD in step: hidden on the title, shown everywhere else,
+    // its count always current. Cheap to set every frame and never wrong.
+    bagBtn.textContent = "✦ " + seedCount() + "/3";
+    hudEl.style.display = (state === "title") ? "none" : "block";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = "#0e0a12"; ctx.fillRect(0, 0, viewW, viewH);
 
@@ -591,6 +781,7 @@
     }
     ctx.globalCompositeOperation = "source-over";
 
+    drawItems();
     drawNpcs();
     drawPlayer();
 
@@ -606,9 +797,11 @@
     ctx.fillStyle = vg; ctx.fillRect(0, 0, viewW, viewH);
 
     if (state === "play" && !hasRead && playT < HINT_MS) drawHint();
+    if (state === "play") drawToast();   // pickups/door happen in play; shown there
     if (state === "title") drawTitle();
     if (state === "reading") drawBox(signText);
     if (state === "dialog") drawDialog();
+    if (state === "inventory") drawInventory();
   }
 
   function drawTitle() {
@@ -740,6 +933,129 @@
     }
   }
 
+  // A brief floating toast near the top (below the discovery cue), fading out
+  // over its last stretch and drifting up a little — static under reduced motion.
+  function drawToast() {
+    if (toastT <= 0 || !toast) return;
+    var alpha = reduced ? 1 : Math.min(1, toastT / 400);
+    var rise = reduced ? 0 : (1 - Math.min(1, toastT / TOAST_MS)) * 6;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "14px system-ui, sans-serif";
+    var w = ctx.measureText(toast).width + 28, x = viewW / 2, y = 58 - rise;
+    ctx.fillStyle = "rgba(20,12,8," + (0.82 * alpha) + ")";
+    roundRect(x - w / 2, y - 15, w, 28, 9); ctx.fill();
+    ctx.strokeStyle = "rgba(255,170,70," + (0.55 * alpha) + ")"; ctx.lineWidth = 1;
+    roundRect(x - w / 2, y - 15, w, 28, 9); ctx.stroke();
+    ctx.fillStyle = "rgba(255,235,205," + alpha + ")";
+    ctx.fillText(toast, x, y + 4);
+    ctx.restore();
+    ctx.textAlign = "left";
+  }
+
+  // Geometry of the inventory panel, shared by the draw and the test hook. The
+  // panel is centred; its vertical insets reserve space only for a control the
+  // centred panel would actually overlap, so a narrow panel on a wide landscape
+  // phone need not lift off the corner buttons while a full-width portrait panel
+  // does. Sizes to viewH: the slot size shrinks until the panel fits the space
+  // left between the HUD at the top and the action button at the bottom.
+  function inventoryLayout() {
+    var pad = 12, gap = 10, n = bag.length;
+    var maxW = Math.min(viewW - 24, 420);
+    var slot = 60;
+    var cols = n ? Math.min(n, Math.max(1, Math.floor((maxW - pad * 2 + gap) / (slot + gap)))) : 0;
+    var rows = n ? Math.ceil(n / cols) : 0;
+    function geom() {
+      var gridW = n ? cols * slot + (cols - 1) * gap : 0;
+      var panelW = Math.min(maxW, Math.max(220, gridW + pad * 2));
+      var left = Math.round((viewW - panelW) / 2);
+      return { gridW: gridW, panelW: panelW, left: left, right: left + panelW };
+    }
+    var g = geom();
+    // Reserve top/bottom space only where the centred panel overlaps a control.
+    var topInset = 16, botInset = 16;
+    try {
+      var cr = cv.getBoundingClientRect();
+      var rectOf = function (el) {
+        var r = el.getBoundingClientRect();
+        return { left: r.left - cr.left, right: r.right - cr.left, top: r.top - cr.top,
+                 bottom: r.bottom - cr.top, shown: r.width > 0 && getComputedStyle(el).display !== "none" };
+      };
+      var a = rectOf(btnA), hud = rectOf(bagBtn);
+      if (hud.shown && !(g.right < hud.left || g.left > hud.right)) topInset = Math.max(topInset, hud.bottom + 10);
+      if (a.shown && !(g.right < a.left || g.left > a.right)) botInset = Math.max(botInset, viewH - a.top + 10);
+    } catch (e) {}
+    var availTop = topInset, availBot = viewH - botInset;
+    var availH = Math.max(90, availBot - availTop);
+    var titleH = 26, descH = 46;
+    var fixed = pad + titleH + gap + descH + pad;   // everything but the slot rows
+    for (var guard = 0; guard < 16 && n; guard++) {
+      var need = fixed + gap + rows * (slot + gap) - gap;
+      if (need <= availH || slot <= 34) break;
+      slot -= 4;
+      cols = Math.min(n, Math.max(1, Math.floor((maxW - pad * 2 + gap) / (slot + gap))));
+      rows = Math.ceil(n / cols);
+      g = geom();
+    }
+    var boxH = n ? (fixed + gap + rows * (slot + gap) - gap) : (pad + titleH + gap + 26 + pad);
+    boxH = Math.min(boxH, availH);
+    var top = Math.round(availTop + Math.max(0, (availH - boxH) / 2));
+    return { pad: pad, gap: gap, top: top, left: g.left, panelW: g.panelW, boxH: boxH,
+             cols: cols, rows: rows, slot: slot, titleH: titleH, descH: descH, n: n, gridW: g.gridW };
+  }
+
+  // The bag panel: a titled grid of slots (each an item's icon + a short name),
+  // the selected slot highlighted with its one-line description below. An empty
+  // bag reads "Nothing yet." Slot hit-rects are rebuilt here so a tap can pick one.
+  function drawInventory() {
+    var L = inventoryLayout();
+    ctx.fillStyle = "rgba(8,5,12,.55)"; ctx.fillRect(0, 0, viewW, viewH);   // dim the world behind
+    ctx.fillStyle = "rgba(16,11,22,.96)";
+    roundRect(L.left, L.top, L.panelW, L.boxH, 14); ctx.fill();
+    ctx.strokeStyle = "rgba(255,190,110,.55)"; ctx.lineWidth = 2;
+    roundRect(L.left, L.top, L.panelW, L.boxH, 14); ctx.stroke();
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffcf8a"; ctx.font = "700 16px system-ui, sans-serif";
+    ctx.fillText("What you carry", L.left + L.panelW / 2, L.top + L.pad + 14);
+
+    invSlotRects = [];
+    if (L.n === 0) {
+      ctx.fillStyle = "rgba(220,206,184,.8)"; ctx.font = "14px system-ui, sans-serif";
+      ctx.fillText("Nothing yet.", L.left + L.panelW / 2, L.top + L.pad + L.titleH + L.gap + 16);
+      ctx.textAlign = "left";
+      return;
+    }
+
+    var gridLeft = L.left + (L.panelW - L.gridW) / 2;
+    var gridTop = L.top + L.pad + L.titleH + L.gap;
+    for (var i = 0; i < bag.length; i++) {
+      var col = i % L.cols, row = (i / L.cols) | 0;
+      var sx = gridLeft + col * (L.slot + L.gap), sy = gridTop + row * (L.slot + L.gap);
+      var sel = (i === invSel);
+      ctx.fillStyle = sel ? "rgba(255,180,90,.18)" : "rgba(255,255,255,.05)";
+      roundRect(sx, sy, L.slot, L.slot, 10); ctx.fill();
+      ctx.strokeStyle = sel ? "rgba(255,200,120,.9)" : "rgba(255,255,255,.14)"; ctx.lineWidth = sel ? 2 : 1;
+      roundRect(sx, sy, L.slot, L.slot, 10); ctx.stroke();
+      drawItemIcon(bag[i].kind, sx + L.slot / 2, sy + L.slot * 0.40, 1.1);
+      ctx.textAlign = "center";
+      ctx.fillStyle = sel ? "#ffe9c2" : "rgba(220,214,196,.82)"; ctx.font = "11px system-ui, sans-serif";
+      ctx.fillText(bag[i].kind === "seed" ? "emberseed" : "iron key", sx + L.slot / 2, sy + L.slot - 7);
+      invSlotRects.push({ x: sx, y: sy, w: L.slot, h: L.slot, i: i });
+    }
+
+    var cur = bag[invSel];
+    if (cur) {
+      ctx.fillStyle = "rgba(232,222,202,.92)"; ctx.font = "13px system-ui, sans-serif";
+      var dlines = wrap(cur.name + " — " + cur.desc, L.panelW - L.pad * 2);
+      var maxLines = Math.max(1, Math.floor(L.descH / 16));
+      if (dlines.length > maxLines) dlines = dlines.slice(0, maxLines);
+      var baseY = L.top + L.boxH - L.pad - 4 - (dlines.length - 1) * 16;
+      for (var k = 0; k < dlines.length; k++) ctx.fillText(dlines[k], L.left + L.panelW / 2, baseY + k * 16);
+    }
+    ctx.textAlign = "left";
+  }
+
   // A one-time discovery cue at the top (clear of the bottom controls): until the
   // first read, tell a newcomer how to read the valley. It fades out after a few
   // seconds or the moment they read something; under reduced motion it just shows.
@@ -798,12 +1114,22 @@
     if (e.key === "Enter") { e.preventDefault(); if (state === "title") start(); else action(); return; }
     if (e.key === " " || e.code === "Space") { e.preventDefault(); action(); return; }
     if (e.key === "Escape") { e.preventDefault(); dismiss(); return; }
+    // I / i opens or closes the bag (only from play / inventory, so it never
+    // tears open a read or a conversation — the box-states stay exclusive).
+    if (e.key === "i" || e.key === "I") {
+      e.preventDefault();
+      if (state === "play" || state === "inventory") toggleInventory();
+      return;
+    }
     var dir = KEYMAP[e.key];
     if (dir) {
       e.preventDefault();
       // In a conversation the up/down keys move the choice highlight, not the
       // traveler — left/right do nothing (the list is vertical).
       if (state === "dialog") { if (dir === "up") dialogMove(-1); else if (dir === "down") dialogMove(1); return; }
+      // In the bag, the arrows move the slot selection (wrapping); the grid is
+      // one row, so left/up step back and right/down step forward.
+      if (state === "inventory") { inventoryMove((dir === "left" || dir === "up") ? -1 : 1); return; }
       if (state === "title") start();
       press(dir);
     }
@@ -839,12 +1165,30 @@
   btnA.addEventListener("pointerdown", function (e) { e.preventDefault(); action(); });
   btnA.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
 
+  // The seed HUD doubles as the bag button: a tap toggles the inventory (only
+  // from play / inventory). Same single-fire discipline as btnA — pointerdown
+  // acts, touchstart only swallows the compatibility mouse event a tap raises.
+  bagBtn.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    if (state === "play" || state === "inventory") toggleInventory();
+  });
+  bagBtn.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
+
   // tap / click on the world begins the game, dismisses a read, and drives a
   // conversation: tapping a choice row picks it, tapping elsewhere turns the
   // page (while choosing, a tap off the choices does nothing — A / Esc still work).
   cv.addEventListener("pointerdown", function (e) {
     if (state === "title") { start(); return; }
     if (state === "reading") { dismiss(); return; }
+    if (state === "inventory") {
+      var ri = cv.getBoundingClientRect();
+      var ix = e.clientX - ri.left, iy = e.clientY - ri.top;   // CSS px == view coords
+      for (var j = 0; j < invSlotRects.length; j++) {
+        var sr = invSlotRects[j];
+        if (ix >= sr.x && ix <= sr.x + sr.w && iy >= sr.y && iy <= sr.y + sr.h) { inventorySelect(sr.i); return; }
+      }
+      return;   // a tap off the slots does nothing (bag closes via the HUD / A / Esc / I)
+    }
     if (state === "dialog") {
       if (dlgChoices) {
         var r = cv.getBoundingClientRect();
@@ -920,7 +1264,28 @@
     // view-space hit rects of the choices currently drawn (for the tap test):
     dialogChoiceRects: function () { return dlgChoiceRects.map(function (r) { return { x: r.x, y: r.y, w: r.w, h: r.h, i: r.i }; }); },
     // conversation-box geometry in view coords, for the phone-overlap guard:
-    dialogBox: function () { if (state !== "dialog" || !dlgNode) return null; var L = dialogLayout(); return { top: L.top, bottom: L.top + L.boxH }; }
+    dialogBox: function () { if (state !== "dialog" || !dlgNode) return null; var L = dialogLayout(); return { top: L.top, bottom: L.top + L.boxH }; },
+
+    // --- increment 3: items, the bag, the door, the inventory panel ---
+    get items() { return worldItems.map(function (it) { return { id: it.id, tx: it.tx, ty: it.ty, name: it.name, kind: it.kind }; }); },
+    get bag() { return bag.map(function (it) { return { id: it.id, name: it.name, kind: it.kind, desc: it.desc }; }); },
+    get seeds() { return seedCount(); },
+    get toast() { return toast; },
+    // door state: `doors` lists each door tile with its locked flag; doorLocked
+    // answers for one tile. Locked === the MAP tile is still DOOR (one truth).
+    get doors() { return DOORS.map(function (d) { return { tx: d.tx, ty: d.ty, locked: MAP[d.ty][d.tx] === DOOR }; }); },
+    doorLocked: function (tx, ty) { return !!(MAP[ty] && MAP[ty][tx] === DOOR); },
+    // inventory panel: open flag, selection, slot hit-rects + box geometry.
+    get inventoryOpen() { return state === "inventory"; },
+    get inventorySel() { return invSel; },
+    inventorySlotRects: function () { return invSlotRects.map(function (r) { return { x: r.x, y: r.y, w: r.w, h: r.h, i: r.i }; }); },
+    inventoryBox: function () { if (state !== "inventory") return null; var L = inventoryLayout(); return { top: L.top, bottom: L.top + L.boxH }; },
+    // pokes (same code paths as real input; never change balance):
+    toggleInventory: toggleInventory,
+    inventoryMove: inventoryMove,
+    inventorySelect: inventorySelect,
+    // introspection the reduced-motion test reads (mirrors emberGlowRadius):
+    seedGlowRadius: seedGlowRadius
   };
 })();
 </script>
