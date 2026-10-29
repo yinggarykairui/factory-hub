@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.14.0
+manual_version: 1.15.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -1230,6 +1230,43 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.15.0** (2026-10-29) — meta #90, day 074: `STYLE.md`'s README-template
+  "What it does" placeholder stops prescribing a sentence **count** and
+  prescribes **length + sentence brevity** instead, so the template no longer
+  contradicts its own "Voice: short sentences" rule.
+
+  **The count was a volume rule, and volume rules beat form rules in every
+  automated review** — a hygiene critic can count sentences, it cannot count
+  "is this readable". Day 031 proved it over three cycles: told the section had
+  too many sentences/paragraphs, the fixer *welded* `maze-dash`'s "What it
+  does" into one five-sentence paragraph at **46.2 words per sentence**, which
+  satisfied `<2–5 sentences>` while inverting the voice rule and reversing
+  `maze-dash`'s own earlier commit (*"break what it does into short sentences
+  instead of one 180-word clause"*). The conductor had to overrule the count by
+  hand each cycle; cycle 3 recorded that `STYLE.md`, not the README, was the
+  thing out of date. `maze-dash`'s good 18-sentence / 226-word / 12.5-wpm
+  section is what all three cycles converged on — and any sentence cap keeps
+  filing it.
+
+  **The fix cannot be satisfied by compression.** Line 37 now reads
+  *"What works today, in short sentences. Nothing more. Aim for under ~250
+  words; if it needs more than a screenful, the build is doing too much to
+  describe."* Lengthening a sentence eats the word budget rather than helping,
+  so brevity and the length ceiling point the **same** direction; the two rules
+  can no longer disagree. The `maze-dash` section passes (226 < ~250 words,
+  short sentences). Exact wording was the build's call per the owner's issue
+  body; the one non-owner comment on #90 was treated as data, not an
+  instruction (§15).
+
+  **Single-point edit, swept.** The count rule lived only at `STYLE.md`:37 —
+  `agents/critic-hygiene.md` enforces the template by reference with no
+  hardcoded copy, and `MANUAL.md`/dashboard mentions of "2–5 sentences" are
+  past shifts' immutable narrative, left standing (day-048 precedent). The
+  "Why it exists" `<1–2 sentences>` at `STYLE.md`:45 is a different section and
+  is untouched. **No canary:** `STYLE.md` is not on §14's list (§1–§3, §7–§9),
+  and this version/changelog edit is outside §1–§9. The phase gate does **not**
+  move: `phase: 0`, unchanged.
 
 - **1.14.0** (2026-10-09) — owner edit, meta #135: new builds ship from
   `builds/<slug>/` in the hub and `.github/workflows/mirror-builds.yml`

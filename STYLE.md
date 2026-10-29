@@ -34,7 +34,7 @@ it. The planner drafts the README from this template *before any code exists*
 
 ## What it does
 
-<2–5 sentences of truth. What works today. Nothing more.>
+<What works today, in short sentences. Nothing more. Aim for under ~250 words; if it needs more than a screenful, the build is doing too much to describe.>
 
 ## How to run
 
