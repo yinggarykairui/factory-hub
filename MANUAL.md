@@ -1244,8 +1244,9 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   satisfied `<2–5 sentences>` while inverting the voice rule and reversing
   `maze-dash`'s own earlier commit (*"break what it does into short sentences
   instead of one 180-word clause"*). The conductor had to overrule the count by
-  hand each cycle; cycle 3 recorded that `STYLE.md`, not the README, was the
-  thing out of date. `maze-dash`'s good 18-sentence / 226-word / 12.5-wpm
+  hand (cycle 2 ruled it is not the bar, and the section went back to 18
+  sentences); cycle 3 recorded that `STYLE.md`, not the README, was the thing
+  out of date. `maze-dash`'s good 18-sentence / 226-word / 12.5-wpm
   section is what all three cycles converged on — and any sentence cap keeps
   filing it.
 
