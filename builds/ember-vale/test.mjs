@@ -615,23 +615,241 @@ async function main() {
   check('survives bag / door / pickup garbage input', (await ev(() => window.__ev.state)) != null);
   await ev(() => window.__ev.dismiss());
 
+  // ================= increment 4: the thread of the quest =================
+  // A canvas quest log (Q / #btnLog) — a sixth box-state that freezes movement
+  // and never overlaps the others; every step's done-state derived from live
+  // state. The main quest shown truthfully in-progress; a fully-completable
+  // side errand (fetch a lantern, deliver it to Mira).
+
+  // 20 — the log on a fresh phone page: open/close, freeze, exclusivity, and the
+  // full side errand driven to completion with its steps derived off live state.
+  {
+    const qc = await browser.newContext({ viewport: { width: 360, height: 720 }, hasTouch: true, isMobile: true });
+    const qp = await qc.newPage();
+    qp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(quest): ' + m.text()); });
+    qp.on('pageerror', e => consoleErrors.push('pageerror(quest): ' + e.message));
+    await qp.goto(url);
+    await qp.waitForFunction(() => window.__ev && window.__ev.state);
+    await qp.locator('#btnA').tap();                               // begin
+    // a deterministic dialogue driver: open, advance to the choices or the last
+    // page, pick if choosing, finish any routed node, then dismiss.
+    await qp.evaluate(() => {
+      window.__talk = function (tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (let i = 0; i < 8; i++) { const d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        const d = window.__ev.dialog();
+        if (d && d.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (let i = 0; i < 8 && window.__ev.dialog(); i++) window.__ev.action();
+        window.__ev.dismiss();
+      };
+    });
+
+    // before any charge: the log opens, lists nothing, renders cleanly.
+    await qp.evaluate(() => window.__ev.toggleQuests());
+    await qp.waitForTimeout(50);
+    const empty = await qp.evaluate(() => ({ open: window.__ev.questOpen, n: window.__ev.quests().length, box: window.__ev.questBox() }));
+    check('the quest log opens with no quests before the charge',
+      empty.open === true && empty.n === 0 && empty.box && empty.box.bottom > empty.box.top);
+    // base Ember read below three seeds is unchanged (foreshadow is a 3-seed thing).
+    const baseEmber = await qp.evaluate(() => {
+      window.__ev.dismiss(); window.__ev.place(20, 5, 'up'); window.__ev.action();
+      const t = window.__ev.signText; window.__ev.dismiss(); return t;
+    });
+    check('the Ember reads its base line below three seeds', /barely a glow/.test(baseEmber));
+
+    // Q opens; movement frozen; Q / action / Esc / tap all close.
+    await qp.evaluate(() => window.__ev.dismiss());
+    await qp.keyboard.press('q'); await qp.waitForTimeout(40);
+    check('the Q key opens the quest log', await qp.evaluate(() => window.__ev.questOpen === true && window.__ev.state === 'quests'));
+    const qFrozen = await qp.evaluate(() => {
+      const x0 = window.__ev.player.x;
+      window.__ev.press('right'); for (let i = 0; i < 20; i++) window.__ev.step(40); window.__ev.release('right');
+      return window.__ev.player.x === x0 && window.__ev.questOpen === true;
+    });
+    check('movement is frozen while the quest log is open', qFrozen);
+    await qp.keyboard.press('q');
+    check('the Q key closes the quest log', await qp.evaluate(() => window.__ev.state === 'play'));
+    await qp.keyboard.press('q'); await qp.evaluate(() => window.__ev.action());
+    check('action closes the quest log', await qp.evaluate(() => window.__ev.state === 'play' && window.__ev.questOpen === false));
+    await qp.keyboard.press('q'); await qp.keyboard.press('Escape');
+    check('Escape closes the quest log', await qp.evaluate(() => window.__ev.state === 'play'));
+    await qp.locator('#btnLog').tap(); await qp.waitForTimeout(40);
+    check('tapping #btnLog opens the quest log', await qp.evaluate(() => window.__ev.questOpen === true));
+    await qp.locator('#btnLog').tap();
+    check('tapping #btnLog again closes the quest log', await qp.evaluate(() => window.__ev.state === 'play'));
+
+    // exclusivity: Q never tears the log open over a read or the bag.
+    await qp.evaluate(() => { window.__ev.dismiss(); window.__ev.place(20, 26, 'right'); window.__ev.action(); });
+    await qp.keyboard.press('q');
+    check('Q does not open the log over a read', await qp.evaluate(() => window.__ev.reading === true && window.__ev.questOpen === false));
+    await qp.evaluate(() => { window.__ev.dismiss(); window.__ev.place(20, 8, 'right'); window.__ev.action(); });
+    await qp.keyboard.press('q');
+    check('Q does not open the log over a conversation', await qp.evaluate(() => window.__ev.state === 'dialog' && window.__ev.questOpen === false));
+    await qp.evaluate(() => { window.__ev.dismiss(); window.__ev.toggleInventory(); });
+    await qp.keyboard.press('q');
+    check('Q does not open the log over the bag', await qp.evaluate(() => window.__ev.inventoryOpen === true && window.__ev.questOpen === false));
+    await qp.evaluate(() => window.__ev.dismiss());
+
+    // the charge makes the main quest appear with four steps read off live state.
+    await qp.evaluate(() => window.__talk(20, 8, 'right', 1));      // "How can I help?" -> the charge
+    const relight = await qp.evaluate(() => window.__ev.quests().find(q => q.id === 'relight'));
+    check('the main quest appears after the charge with four steps',
+      !!relight && relight.steps.length === 4 && relight.complete === false);
+    check('the charge step reads done, the rest read live-undone (no seeds, no ask yet)',
+      relight.steps[0].done === true && relight.steps[1].done === false &&
+      relight.steps[2].done === false && relight.steps[3].done === false);
+    check('the gather step shows (0/3) and the return step its base label',
+      /\(0\/3\)/.test(relight.steps[2].text) && /three emberseeds to the heart/.test(relight.steps[3].text));
+
+    // the errand is invisible until Mira asks.
+    check('the lantern errand is absent until Mira asks',
+      await qp.evaluate(() => window.__ev.quests().some(q => q.id === 'lantern') === false));
+    await qp.evaluate(() => window.__talk(6, 24, 'up', null));      // mira_open -> miraTold
+    check('talking to Mira sets miraTold', await qp.evaluate(() => window.__ev.flags.miraTold === true));
+    await qp.evaluate(() => window.__talk(6, 24, 'up', 0));         // mira_wish, "I'll bring you that light" -> miraAsked
+    check('accepting Mira\'s errand makes it visible with two steps', await qp.evaluate(() => {
+      const q = window.__ev.quests().find(x => x.id === 'lantern');
+      return window.__ev.flags.miraAsked === true && !!q && q.steps.length === 2 && q.complete === false;
+    }));
+    check('both errand steps read undone before the lantern is found', await qp.evaluate(() => {
+      const q = window.__ev.quests().find(x => x.id === 'lantern');
+      return q.steps[0].done === false && q.steps[1].done === false;
+    }));
+
+    // the lantern is a non-ITEMS errand item at (10,25); the four valley items
+    // are untouched; walking onto it moves it into the bag and checks step one.
+    const errand = await qp.evaluate(() => ({ e: window.__ev.errandItems, items: window.__ev.items.length }));
+    check('the lantern is an errand item at (10,25), and items stays four',
+      errand.items === 4 && errand.e.length === 1 && errand.e[0].kind === 'lantern' && errand.e[0].tx === 10 && errand.e[0].ty === 25);
+    const pickL = await qp.evaluate(() => {
+      window.__ev.dismiss(); window.__ev.place(10, 25, 'down'); window.__ev.step(16);
+      const q = window.__ev.quests().find(x => x.id === 'lantern');
+      return { inBag: window.__ev.bag.some(b => b.kind === 'lantern'), left: window.__ev.errandItems.length,
+               findDone: q.steps[0].done, deliverDone: q.steps[1].done, complete: q.complete };
+    });
+    check('walking onto the lantern moves it into the bag', pickL.inBag === true && pickL.left === 0);
+    check('finding the lantern checks step one but not step two', pickL.findDone === true && pickL.deliverDone === false && pickL.complete === false);
+
+    // deliver it: the give hook drops it from the bag, miraLit, both steps done,
+    // the quest complete, and Mira's opening is thereafter mira_lit.
+    await qp.evaluate(() => window.__talk(6, 24, 'up', 0));         // mira_deliver, "A light for your window"
+    const delivered = await qp.evaluate(() => {
+      const q = window.__ev.quests().find(x => x.id === 'lantern');
+      return { lit: window.__ev.flags.miraLit, gone: !window.__ev.bag.some(b => b.kind === 'lantern'),
+               s0: q.steps[0].done, s1: q.steps[1].done, complete: q.complete };
+    });
+    check('delivering sets miraLit and hands the lantern over (give)', delivered.lit === true && delivered.gone === true);
+    check('both errand steps read done and the quest reads complete',
+      delivered.s0 === true && delivered.s1 === true && delivered.complete === true);
+    const miraNow = await qp.evaluate(() => {
+      window.__ev.place(6, 24, 'up'); window.__ev.action();
+      const t = window.__ev.dialog().text; window.__ev.dismiss(); return t;
+    });
+    check('Mira\'s opening is mira_lit after the delivery', /light in the window again/.test(miraNow));
+
+    // the panel fits and clears the controls on a phone, portrait + landscape.
+    const fits = async (label) => {
+      await qp.evaluate(() => window.__ev.toggleQuests());
+      await qp.waitForTimeout(50);
+      const d = await qp.evaluate(() => {
+        const box = window.__ev.questBox(), vw = window.__ev.view.w, vh = window.__ev.view.h;
+        const a = document.getElementById('btnA').getBoundingClientRect();
+        const hud = document.getElementById('btnBag').getBoundingClientRect();
+        return { box, vw, vh, a: { left: a.left, right: a.right, top: a.top, bottom: a.bottom },
+          hud: { left: hud.left, right: hud.right, top: hud.top, bottom: hud.bottom } };
+      });
+      check('the quest panel fits on-screen (' + label + ')',
+        d.box.top >= 0 && d.box.bottom <= d.vh && d.box.left >= 0 && d.box.right <= d.vw);
+      check('the quest panel clears the controls (' + label + ')', noOverlap(d.box, d.a) && noOverlap(d.box, d.hud));
+      await qp.evaluate(() => window.__ev.toggleQuests());
+    };
+    await fits('phone portrait');
+    await qp.setViewportSize({ width: 568, height: 320 });
+    await qp.waitForTimeout(50);
+    await fits('phone landscape');
+    // a garbage mash with the log in the mix + mid-panel resizes never crashes.
+    await qp.evaluate(() => {
+      for (let i = 0; i < 120; i++) {
+        if (Math.random() < 0.5) window.__ev.toggleQuests();
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: ['q', 'Q', 'i', 'Escape', ' '][Math.random() * 5 | 0] }));
+        window.__ev.action(); window.__ev.step(16);
+      }
+      window.__ev.dismiss();
+    });
+    for (let i = 0; i < 6; i++) { await qp.setViewportSize({ width: 320 + i * 40, height: 360 + i * 30 }); if (i % 2) await qp.evaluate(() => window.__ev.toggleQuests()); }
+    check('survives quest-log garbage input + resizes', (await qp.evaluate(() => window.__ev.state)) != null);
+    await qc.close();
+  }
+
+  // 21 — the main page carries all three seeds (section 14): the gather step
+  // flips at 3, the return step relabels but stays undone, the quest stays
+  // incomplete, and facing the Ember now reads the foreshadow line (no change).
+  await ev(() => window.__ev.dismiss());
+  const threeSeed = await ev(() => {
+    const q = window.__ev.quests().find(x => x.id === 'relight');
+    return { seeds: window.__ev.seeds, gatherText: q.steps[2].text, gatherDone: q.steps[2].done,
+             returnText: q.steps[3].text, returnDone: q.steps[3].done, complete: q.complete,
+             errandAbsent: !window.__ev.quests().some(x => x.id === 'lantern') };
+  });
+  check('at three seeds the gather step flips to done and reports (3/3)',
+    threeSeed.seeds === 3 && /\(3\/3\)/.test(threeSeed.gatherText) && threeSeed.gatherDone === true);
+  check('at three seeds the return step relabels but stays undone',
+    /the way is not yet open/.test(threeSeed.returnText) && threeSeed.returnDone === false);
+  check('the main quest never reads complete this increment', threeSeed.complete === false);
+  check('the errand is absent on a run where Mira was never asked', threeSeed.errandAbsent === true);
+  // lantern reachability on foot with the door shut (the BFS the critic re-runs).
+  const lanternReach = await ev(() => {
+    const e = window.__ev.errandItems[0];
+    const nonsolid = window.__ev.solid(e.tx, e.ty) === false;
+    const seen = new Set(['20,26']); const q = [[20, 26]];
+    while (q.length) { const [x, y] = q.shift();
+      for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const nx = x + dx, ny = y + dy, k = nx + ',' + ny;
+        if (seen.has(k)) continue; if (!window.__ev.solid(nx, ny)) { seen.add(k); q.push([nx, ny]); }
+      }
+    }
+    return { nonsolid, reachable: seen.has(e.tx + ',' + e.ty) };
+  });
+  check('the lantern sits on a non-solid tile reachable on foot (door shut)',
+    lanternReach.nonsolid === true && lanternReach.reachable === true);
+  const fore = await ev(() => {
+    window.__ev.dismiss(); window.__ev.place(20, 5, 'up'); window.__ev.action();
+    const t = window.__ev.signText, lit = window.__ev.state;
+    window.__ev.dismiss();
+    return { t, lit, seeds: window.__ev.seeds };
+  });
+  check('facing the Ember with three seeds reads the foreshadow line (a read only, no change)',
+    /the dark between you and the heart is not done with you yet/.test(fore.t) && fore.lit === 'reading');
+
   // Console / page errors must be clean across the whole run.
   check('zero console errors across the run', consoleErrors.length === 0);
   if (consoleErrors.length) consoleErrors.forEach(e => console.log('    ! ' + e));
 
-  // Screenshot — a real running frame on a fresh page (clean flags): the bag
-  // open at dusk, showing a collected emberseed and the iron key, the "✦ n/3"
-  // seed HUD in the corner — increment 3's pocket-inventory on display.
+  // Screenshot — a real running frame on a fresh page (clean flags): the quest
+  // log open at dusk, the main quest "Relight the Ember" in progress (two
+  // emberseeds gathered) and Mira's side errand underway — increment 4's
+  // quest-thread on display, with the "✦ n/3" HUD and Quests button in the corner.
   {
     const sp = await browser.newPage({ viewport: { width: 960, height: 640 } });
     await sp.goto(url);
     await sp.waitForFunction(() => window.__ev && window.__ev.state);
     await sp.evaluate(() => {
       window.__ev.start(); window.__ev.setReducedMotion(false);
-      // walk onto the stream-side emberseed, then the east-cottage iron key
+      function talk(tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (let i = 0; i < 8; i++) { const d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        const d = window.__ev.dialog();
+        if (d && d.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (let i = 0; i < 8 && window.__ev.dialog(); i++) window.__ev.action();
+        window.__ev.dismiss();
+      }
+      talk(20, 8, 'right', 1);                                          // the Warden's charge -> questStarted
+      // gather two of the three emberseeds (so the log shows "(2/3)")
       window.__ev.place(15, 13, 'left'); window.__ev.press('left'); for (let i = 0; i < 30; i++) window.__ev.step(40); window.__ev.release('left');
-      window.__ev.place(32, 21, 'right'); window.__ev.press('right'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('right');
-      window.__ev.toggleInventory(); window.__ev.inventorySelect(0);   // open the bag on the seed
+      window.__ev.place(32, 7, 'up'); window.__ev.press('up'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('up');
+      talk(6, 24, 'up', null);                                          // Mira opens -> miraTold
+      talk(6, 24, 'up', 0);                                             // "I'll bring you that light" -> the errand
+      window.__ev.toggleQuests();                                       // open the quest log
     });
     await sp.waitForTimeout(240);                           // let the frame settle
     await sp.screenshot({ path: shot });
