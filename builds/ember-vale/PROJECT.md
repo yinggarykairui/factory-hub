@@ -33,9 +33,12 @@ purpose-built for this one story, never imported as a library.
   branching choices — kept *separate* from `reading` so signposts and the Ember
   behave exactly as they did (a plain one-shot read), and only people get the
   page/choice machinery. Increment 3 adds `inventory` — the "what you carry"
-  pouch — a fourth box state that freezes movement like `reading`; the four
-  box-states never overlap. Pickup and the locked-door unlock happen in `play`
-  (walking onto an item; facing a `DOOR` + action with the key).
+  pouch — a fourth box state that freezes movement like `reading`. Increment 4
+  adds `quests` — the quest log, opened by `Q` or the `#btnLog` HUD button — a
+  fifth box state that freezes movement the same way; the box-states never
+  overlap (each toggles only between itself and `play`). Pickup and the
+  locked-door unlock happen in `play` (walking onto an item — world or errand;
+  facing a `DOOR` + action with the key).
 - People and talk (increment 2): an `NPCS` table (`{id, tx, ty, facing, name,
   color}`, each tile solid so you cannot walk through a person) and a `DIALOG`
   graph of nodes (`{speaker, lines[], choices?, set?, to?/end}`). A `flags`
@@ -84,9 +87,21 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   second flag); a new `inventory` state (the pouch, opened by `I`/a tap on the
   `#btnBag` HUD, movement frozen) with keyboard + tap slot selection; a
   persistent "✦ n/3" seed HUD that doubles as the pouch button. In-memory only.
-- [ ] **4/6 — The thread of the quest (quests).** A quest log with steps and
-  objectives (the quest-thread pattern), main plus a side errand; quest state
-  tracked and reflected by NPCs and the world.
+- [x] **4/6 — The thread of the quest (quests).** A canvas quest log (the
+  quest-thread pattern) opened by `Q` or a `#btnLog` HUD button — a sixth
+  `quests` box-state that freezes movement and never overlaps the other boxes;
+  every step's done-state derived from existing state (flags + bag + seed count),
+  no parallel bookkeeping. The main quest "Relight the Ember" (visible once the
+  Warden's charge is taken) tracks its steps — charge, ask the folk, gather
+  emberseeds (n/3), return to the heart — and stays truthfully in-progress: the
+  return step is foreshadowed but not completable (the guardian is 5/6, the
+  relight 6/6). A fully-completable side errand, "A light for Mira's window":
+  Mira (once she's warmed to you) asks for an old lantern (a new world item at
+  (10,25) in the south-west cottage); fetch it, deliver it via a new dialogue
+  choice (a small `give` hook drops it from the bag), and she sets a light in
+  her window — her later lines, and a warm glow at her tile, reflect it. New
+  flags `miraAsked`/`miraLit`; new `__ev` quest snapshot. In-memory only.
+  **Shipped day 0XX** (NN/NN headless; 107 increment-1/2/3 checks preserved).
 - [ ] **5/6 — What guards the dark (combat).** Turn-based encounters (the
   turn-clash pattern) — a guardian holds the last emberseed; element/speed
   turn order, win/lose, back to the world.
@@ -108,6 +123,18 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   path — no D-pad needed to converse.
 - The save blob (increment 6) must version itself from increment 6's first
   commit so a later change can refuse an unknown schema (the overworld-express
-  lesson).
+  lesson). It must persist the full in-memory run: the `flags` object (now
+  including `miraAsked`/`miraLit`), the `bag`, the drained world/errand item
+  lists, and each door's unlocked (MAP-rewritten) state.
+- The main quest's "return to the Ember" step is intentionally non-completable in
+  increment 4 (`done` always false, `complete()` always false). Increment 5
+  (combat clears the guardian holding the last seed) and increment 6 (relight +
+  ending) must wire this step's done-state and the quest's completion to those
+  events — the quest-thread derives from state, so they only need the backing
+  flags/conditions, not a rewrite of the log.
+- The dialogue graph gained a `give` field (a node/choice may hand a bag item
+  over on resolve, via `applyGive`), introduced for Mira's lantern delivery.
+  Later deliver/trade interactions should reuse it rather than add a parallel
+  path, and the save blob must tolerate items that have left the bag this way.
 - Keep the valley small enough to cross in under a minute on foot; a ~15-minute
   game is made of dialogue, quests, and one fight, not of walking.
