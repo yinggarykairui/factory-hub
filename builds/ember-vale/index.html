@@ -57,7 +57,7 @@
   /* The inventory panel (increment 3) freezes movement like a read, so the
      D-pad is dead weight — hide it. The action button stays (it closes the
      panel) and the panel sizes itself to clear whatever controls are showing. */
-  #screen.inv .dpad { display: none; }
+  #screen.inv .dpad, #screen.log .dpad { display: none; }
   /* While choosing a reply, the action button is dead weight too — you tap the
      choice directly (or use the keyboard) — so hide it and let the box reclaim
      the full height. This is what keeps a tall 3-choice reply inside the box on
@@ -79,6 +79,7 @@
   </div>
   <div class="hud">
     <button id="btnBag" aria-label="What you carry — open the bag">&#10022; 0/3</button>
+    <button id="btnLog" aria-label="Your quests — open the quest log">Quests</button>
   </div>
 </div>
 
@@ -86,7 +87,7 @@
 "use strict";
 (function () {
   // ===================================================================
-  // EMBER VALE — increments 1–3.
+  // EMBER VALE — increments 1–4.
   //   1: the overworld — a hand-authored dusk valley you walk and read.
   //   2: the people who stayed — NPCs you can walk up to and talk with,
   //      branching flag-gated dialogue, and the Warden setting the main quest
@@ -94,14 +95,21 @@
   //   3: what you carry — collectible items (three emberseeds + an iron key)
   //      you walk onto to pick up, a bag/inventory panel, a persistent seed
   //      HUD, and a locked door the key gates (a seed sealed behind it).
+  //   4: the thread of the quest — a canvas quest log (opened by Q / #btnLog),
+  //      the main quest "Relight the Ember" shown truthfully in-progress, and a
+  //      fully-completable side errand (fetch a lantern, deliver it to Mira).
+  //      Every step's done-state is derived from live state (flags + bag +
+  //      seed count), never a parallel bookkeeping copy.
   // Vanilla JS + <canvas>, zero dependencies, no network, no images, no fonts.
   // Everything is drawn from code so it runs offline from file://.
   // State: "title" -> "play" <-> "reading"   (signposts/Ember, one-shot read)
   //                           <-> "dialog"    (people, pages + choices)
-  //                           <-> "inventory" (the bag panel; movement frozen).
+  //                           <-> "inventory" (the bag panel; movement frozen)
+  //                           <-> "quests"    (the quest log; movement frozen).
   // Quest state is the in-memory `flags` object; the bag + the door's unlocked
   // state are in memory only too — the save blob arrives in increment 6. The
-  // three box-states never overlap. No quest-log, no combat, no save yet.
+  // box-states never overlap. The quest log derives, never bookkeeps; no
+  // combat, no save, no relight yet.
   // ===================================================================
 
   var TILE = 32;              // world tile size, px
@@ -211,7 +219,13 @@
     { id: "warden", name: "The Warden", tx: 21, ty: 8,  facing: "left", color: "#caa2e8",
       dialog: function (f) { return f.questStarted ? "warden_recap" : "warden_intro"; } },
     { id: "mira",   name: "Mira",       tx: 6,  ty: 23, facing: "down", color: "#7fb7c8",
-      dialog: function (f) { return f.questStarted ? "mira_open" : "mira_wary"; } },
+      dialog: function (f) {
+        if (f.miraLit)   return "mira_lit";
+        if (f.miraAsked) return hasLantern() ? "mira_deliver" : "mira_waiting";
+        if (f.miraTold)  return "mira_wish";
+        if (f.questStarted) return "mira_open";   // UNCHANGED — sets miraTold
+        return "mira_wary";                        // UNCHANGED
+      } },
     { id: "bram",   name: "Bram",       tx: 16, ty: 22, facing: "down", color: "#e3a06a",
       dialog: function (f) { return f.bramEased ? "bram_after" : (f.questStarted ? "bram_quest" : "bram_intro"); } }
   ];
@@ -252,6 +266,30 @@
       "The Warden sent you? Then you mean it. Good — I am so tired of the dark.",
       "Emberseeds, then. I have seen one glint by the stream, up where the old bridge crosses. The other two I cannot swear to — but the valley keeps what it grows. Look where things are oldest."
     ], set: { miraTold: true }, end: true },
+    // The side errand (increment 4): once Mira has told you where the seeds lie
+    // (miraTold), she asks for the lantern (miraAsked), waits while you fetch it,
+    // takes it on delivery (give:"lantern", miraLit), and her opening settles on
+    // mira_lit thereafter. A self-contained fetch/deliver, fully completable now.
+    mira_wish: { speaker: "Mira", lines: [
+      "There's one more thing, if you'll hear it. I've kept my shutters latched since the Ember began to fail — I couldn't stand a dark window on top of a dark sky.",
+      "There's an old lantern in the little cottage down the row, the one nobody's opened in a year. Bring it to me and I'll set a light in my window again."
+    ], choices: [
+      { label: "“I'll bring you that light.”", set: { miraAsked: true }, end: true },
+      { label: "“Later — the Ember first.”", end: true }
+    ] },
+    mira_waiting: { speaker: "Mira", lines: [
+      "The lantern's in the little cottage down the row — the door's not locked, only stiff from a year unopened. My thanks for looking."
+    ], end: true },
+    mira_deliver: { speaker: "Mira", lines: [
+      "You found it — you actually found it. Here, let me take it..."
+    ], choices: [
+      { label: "“A light for your window.”", give: "lantern", set: { miraLit: true }, to: "mira_lit" },
+      { label: "“Hold on — not yet.”", end: true }
+    ] },
+    mira_lit: { speaker: "Mira", lines: [
+      "Look at that — a light in the window again. The first in a long while. It's only a little fire, but it's mine.",
+      "Now go and wake the big one, traveler. I'll keep this one burning till you do."
+    ], end: true },
 
     bram_intro: { speaker: "Bram", lines: [
       "Are you a firekeeper? You don't look like one. The firekeepers had warm hands.",
@@ -280,7 +318,8 @@
 
   // Quest state. In memory only (increment 6 adds the save blob); read when an
   // NPC picks its opening node, written when a node or a choice resolves.
-  var flags = { questStarted: false, wardenHeard: false, miraTold: false, bramEased: false };
+  var flags = { questStarted: false, wardenHeard: false, miraTold: false, bramEased: false,
+                miraAsked: false, miraLit: false };
 
   // --- what you carry (increment 3): items, the bag, the locked door ---
   // Collectibles sit on non-solid (walkable) tiles. Walking onto an item's tile
@@ -309,6 +348,52 @@
   // rewrites it to FLOOR, so there is one source of truth and no second flag.
   var DOORS = [{ tx: 26, ty: 23 }];
 
+  // --- the thread of the quest (increment 4): the quest log ----------
+  // The side errand's one world item — an old lantern. Kept OUT of ITEMS/
+  // worldItems (so the frozen increment-3 check `items.length === 4` holds) but
+  // sharing the same pickup/draw pipeline via a parallel errand-item list. It
+  // sits on the interior FLOOR of the SW cottage cottage(8,24,4,4) at (10,25) —
+  // non-solid and BFS-reachable from the spawn with the door shut (verified).
+  var ERRAND_ITEMS = [
+    { id: "lantern", tx: 10, ty: 25, name: "an old lantern", kind: "lantern",
+      desc: "A dented tin lantern from a shuttered cottage. Someone would be glad of its light." }
+  ];
+  var worldErrandItems = ERRAND_ITEMS.map(function (it) { return it; });
+  function hasLantern() { return bag.some(function (it) { return it.kind === "lantern"; }); }
+
+  // The quest table. One source of truth: each quest's visibility + completion
+  // and each step's label + done-ness are functions reading live state (flags,
+  // bag, seedCount), never a parallel bookkeeping copy — the increment-3 door
+  // principle. The main quest is shown truthfully in-progress (never completable
+  // this increment); the side errand is fully completable now.
+  var QUESTS = [
+    { id: "relight", name: "Relight the Ember",
+      visible:  function () { return flags.questStarted; },
+      complete: function () { return false; },                 // never completable this increment
+      steps: [
+        { id: "charge", label: function () { return "Take the Warden's charge"; },
+          done: function () { return flags.wardenHeard; } },
+        { id: "ask",    label: function () { return "Ask the valley folk where the emberseeds lie"; },
+          done: function () { return flags.miraTold; } },
+        { id: "gather", label: function () { return "Gather emberseeds (" + seedCount() + "/3)"; },
+          done: function () { return seedCount() === 3; } },
+        { id: "return", label: function () { return seedCount() === 3
+            ? "Carry the light to the Ember — the way is not yet open"
+            : "Carry three emberseeds to the heart of the vale"; },
+          done: function () { return false; } }               // foreshadowed, not completable (incr 5+6)
+      ] },
+    { id: "lantern", name: "A light for Mira's window",
+      visible:  function () { return flags.miraAsked; },        // flag-gated: invisible until Mira asks
+      complete: function () { return flags.miraLit; },
+      steps: [
+        { id: "find",    label: function () { return "Find the old lantern in the shuttered cottage"; },
+          done: function () { return hasLantern() || flags.miraLit; } },   // stays checked after delivery
+        { id: "deliver", label: function () { return "Bring the lantern to Mira"; },
+          done: function () { return flags.miraLit; } }
+      ] }
+  ];
+  var EMBER_READY_LINE = "You carry three emberseeds now, and the coal leans toward them as you near — but the dark between you and the heart is not done with you yet. Not tonight, not like this.";
+
   // A brief floating toast ("Picked up an emberseed.", "The iron key turns.").
   // `toast` keeps the last text (for the test hook); `toastT` is its fade timer.
   var TOAST_MS = 2400;
@@ -316,7 +401,7 @@
   function setToast(t) { toast = t; toastT = TOAST_MS; }
 
   // --- state --------------------------------------------------------
-  var state = "title";                  // "title" | "play" | "reading" | "dialog" | "inventory"
+  var state = "title";                  // "title" | "play" | "reading" | "dialog" | "inventory" | "quests"
   var player = { px: (SPAWN_TX + 0.5) * TILE, py: (SPAWN_TY + 0.5) * TILE, facing: "up", moving: false };
   var cam = { x: 0, y: 0 };
   var held = { up: false, down: false, left: false, right: false };
@@ -386,6 +471,9 @@
     if (npc) { openDialog(npc); return; }
     if (MAP[f.ty] && MAP[f.ty][f.tx] === DOOR) { tryDoor(f.tx, f.ty); return; }
     var line = READS[f.tx + "," + f.ty];
+    // Foreshadow (increment 4): at three seeds the Ember read changes to hint the
+    // way home is still barred — a read only, no relight, no state change.
+    if (f.tx === EMBER_TX && f.ty === EMBER_TY && seedCount() === 3) line = EMBER_READY_LINE;
     if (line != null) { signText = line; state = "reading"; hasRead = true; screenEl.classList.add("reading"); }
   }
   // Facing a locked door + action: the iron key turns it (the MAP tile becomes
@@ -410,10 +498,19 @@
     screenEl.classList.remove("talking");
   }
   function applySet(set) { if (set) for (var k in set) if (set.hasOwnProperty(k)) flags[k] = set[k]; }
+  // The give hook (increment 4), mirroring applySet: a node or choice that names
+  // `give: "<kind>"` hands one bag item of that kind over on resolve — the
+  // delivery half of Mira's lantern errand. One source of truth: the item simply
+  // leaves the bag, so seedCount/hasLantern reflect it with no second flag.
+  function applyGive(kind) {
+    if (!kind) return;
+    for (var i = 0; i < bag.length; i++) if (bag[i].kind === kind) { bag.splice(i, 1); return; }
+  }
   // resolve the current node once its last page has been read.
   function resolveNode() {
     if (dlgNode.choices) { dlgChoices = dlgNode.choices; dlgSel = 0; return; }
     applySet(dlgNode.set);
+    applyGive(dlgNode.give);
     if (dlgNode.to) enterNode(dlgNode.to); else closeDialog();
   }
   function pickChoice(i) {
@@ -421,6 +518,7 @@
     var c = dlgChoices[i];
     dlgChoices = null; dlgChoiceRects = [];
     applySet(c.set);
+    applyGive(c.give);
     if (c.to) enterNode(c.to); else closeDialog();
   }
   // action inside a conversation: confirm a choice, turn a page, or resolve.
@@ -457,6 +555,17 @@
     return n;
   }
 
+  // --- the quest log (increment 4) ----------------------------------
+  // A read-only panel: open from play, movement frozen while it is up, close
+  // back to play. Like the bag, it only ever toggles between "play" and
+  // "quests", so it never opens over a read, a conversation or the bag — the
+  // box-states stay exclusive. It derives everything it shows from QUESTS'
+  // live predicates; it holds no state of its own.
+  function toggleQuests() {
+    if (state === "play") state = "quests";
+    else if (state === "quests") state = "play";
+  }
+
   // --- camera: follow the player, clamp to the world edge -----------
   function clampCam() {
     var mx = W * TILE - viewW, my = H * TILE - viewH;
@@ -471,6 +580,7 @@
     if (state === "reading") { dismiss(); return; }
     if (state === "dialog") { dialogAdvance(); return; }
     if (state === "inventory") { toggleInventory(); return; }   // action closes the bag
+    if (state === "quests") { toggleQuests(); return; }          // action closes the quest log
     tryInteract();
   }
   // Dismiss closes whatever box is open. A read clears; a conversation is
@@ -480,6 +590,7 @@
     if (state === "reading") { state = "play"; signText = ""; screenEl.classList.remove("reading"); }
     else if (state === "dialog") { closeDialog(); }
     else if (state === "inventory") { state = "play"; }
+    else if (state === "quests") { state = "play"; }
   }
   function press(dir) { if (DIR[dir]) { held[dir] = true; if (state === "play") player.facing = dir; } }
   function release(dir) { if (DIR[dir]) held[dir] = false; }
@@ -511,6 +622,16 @@
         var it = worldItems.splice(i, 1)[0];
         bag.push(it);
         setToast("Picked up " + it.name + ".");
+        return;
+      }
+    }
+    // the errand items share the same pickup pipeline (kept on their own list so
+    // the frozen `items.length === 4` check is untouched).
+    for (var j = 0; j < worldErrandItems.length; j++) {
+      if (worldErrandItems[j].tx === ptx && worldErrandItems[j].ty === pty) {
+        var e = worldErrandItems.splice(j, 1)[0];
+        bag.push(e);
+        setToast("Picked up " + e.name + ".");
         return;
       }
     }
@@ -650,6 +771,20 @@
       ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.4, cy - r * 0.15); ctx.lineTo(cx, cy + r * 0.2); ctx.lineTo(cx - r * 0.4, cy - r * 0.15); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = "rgba(110,46,10,.7)"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r * 0.8, cy); ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r * 0.8, cy); ctx.closePath(); ctx.stroke();
+    } else if (kind === "lantern") {
+      // a small tin lantern: a bail handle, a tin body, and a glowing pane.
+      var lw = 7 * scale, lh = 10 * scale;
+      ctx.strokeStyle = "#8a7a55"; ctx.lineWidth = 1.4 * scale;
+      ctx.beginPath(); ctx.arc(cx, cy - lh * 0.72, lw * 0.4, Math.PI, 0); ctx.stroke(); // bail
+      ctx.fillStyle = "#6b5d3e";                                                        // tin body
+      ctx.fillRect(cx - lw / 2, cy - lh * 0.5, lw, lh);
+      ctx.fillStyle = "#8a7a55";                                                        // top + base caps
+      ctx.fillRect(cx - lw / 2 - 1, cy - lh * 0.5 - 2 * scale, lw + 2, 2.4 * scale);
+      ctx.fillRect(cx - lw / 2 - 1, cy + lh * 0.5 - 0.5 * scale, lw + 2, 2.4 * scale);
+      ctx.fillStyle = "rgba(255,196,96,.95)";                                           // the glowing pane
+      ctx.fillRect(cx - lw * 0.32, cy - lh * 0.34, lw * 0.64, lh * 0.64);
+      ctx.strokeStyle = "rgba(60,46,20,.7)"; ctx.lineWidth = 1;
+      ctx.strokeRect(cx - lw / 2, cy - lh * 0.5, lw, lh);
     } else { // key
       var k = 5.5 * scale;
       ctx.strokeStyle = "#cfc6b0"; ctx.fillStyle = "#cfc6b0"; ctx.lineWidth = 2 * scale;
@@ -680,6 +815,22 @@
       ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(cx, cy + 8, 6, 2.2, 0, 0, 6.3); ctx.fill();
       drawItemIcon(it.kind, cx, cy, 1);
     }
+    // the errand items share the draw pipeline. The lantern gets a faint warm
+    // point-glow (no seed-breathe) so it reads as a light waiting in the dark.
+    for (var e = 0; e < worldErrandItems.length; e++) {
+      var ei = worldErrandItems[e];
+      var ex = (ei.tx + 0.5) * TILE - cam.x, ey = (ei.ty + 0.5) * TILE - cam.y;
+      if (ex < -TILE || ey < -TILE || ex > viewW + TILE || ey > viewH + TILE) continue;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      var lg = ctx.createRadialGradient(ex, ey, 1, ex, ey, 11);
+      lg.addColorStop(0, "rgba(255,190,100,.4)");
+      lg.addColorStop(1, "rgba(255,170,80,0)");
+      ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(ex, ey, 11, 0, 6.3); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(ex, ey + 8, 6, 2.2, 0, 0, 6.3); ctx.fill();
+      drawItemIcon(ei.kind, ex, ey, 1);
+    }
   }
 
   function drawNpcs() {
@@ -688,6 +839,18 @@
       var n = NPCS[i];
       var cx = (n.tx + 0.5) * TILE - cam.x, cy = (n.ty + 0.5) * TILE - cam.y;
       if (cx < -TILE || cy < -TILE || cx > viewW + TILE || cy > viewH + TILE) continue; // off-screen
+      // world reflection (increment 4): once Mira's lantern burns in her window,
+      // a small warm additive glow sits at her tile — the errand made visible.
+      if (n.id === "mira" && flags.miraLit) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        var mgr = 22 + (reduced ? 0 : Math.sin(animT / 700) * 3);
+        var mg = ctx.createRadialGradient(cx, cy, 2, cx, cy, mgr);
+        mg.addColorStop(0, "rgba(255,190,100,.45)");
+        mg.addColorStop(1, "rgba(255,160,70,0)");
+        ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(cx, cy, mgr, 0, 6.3); ctx.fill();
+        ctx.restore();
+      }
       var sway = reduced ? 0 : Math.sin(animT / 900 + n.tx * 1.3) * 1.4;
       var y = cy + sway;
       ctx.fillStyle = "rgba(0,0,0,.4)";
@@ -745,6 +908,7 @@
     // dialogLayout's controlsVisible() reads false and the box uses full height.
     screenEl.classList.toggle("choosing", state === "dialog" && !!dlgChoices);
     screenEl.classList.toggle("inv", state === "inventory");   // hides the dead D-pad
+    screenEl.classList.toggle("log", state === "quests");      // hides the dead D-pad
     // Keep the seed HUD in step: hidden on the title, shown everywhere else,
     // its count always current. Cheap to set every frame and never wrong.
     bagBtn.textContent = "✦ " + seedCount() + "/3";
@@ -802,6 +966,7 @@
     if (state === "reading") drawBox(signText);
     if (state === "dialog") drawDialog();
     if (state === "inventory") drawInventory();
+    if (state === "quests") drawQuests();
   }
 
   function drawTitle() {
@@ -1042,7 +1207,7 @@
       drawItemIcon(bag[i].kind, sx + L.slot / 2, sy + L.slot * 0.40, 1.1);
       ctx.textAlign = "center";
       ctx.fillStyle = sel ? "#ffe9c2" : "rgba(220,214,196,.82)"; ctx.font = "10px system-ui, sans-serif";
-      ctx.fillText(bag[i].kind === "seed" ? "emberseed" : "iron key", sx + L.slot / 2, sy + L.slot - 7);
+      ctx.fillText(bag[i].kind === "seed" ? "emberseed" : bag[i].kind === "lantern" ? "lantern" : "iron key", sx + L.slot / 2, sy + L.slot - 7);
       invSlotRects.push({ x: sx, y: sy, w: L.slot, h: L.slot, i: i });
     }
 
@@ -1056,6 +1221,107 @@
       for (var k = 0; k < dlines.length; k++) ctx.fillText(dlines[k], L.left + L.panelW / 2, baseY + k * 16);
     }
     ctx.textAlign = "left";
+  }
+
+  // Geometry of the quest-log panel, modelled on inventoryLayout: a centred
+  // panel, width capped, with top/bottom insets reserved only where the centred
+  // panel would actually overlap the HUD (top) or the action button (bottom), so
+  // it clears the controls on a phone. Content is short (≤2 quests, ≤6 step rows)
+  // so there is no scroll — boxH is clamped to the available height.
+  function questLayout() {
+    var pad = 16, rowH = 22;
+    var panelW = Math.min(viewW - 24, 460);
+    var left = Math.round((viewW - panelW) / 2);
+    var right = left + panelW;
+    // count the rows the visible quests need: a title row + a step row each.
+    var titleH = 28, nameH = 26, lineH = rowH;
+    var rows = 0, vis = 0;
+    for (var i = 0; i < QUESTS.length; i++) {
+      if (!QUESTS[i].visible()) continue;
+      vis++;
+      rows += 1 + QUESTS[i].steps.length;   // the quest name + its steps
+    }
+    // Reserve top/bottom space only where the centred panel overlaps a control.
+    var topInset = 16, botInset = 16;
+    try {
+      var cr = cv.getBoundingClientRect();
+      var rectOf = function (el) {
+        var r = el.getBoundingClientRect();
+        return { left: r.left - cr.left, right: r.right - cr.left, top: r.top - cr.top,
+                 bottom: r.bottom - cr.top, shown: r.width > 0 && getComputedStyle(el).display !== "none" };
+      };
+      var a = rectOf(btnA), hud = rectOf(bagBtn);
+      if (hud.shown && !(right < hud.left || left > hud.right)) topInset = Math.max(topInset, hud.bottom + 10);
+      if (a.shown && !(right < a.left || left > a.right)) botInset = Math.max(botInset, viewH - a.top + 10);
+    } catch (e) {}
+    var availTop = topInset, availBot = viewH - botInset;
+    var availH = Math.max(90, availBot - availTop);
+    var content = titleH + (vis ? (rows * lineH + (vis - 1) * 10) : nameH);
+    var boxH = Math.min(availH, pad + content + pad);
+    var top = Math.round(availTop + Math.max(0, (availH - boxH) / 2));
+    return { pad: pad, left: left, panelW: panelW, top: top, boxH: boxH,
+             titleH: titleH, rowH: rowH, vis: vis };
+  }
+
+  // The quest log: a titled panel listing each visible quest (name, a ✓ tag when
+  // complete) with its steps — a filled ✓ glyph box when done, a hollow ○ when
+  // not, done rows brighter and undone dimmer. Reads entirely off QUESTS' live
+  // predicates. With no quest visible it draws one honest line.
+  function drawQuests() {
+    var L = questLayout();
+    ctx.fillStyle = "rgba(8,5,12,.55)"; ctx.fillRect(0, 0, viewW, viewH);   // dim the world behind
+    ctx.fillStyle = "rgba(16,11,22,.96)";
+    roundRect(L.left, L.top, L.panelW, L.boxH, 14); ctx.fill();
+    ctx.strokeStyle = "rgba(255,190,110,.55)"; ctx.lineWidth = 2;
+    roundRect(L.left, L.top, L.panelW, L.boxH, 14); ctx.stroke();
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffcf8a"; ctx.font = "700 16px system-ui, sans-serif";
+    ctx.fillText("Quests", L.left + L.panelW / 2, L.top + L.pad + 14);
+    ctx.textAlign = "left";
+
+    var tx = L.left + L.pad, y = L.top + L.pad + L.titleH + 6;
+    var innerR = L.left + L.panelW - L.pad;
+
+    if (L.vis === 0) {
+      ctx.fillStyle = "rgba(220,206,184,.8)"; ctx.font = "14px system-ui, sans-serif";
+      ctx.fillText("No quests yet — the valley has asked nothing of you.", tx, y + 4);
+      return;
+    }
+
+    for (var i = 0; i < QUESTS.length; i++) {
+      var q = QUESTS[i];
+      if (!q.visible()) continue;
+      if (y > L.top + L.boxH - 10) break;   // never spill past the panel
+      // the quest name, with a small complete tag when done.
+      ctx.fillStyle = "#ffe9c2"; ctx.font = "700 15px system-ui, sans-serif";
+      ctx.fillText(q.name, tx, y + 2);
+      if (q.complete()) {
+        ctx.fillStyle = "rgba(150,220,150,.95)"; ctx.font = "12px system-ui, sans-serif";
+        ctx.fillText("✓ complete", Math.min(innerR - 70, tx + ctx.measureText(q.name).width + 12), y + 2);
+      }
+      y += L.rowH;
+      // the steps.
+      for (var s = 0; s < q.steps.length; s++) {
+        if (y > L.top + L.boxH - 8) break;
+        var st = q.steps[s], done = st.done();
+        var gx = tx + 2, gy = y - 9;
+        if (done) {
+          ctx.fillStyle = "rgba(150,220,150,.9)";
+          roundRect(gx, gy, 13, 13, 3); ctx.fill();
+          ctx.strokeStyle = "rgba(24,16,10,.9)"; ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.moveTo(gx + 3, gy + 7); ctx.lineTo(gx + 5.5, gy + 10); ctx.lineTo(gx + 10, gy + 3.5); ctx.stroke();
+        } else {
+          ctx.strokeStyle = "rgba(200,190,170,.55)"; ctx.lineWidth = 1.4;
+          ctx.beginPath(); ctx.arc(gx + 6.5, gy + 6.5, 6, 0, 6.3); ctx.stroke();
+        }
+        ctx.fillStyle = done ? "rgba(236,226,206,.95)" : "rgba(190,182,166,.6)";
+        ctx.font = "14px system-ui, sans-serif";
+        ctx.fillText(st.label(), tx + 22, y + 1);
+        y += L.rowH;
+      }
+      y += 10;   // a gap between quests
+    }
   }
 
   // A one-time discovery cue at the top (clear of the bottom controls): until the
@@ -1123,6 +1389,13 @@
       if (state === "play" || state === "inventory") toggleInventory();
       return;
     }
+    // Q / q opens or closes the quest log (only from play / quests, so it never
+    // tears open a read, a conversation or the bag — the box-states stay exclusive).
+    if (e.key === "q" || e.key === "Q") {
+      e.preventDefault();
+      if (state === "play" || state === "quests") toggleQuests();
+      return;
+    }
     var dir = KEYMAP[e.key];
     if (dir) {
       e.preventDefault();
@@ -1132,6 +1405,8 @@
       // In the bag, the arrows move the slot selection (wrapping); the grid is
       // one row, so left/up step back and right/down step forward.
       if (state === "inventory") { inventoryMove((dir === "left" || dir === "up") ? -1 : 1); return; }
+      // The quest log is read-only: swallow the arrows so no held direction sticks.
+      if (state === "quests") { return; }
       if (state === "title") start();
       press(dir);
     }
@@ -1175,6 +1450,16 @@
     if (state === "play" || state === "inventory") toggleInventory();
   });
   bagBtn.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
+
+  // The quest-log button: same single-fire discipline as btnBag — pointerdown
+  // acts (only from play / quests), touchstart only swallows the compatibility
+  // mouse event a tap raises. It never opens over a read, dialog or the bag.
+  var logBtn = document.getElementById("btnLog");
+  logBtn.addEventListener("pointerdown", function (e) {
+    e.preventDefault();
+    if (state === "play" || state === "quests") toggleQuests();
+  });
+  logBtn.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
 
   // tap / click on the world begins the game, dismisses a read, and drives a
   // conversation: tapping a choice row picks it, tapping elsewhere turns the
@@ -1249,7 +1534,7 @@
     hintShowing: function () { return state === "play" && !hasRead && playT < HINT_MS; },
 
     // --- increment 2: people, flags, conversation ---
-    get flags() { return { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard, miraTold: flags.miraTold, bramEased: flags.bramEased }; },
+    get flags() { return { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard, miraTold: flags.miraTold, bramEased: flags.bramEased, miraAsked: flags.miraAsked, miraLit: flags.miraLit }; },
     get npcs() { return NPCS.map(function (n) { return { id: n.id, tx: n.tx, ty: n.ty, name: n.name }; }); },
     // live conversation snapshot, or null unless state === "dialog".
     dialog: function () {
@@ -1287,7 +1572,30 @@
     inventoryMove: inventoryMove,
     inventorySelect: inventorySelect,
     // introspection the reduced-motion test reads (mirrors emberGlowRadius):
-    seedGlowRadius: seedGlowRadius
+    seedGlowRadius: seedGlowRadius,
+
+    // --- increment 4: the quest log ---
+    get questOpen() { return state === "quests"; },
+    toggleQuests: toggleQuests,
+    // quest-log panel geometry in view coords, for the phone-overlap guard.
+    questBox: function () {
+      if (state !== "quests") return null;
+      var L = questLayout();
+      return { top: L.top, bottom: L.top + L.boxH, left: L.left, right: L.left + L.panelW };
+    },
+    // the errand items still in the world (kept off `items` so items.length === 4).
+    get errandItems() {
+      return worldErrandItems.map(function (it) {
+        return { id: it.id, tx: it.tx, ty: it.ty, name: it.name, kind: it.kind };
+      });
+    },
+    // the live quest snapshot: only visible quests, each with its derived steps.
+    quests: function () {
+      return QUESTS.filter(function (q) { return q.visible(); }).map(function (q) {
+        return { id: q.id, name: q.name, complete: q.complete(),
+          steps: q.steps.map(function (s) { return { id: s.id, text: s.label(), done: s.done() }; }) };
+      });
+    }
   };
 })();
 </script>
