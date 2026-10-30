@@ -101,7 +101,7 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   choice (a small `give` hook drops it from the bag), and she sets a light in
   her window — her later lines, and a warm glow at her tile, reflect it. New
   flags `miraAsked`/`miraLit`; new `__ev` quest snapshot. In-memory only.
-  **Shipped day 0XX** (NN/NN headless; 107 increment-1/2/3 checks preserved).
+  **Shipped day 075** (143/143 headless; 107 increment-1/2/3 checks preserved).
 - [ ] **5/6 — What guards the dark (combat).** Turn-based encounters (the
   turn-clash pattern) — a guardian holds the last emberseed; element/speed
   turn order, win/lose, back to the world.

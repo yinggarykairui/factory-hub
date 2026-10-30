@@ -1,5 +1,5 @@
 {
-  "description": "A short 2D role-playing game built one increment per day. Arrive in a valley at dusk where the heart-fire is going out: walk the hand-drawn overworld, talk to the people who stayed, and gather the emberseeds — pick up items into a pouch and open a locked door with the iron key.",
-  "topics": ["game", "rpg", "overworld", "tilemap", "camera", "collision", "dialogue", "inventory", "items", "canvas", "vanilla-js", "zero-dependency"],
+  "description": "A short 2D role-playing game built one increment per day. Arrive in a valley at dusk where the heart-fire is going out: walk the hand-drawn overworld, talk to the people who stayed, gather the emberseeds, pick up items into a pouch, and follow a quest log — the main quest to relight the Ember plus a side errand to light Mira's window.",
+  "topics": ["game", "rpg", "overworld", "tilemap", "camera", "collision", "dialogue", "inventory", "items", "quests", "canvas", "vanilla-js", "zero-dependency"],
   "pages": true
 }
