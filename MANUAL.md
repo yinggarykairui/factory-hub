@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.15.0
+manual_version: 1.16.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -1023,13 +1023,20 @@ program for it and then scoped the program out under §7.4 — three critic cycl
 and each one found it returning a wrong verdict in a new way, the last of them
 silently permissive on a one-character typo in a dashboard row. A tool that can be
 wrong in the *generous* direction is worse than no tool, because the gate is the
-one place the factory grades itself. The tool is owed and is filed as #94;
-until it exists and is trusted, a shift asserting these clauses asserts them one
-day at a time, in the advancing issue, where a reader can check each one. Two
-standing cautions for whoever writes it: clauses 2, 4 and 5 are not decidable from
-a comment body and need a hand-kept table, and any such table is where a shift
-could rig a verdict — so it names the artifact each row was read from, and a day
-with no row counts as unproven, never as fine.
+one place the factory grades itself. The tool owed as #94 now exists at
+`scripts/graduation_audit.py` (built day 076, see `scripts/GRADUATION_AUDIT.md`):
+it parses the dashboard strictly, refuses loudly on corruption, and errs only ever
+toward NOT-clean — it **assists** this audit and does not replace it. Until it has
+earned trust across real advances, a shift asserting these clauses still asserts
+them one day at a time, in the advancing issue, where a reader can check each one;
+the tool's verdict is evidence a reader can re-run, never the gate. The caution it
+was built around: none of the five clauses is decidable from the dashboard, so all
+five come from a hand-kept table (`scripts/graduation_evidence.json`) — the tool
+machine-checks only the dashboard-derived factory-day sequence and liveness and
+clause 3's sha against the repo, and trusts the rest on citation, clause 1
+("verified its own ship") and clause 2 ("different shifts") included. That table is
+where a shift could rig a verdict — so each row names the artifact it was read
+from, and a day with no row counts as unproven, never as fine.
 
 The advancing `meta` issue must quote the five as a table — day number, date,
 verification comment link, verified sha — and state explicitly, in one line per
@@ -1230,6 +1237,97 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.16.0** (2026-10-31) — meta #94, day 076: the §16 graduation-audit tool day
+  034 scoped out now exists, at `scripts/graduation_audit.py`, with
+  `scripts/graduation_evidence.json`, `scripts/test_graduation_audit.py` and
+  `scripts/GRADUATION_AUDIT.md`. §16's "checked by hand" paragraph is updated to
+  point at it and to say what it is: an **assistant** to the by-hand audit, never
+  the gate. The phase gate does **not** move: `phase: 0`, unchanged.
+
+  **Built to not repeat the eight defects that killed day 034's version** (#94's
+  carried-forward list):
+
+  1. **Strict parse, loud refuse.** Every line in the index-table block must parse
+     into 11 columns with a 3-digit day and a strict `YYYY-MM-DD` date, or the
+     audit **stops** — the old `rows()` dropped an un-padded `2026-8-27` silently
+     and the liveness anchor slid back to a clean row. The parsed day numbers are
+     cross-checked to be the contiguous sequence `1..N`; a hole means a dropped or
+     reordered row and is a hard error. The old code *died* on out-of-order rows
+     and *lied* on unparseable ones; this one refuses on both.
+  2. **Same-date rows are one factory day.** Days 001/002 (both 2026-07-25)
+     collapse to one; the evening is judged against the **last** row on the date
+     (§16: "the dashboard's last row on that date is the ship"). The old code
+     appended both, so five "evenings" could span four days.
+  3. **Trailing zero days block.** Liveness requires the last row to be the current
+     factory day or the one before it; a factory that stopped shipping cannot
+     graduate on an old clean tail. A missing calendar date between two shipped
+     days is a zero day and breaks the run.
+  4. **Factory timezone, never the UTC clock.** "Today" is `America/Los_Angeles`;
+     a missing tz database is an error that asks for `--today`, not a silent UTC
+     fallback — that fallback was day 034's off-by-one that made the gate
+     unclearable at exactly the hour a shift would clear it. `--today YYYY-MM-DD`
+     makes the anchor deterministic for tests and gives an operator an escape hatch.
+  5. **Three exit codes, not two.** `0` gate clears, `1` gate does not clear (a
+     normal result), `2` could not run (refused loudly). A failed lookup, an absent
+     artifact, and a crash are three different things; the old tool collapsed them
+     into exit 1, which its own contract read as "gate not clear". A `null`/non-dict
+     clause shape is now UNPROVEN, not a traceback.
+  6. **A sha must be a sha.** `[0-9a-f]{7,40}` matches `1234567` and the word
+     `defaced`; the only real check is resolving it against the repo, so a
+     claimed-clean factory-hub ship whose sha is not a commit in the hub is refused
+     (exit 2). Cross-repo shas the hub cannot resolve are accepted on citation and
+     flagged "verify by hand", never machine-passed.
+  7. **No row is unproven, never fine.** Clauses 1–5 come from a hand-kept evidence
+     table; a factory day with no row, or any clause with no artifact citation, is
+     UNPROVEN and cannot be in a clean run. Every row names the artifact it was read
+     from — the table is where a shift could rig a verdict, so the citation is the
+     price of a row counting.
+  8. **Clause 2 stays a hand assertion, and says so.** §10's sign-off carries no
+     shift/run id, so "different shifts" is not machine-decidable; the tool trusts
+     the cited assertion and flags it HAND rather than pretending to verify it.
+
+  **Three adversarial cycles, each closing a distinct silent-drop path — the
+  factory's own recurring failure mode, inside the tool built to prevent it.** The
+  defect §16 warns of is "silently permissive … the anchor slid back to a clean
+  row", and the parser re-grew it twice under review before the root was found.
+  Cycle 1 (the first correctness + hygiene pass): the block ended at the first line
+  that failed a *stricter-than-GFM* pipe test, so a row with no leading pipe, or
+  trailing junk after the final pipe, silently truncated the table → a reachable
+  false GRADUATES. Cycle 2 made the parse **GFM-renderer-faithful** — a row may omit
+  bounding pipes, the block runs to the first blank line, every line in it is
+  strictly validated (loud refuse, never a skip), and an index-row-shaped line after
+  the block refuses. Cycle 3 found the subtlest: `str.splitlines()` breaks on
+  U+2028/9, U+000B/C, U+001C–1E and U+0085, which CommonMark/GFM do **not**, so one
+  such char embedded in the table split a row the renderer shows whole into fragments
+  the parser dropped (confirmed against `cmark-gfm`). The fix splits only on real
+  Markdown breaks (`\n`/`\r`/`\r\n`), detects blanks the CommonMark way (spaces/tabs),
+  and refuses any dashboard containing those separator chars (the real one has none).
+  Two other review findings, both sound: the git binary being absent made the one
+  machine check (hub-sha resolution) fall through *generous* — it now marks the day
+  unproven, symmetric with the tz path that refuses rather than guess; and the sha
+  guard required full 40-char hex (§10), so `defaced`/`1234567`/`deadbeef` are
+  rejected cross-repo, not just for the hub. The regression suite reproduces every
+  one of these.
+
+  **The generous-direction guard is the point.** A positive control proves the gate
+  *can* clear (five artifact-cited clean evenings → GRADUATES), so NOT YET is a real
+  verdict and not a tool that always says no; and no synthetic input prints
+  GRADUATES without a live five-long run. Run on the real repo today it prints
+  **NOT YET, live run 0** — matching the dashboard's standing "live run still 0
+  asserted": every recent evening is #136-blocked (web) or #65-blocked (`meta`),
+  and day 072's lone clean CLI evening does not chain. `scripts/test_graduation_audit.py`
+  is green (33 cases); `py_compile` clean; stdlib only, no network (§13).
+
+  **Must-pass set and scope.** This is a `meta` ship that adds a hub tool; its
+  must-pass set is judged against the hub, two of whose lines fail on #65 (no
+  LICENSE, no root README) — §11's *Unverifiable*, not owned here, feature freeze
+  (§7.2). The tool does **not** auto-relabel or auto-advance anything, does **not**
+  fix §10's `7/7` template or the dashboard `clean evenings` wording (standing
+  residuals named in #94), and seeds the evidence table only with days whose
+  artifacts are quotable. **No canary:** this edits §16 (and adds new `scripts/`
+  code), and §16 is not on §14's canary list — that list is §1–§3 and §7–§9, none
+  of which this touches.
 
 - **1.15.0** (2026-10-29) — meta #90, day 074: `STYLE.md`'s README-template
   "What it does" placeholder stops prescribing a sentence **count** and
