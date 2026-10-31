@@ -1,0 +1,198 @@
+{
+  "schema": "graduation evidence v1. One entry per factory day. Each of the five §16 clauses carries holds (bool), a non-empty artifact citation (where it was read from), and read_as (the standard it was read under). A factory day absent here, or any clause without a citation, is UNPROVEN and cannot be part of a clean run (#94 point 7). Clause 2 ('different shifts') and cross-repo clause-3 shas are hand assertions the tool flags 'verify by hand' (§10 carries no shift/run id — #94 point 8); a factory-hub sha is additionally resolved against the hub repo. This file is deliberately partial: v0 seeds only days whose artifacts are quotable. The verdict is the by-hand audit's assistant, never its replacement (§16).",
+  "owner_login": "yinggarykairui",
+  "days": [
+    {
+      "day": 71,
+      "date": "2026-10-26",
+      "slug": "ember-vale",
+      "kind": "web epic increment 2/6",
+      "clauses": {
+        "1_verified_own_ship": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "epic increment; the evening posted no EVENING VERIFIED (increment 2/6) header because the Pages deploy half was unavailable (#136), so it did not verify its own day's ship",
+          "note": "#136-blocked web increment"
+        },
+        "2_different_shifts": {
+          "holds": true,
+          "hand_asserted": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "SHIP sign-off 'day-071 · noon' vs the evening comment; no §11.3 rescue, no §11.4 build"
+        },
+        "3_artifact_form": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "no EVENING VERIFIED header exists to carry a sha (deliberately omitted, #136)",
+          "sha": "c8e2dfcabe282786b855459e0d25bc93ade02bc8",
+          "sha_in": "ember-vale",
+          "note": "mirror tip recorded, but no verification artifact"
+        },
+        "4_no_human_fix_owed": {
+          "holds": true,
+          "artifact": "issue plane 2026-10-26",
+          "read_as": "no blocked issue names this evening's own output"
+        },
+        "5_mustpass_passed": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/136",
+          "read_as": "web ship: the Pages demo-link must-pass line could not be confirmed from the sandbox (#136)",
+          "note": "#136"
+        }
+      }
+    },
+    {
+      "day": 72,
+      "date": "2026-10-27",
+      "slug": "git-mood",
+      "kind": "cli",
+      "clauses": {
+        "1_verified_own_ship": {
+          "holds": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/132",
+          "read_as": "the evening relabelled the closed build issue #132 shipped -> verified and posted EVENING VERIFIED day-072"
+        },
+        "2_different_shifts": {
+          "holds": true,
+          "hand_asserted": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/132",
+          "read_as": "SHIP sign-off 'day-072 · noon' vs EVENING VERIFIED by the evening; the evening recorded no §11.3 rescue and no §11.4 build"
+        },
+        "3_artifact_form": {
+          "holds": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/132",
+          "read_as": "header 'EVENING VERIFIED day-072' naming the sha",
+          "sha": "27e350ae87fe2c4081269decb8a4235b4b092231",
+          "sha_in": "git-mood"
+        },
+        "4_no_human_fix_owed": {
+          "holds": true,
+          "artifact": "issue plane 2026-10-27",
+          "read_as": "no blocked issue names this evening's own output"
+        },
+        "5_mustpass_passed": {
+          "holds": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/132",
+          "read_as": "CLI ship: the six applicable §8 must-pass lines passed (no Pages demo line applies); the random draw hit 'LICENSE present, description + topics set' and passed"
+        }
+      }
+    },
+    {
+      "day": 73,
+      "date": "2026-10-28",
+      "slug": "ember-vale",
+      "kind": "web epic increment 3/6",
+      "clauses": {
+        "1_verified_own_ship": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "epic increment; no EVENING VERIFIED (increment 3/6) header, deploy half unavailable (#136)",
+          "note": "#136-blocked web increment"
+        },
+        "2_different_shifts": {
+          "holds": true,
+          "hand_asserted": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "SHIP sign-off 'day-073 · noon' vs the evening comment; no §11.3 rescue, no §11.4 build"
+        },
+        "3_artifact_form": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "no EVENING VERIFIED header (deliberately omitted, #136)",
+          "sha": "01f3be247c52f176fcc58bb0d76b55d6baa68317",
+          "sha_in": "ember-vale",
+          "note": "mirror tip recorded, but no verification artifact"
+        },
+        "4_no_human_fix_owed": {
+          "holds": true,
+          "artifact": "issue plane 2026-10-28",
+          "read_as": "no blocked issue names this evening's own output"
+        },
+        "5_mustpass_passed": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/136",
+          "read_as": "web ship: the Pages demo-link must-pass line could not be confirmed (#136)",
+          "note": "#136"
+        }
+      }
+    },
+    {
+      "day": 74,
+      "date": "2026-10-29",
+      "slug": "factory-hub",
+      "kind": "doctrine-only meta",
+      "clauses": {
+        "1_verified_own_ship": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/90#issuecomment-6513970342",
+          "read_as": "the evening posted EVENING SPOT-CHECK day-074 result UNVERIFIABLE and did not relabel #90 to verified",
+          "note": "Unverifiable, not verified"
+        },
+        "2_different_shifts": {
+          "holds": true,
+          "hand_asserted": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/90",
+          "read_as": "SHIP sign-off 'day-074 · noon' vs the evening's spot-check comment; no §11.3 rescue, no §11.4 build"
+        },
+        "3_artifact_form": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/90#issuecomment-6513970342",
+          "read_as": "the artifact is an EVENING SPOT-CHECK (result UNVERIFIABLE), deliberately NOT the clause-3 header EVENING VERIFIED",
+          "sha": "b72103c",
+          "sha_in": "factory-hub",
+          "note": "spot-check header, not a verification header"
+        },
+        "4_no_human_fix_owed": {
+          "holds": true,
+          "artifact": "issue plane 2026-10-29",
+          "read_as": "no blocked issue names this evening's own output"
+        },
+        "5_mustpass_passed": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/65",
+          "read_as": "meta ship judged against the hub: two of the five must-pass lines (root README, LICENSE) fail on the hub's own hygiene, recorded on open blocker #65; §16 clause 5 forbids verifying past a failing must-pass line",
+          "note": "#65"
+        }
+      }
+    },
+    {
+      "day": 75,
+      "date": "2026-10-30",
+      "slug": "ember-vale",
+      "kind": "web epic increment 4/6",
+      "clauses": {
+        "1_verified_own_ship": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "epic increment; no EVENING VERIFIED (increment 4/6) header, deploy half unavailable (#136)",
+          "note": "#136-blocked web increment"
+        },
+        "2_different_shifts": {
+          "holds": true,
+          "hand_asserted": true,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "SHIP sign-off 'day-075 · noon' vs the evening comment; no §11.3 rescue, no §11.4 build"
+        },
+        "3_artifact_form": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/88",
+          "read_as": "no EVENING VERIFIED header (deliberately omitted, #136)",
+          "sha": "32eb05c4290f0b05fc02d92f22defb6451bb04cc",
+          "sha_in": "ember-vale",
+          "note": "mirror tip recorded, but no verification artifact"
+        },
+        "4_no_human_fix_owed": {
+          "holds": true,
+          "artifact": "issue plane 2026-10-30",
+          "read_as": "no blocked issue names this evening's own output"
+        },
+        "5_mustpass_passed": {
+          "holds": false,
+          "artifact": "https://github.com/yinggarykairui/factory-hub/issues/136",
+          "read_as": "web ship: the Pages demo-link must-pass line could not be confirmed (#136)",
+          "note": "#136"
+        }
+      }
+    }
+  ]
+}
