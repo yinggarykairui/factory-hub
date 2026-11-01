@@ -36,9 +36,13 @@ purpose-built for this one story, never imported as a library.
   pouch — a fourth box state that freezes movement like `reading`. Increment 4
   adds `quests` — the quest log, opened by `Q` or the `#btnLog` HUD button — a
   fifth box state that freezes movement the same way; the box-states never
-  overlap (each toggles only between itself and `play`). Pickup and the
-  locked-door unlock happen in `play` (walking onto an item — world or errand;
-  facing a `DOOR` + action with the key).
+  overlap (each toggles only between itself and `play`). Increment 5 adds
+  `combat` — a sixth state entered from `play` (facing the Ember at three seeds,
+  guardian unbeaten) and returned to `play` on win/lose; unlike the other box
+  states it is not a toggle (no key dismisses a fight mid-turn), and it runs its
+  own gauge/turn logic inside the update step rather than freezing like a text
+  box. Pickup and the locked-door unlock happen in `play` (walking onto an item
+  — world or errand; facing a `DOOR` + action with the key).
 - People and talk (increment 2): an `NPCS` table (`{id, tx, ty, facing, name,
   color}`, each tile solid so you cannot walk through a person) and a `DIALOG`
   graph of nodes (`{speaker, lines[], choices?, set?, to?/end}`). A `flags`
@@ -103,8 +107,18 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   flags `miraAsked`/`miraLit`; new `__ev` quest snapshot. In-memory only.
   **Shipped day 075** (143/143 headless; 107 increment-1/2/3 checks preserved).
 - [ ] **5/6 — What guards the dark (combat).** Turn-based encounters (the
-  turn-clash pattern) — a guardian holds the last emberseed; element/speed
-  turn order, win/lose, back to the world.
+  turn-clash pattern) — **the guardian of the return.** The done-map's first
+  wording ("a guardian holds the last emberseed") was overtaken by the
+  increment-3/4 design: all three seeds are already placed and gatherable, and
+  the README frames the fight as "carrying the light home runs into what guards
+  the dark." So the fight gates the **heart**, not a pickup: at three seeds,
+  facing the Ember + action calls up **the Hollow** (the shade that gathered
+  where the Ember failed). Element triangle Ember→Thorn→Tide→Ember (×1.5 weak /
+  ×0.5 resist / ×1.0), a deterministic speed action-gauge turn queue, attack
+  with an element or Guard, the foe telegraphs and shifts when low; win sets
+  `flags.guardianBeaten` and returns beside the Ember, lose restores HP and
+  throws you back (retriggerable). The `relight` quest `complete()` stays false
+  and `guardianBeaten` is in-memory only — the relight + ending + saves are 6/6.
 - [ ] **6/6 — Relight and remember (saves + ending).** Save/load the run (the
   save-crystal pattern); relighting the Ember resolves the story; an ending
   screen. The epic closes `shipped` when this done-map completes.
