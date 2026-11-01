@@ -63,6 +63,30 @@
      the full height. This is what keeps a tall 3-choice reply inside the box on
      a short landscape phone instead of spilling over the controls. */
   #screen.choosing .act { display: none; }
+  /* The combat control bar (increment 5): a row of real DOM buttons (one per
+     element + Guard) at the bottom centre, shown ONLY during a fight — on
+     desktop and phone alike, the same always-visible idiom as the seed HUD (NOT
+     a .touch control, so the desktop media query never hides it). A fight is not
+     a toggle, so while it runs the overworld controls are dead weight: the D-pad,
+     the action button and the seed/quest HUD all hide. The bar wraps so four
+     buttons still fit a ~360px phone. */
+  .combatbar {
+    position: absolute; z-index: 6; left: 50%; transform: translateX(-50%);
+    bottom: 14px; display: none; gap: 8px; flex-wrap: wrap; justify-content: center;
+    width: 100%; max-width: 480px; padding: 0 12px;
+    -webkit-user-select: none; user-select: none; touch-action: none;
+  }
+  .combatbar button {
+    font: inherit; font-size: 15px; font-weight: 700; line-height: 1; color: #f3e6d0;
+    background: rgba(32,22,38,.82); border: 1px solid rgba(240,200,120,.4);
+    border-radius: 12px; padding: 12px 10px; min-height: 48px; min-width: 72px; flex: 1 1 auto;
+    cursor: pointer; touch-action: none; -webkit-user-select: none; user-select: none;
+    backdrop-filter: blur(2px); white-space: nowrap;
+  }
+  .combatbar button b { display: block; font-weight: 500; font-size: 11px; opacity: .65; margin-top: 3px; }
+  .combatbar button:active { background: rgba(230,150,60,.85); color: #2a1405; border-color: #ffd27a; }
+  #screen.combat .combatbar { display: flex; }
+  #screen.combat .dpad, #screen.combat .act, #screen.combat .hud { display: none; }
 </style>
 </head>
 <body>
@@ -80,6 +104,12 @@
   <div class="hud">
     <button id="btnBag" aria-label="What you carry — open the bag">&#10022; 0/3</button>
     <button id="btnLog" aria-label="Your quests — open the quest log">Quests</button>
+  </div>
+  <div class="combatbar" aria-label="Combat actions">
+    <button id="btnEmber" aria-label="Attack with Ember">Ember<b>1</b></button>
+    <button id="btnThorn" aria-label="Attack with Thorn">Thorn<b>2</b></button>
+    <button id="btnTide"  aria-label="Attack with Tide">Tide<b>3</b></button>
+    <button id="btnGuard" aria-label="Guard the next blow">Guard<b>G</b></button>
   </div>
 </div>
 
@@ -319,7 +349,7 @@
   // Quest state. In memory only (increment 6 adds the save blob); read when an
   // NPC picks its opening node, written when a node or a choice resolves.
   var flags = { questStarted: false, wardenHeard: false, miraTold: false, bramEased: false,
-                miraAsked: false, miraLit: false };
+                miraAsked: false, miraLit: false, guardianBeaten: false };
 
   // --- what you carry (increment 3): items, the bag, the locked door ---
   // Collectibles sit on non-solid (walkable) tiles. Walking onto an item's tile
@@ -377,9 +407,14 @@
           done: function () { return flags.miraTold; } },
         { id: "gather", label: function () { return "Gather emberseeds (" + seedCount() + "/3)"; },
           done: function () { return seedCount() === 3; } },
-        { id: "return", label: function () { return seedCount() === 3
-            ? "Carry the light to the Ember — the way is not yet open"
-            : "Carry three emberseeds to the heart of the vale"; },
+        { id: "return", label: function () {
+            // The return step evolves with state but is never completable here
+            // (the relight is increment 6): before three seeds it names the
+            // gathering; at three seeds it names the fight that bars the heart;
+            // once the guardian is beaten it names the open way to the relight.
+            if (flags.guardianBeaten) return "The way home lies open — relight the Ember";
+            if (seedCount() === 3)    return "Face what guards the dark at the heart";
+            return "Carry three emberseeds to the heart of the vale"; },
           done: function () { return false; } }               // foreshadowed, not completable (incr 5+6)
       ] },
     { id: "lantern", name: "A light for Mira's window",
@@ -392,7 +427,9 @@
           done: function () { return flags.miraLit; } }
       ] }
   ];
-  var EMBER_READY_LINE = "You carry three emberseeds now, and the coal leans toward them as you near — but the dark between you and the heart is not done with you yet. Not tonight, not like this.";
+  // Post-fight (increment 5): once the Hollow is beaten, facing the Ember is a
+  // plain read again — the way is open, but the relighting itself waits (incr 6).
+  var EMBER_OPEN_LINE = "The Hollow is gone, and the way to the heart stands clear. The three seeds are warm in your hand — but relighting the Ember is a thing for the small hours, and the night is not done yet.";
 
   // A brief floating toast ("Picked up an emberseed.", "The iron key turns.").
   // `toast` keeps the last text (for the test hook); `toastT` is its fade timer.
@@ -401,7 +438,7 @@
   function setToast(t) { toast = t; toastT = TOAST_MS; }
 
   // --- state --------------------------------------------------------
-  var state = "title";                  // "title" | "play" | "reading" | "dialog" | "inventory" | "quests"
+  var state = "title";                  // "title" | "play" | "reading" | "dialog" | "inventory" | "quests" | "combat"
   var player = { px: (SPAWN_TX + 0.5) * TILE, py: (SPAWN_TY + 0.5) * TILE, facing: "up", moving: false };
   var cam = { x: 0, y: 0 };
   var held = { up: false, down: false, left: false, right: false };
@@ -471,9 +508,14 @@
     if (npc) { openDialog(npc); return; }
     if (MAP[f.ty] && MAP[f.ty][f.tx] === DOOR) { tryDoor(f.tx, f.ty); return; }
     var line = READS[f.tx + "," + f.ty];
-    // Foreshadow (increment 4): at three seeds the Ember read changes to hint the
-    // way home is still barred — a read only, no relight, no state change.
-    if (f.tx === EMBER_TX && f.ty === EMBER_TY && seedCount() === 3) line = EMBER_READY_LINE;
+    // The heart (increment 5): facing the Ember with all three seeds is the real
+    // gate. If the guardian still holds it, action CALLS UP THE FIGHT (not a read).
+    // Once the Hollow is beaten it is a plain read again — the way is open, the
+    // relighting waits (increment 6). Below three seeds it reads its base line.
+    if (f.tx === EMBER_TX && f.ty === EMBER_TY && seedCount() === 3) {
+      if (!flags.guardianBeaten) { startCombat(); return; }
+      line = EMBER_OPEN_LINE;
+    }
     if (line != null) { signText = line; state = "reading"; hasRead = true; screenEl.classList.add("reading"); }
   }
   // Facing a locked door + action: the iron key turns it (the MAP tile becomes
@@ -566,6 +608,207 @@
     else if (state === "quests") state = "play";
   }
 
+  // --- what guards the dark (increment 5): turn-based combat ----------
+  // The turn-clash pattern, rebuilt purpose-built for this one encounter (never
+  // imported). An element triangle Ember -> Thorn -> Tide -> Ember (each BEATS
+  // the one it points to); attacking into the foe's weakness is x1.5, into its
+  // resistance x0.5, else x1. A deterministic speed action-gauge decides turn
+  // order. The traveler attacks with an element or guards; the Hollow telegraphs
+  // its next move and, when low on HP, shifts to winding up crushing blows.
+  var ELEMS = {
+    Ember: { color: "#ff8a4c", key: "1" },
+    Thorn: { color: "#7fcf7f", key: "2" },
+    Tide:  { color: "#5cc8ff", key: "3" }
+  };
+  var BEATS = { Ember: "Thorn", Thorn: "Tide", Tide: "Ember" };   // each beats the one it points to
+  function multiplier(atk, def) {
+    if (BEATS[atk] === def) return 1.5;   // the defender is weak to this element
+    if (BEATS[def] === atk) return 0.5;   // the defender resists it (it beats the attack)
+    return 1.0;
+  }
+  function weaknessOf(elem) { for (var k in BEATS) if (BEATS.hasOwnProperty(k) && BEATS[k] === elem) return k; return null; }
+  function resistOf(elem) { return BEATS[elem]; }   // attacking WITH this element is resisted
+  function matchupWord(atk, def) {
+    var m = multiplier(atk, def);
+    return m === 1.5 ? "it reels" : m === 0.5 ? "it shrugs it off" : "it holds firm";
+  }
+  function fmtMult(m) { return m === 1 ? "1" : String(m); }
+
+  // a tiny seeded PRNG (mulberry32), reset from a fixed constant each fight so a
+  // fight is reproducible. Used only for cosmetic ambience (drifting motes),
+  // never for damage — the fight is deterministic by construction.
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  var FOE_NAME = "the Hollow";
+  var CB_THRESH = 100;         // action-gauge threshold
+  var CB_GAUGE_K = 0.02;       // gauge gained per (speed*ms); turn ORDER is invariant to this
+  var CB_FOE_DELAY = 420;      // ms the foe's turn pauses before it acts (readable queue)
+  var CB_END_DELAY = 1200;     // ms the win/lose banner holds before returning to play
+  var C = null;                // the live fight, or null
+
+  function cbMake(id, name, element, maxHp, speed, atk, side) {
+    return { id: id, name: name, element: element, maxHp: maxHp, hp: maxHp,
+             speed: speed, atk: atk, side: side, gauge: 0, guarding: false, flash: 0 };
+  }
+  // Balance: good play (strike the weakness, guard the telegraphed crush) wins
+  // the traveler through with HP to spare in ~6 turns; bad play (striking the
+  // resistance, never guarding) loses. Verified by the headless suite.
+  function startCombat() {
+    var player = cbMake("player", "the traveler", "Tide", 84, 10, 14, "player");
+    var foe    = cbMake("foe", FOE_NAME, "Thorn", 100, 7, 14, "foe");
+    C = {
+      player: player, foe: foe, list: [player, foe],   // index order = gauge tie-break (player wins ties)
+      awaiting: false,       // true ONLY on the player's turn, accepting input
+      current: null,         // whose turn it is right now
+      foeDelay: 0,           // ms left before the foe acts on its turn
+      endDelay: 0,           // ms left on the win/lose banner
+      over: null,            // null | "win" | "lose"
+      foePlan: "normal",     // the foe's telegraphed NEXT move: normal | windup | crush
+      lowStarted: false,     // has the foe entered its low-HP behaviour yet
+      log: [], rng: mulberry32(0x1A2B3C)
+    };
+    cbLog("sys", "The dark gathers where the Ember failed — " + FOE_NAME + " rises between you and the heart.");
+    state = "combat";
+  }
+  function cbLog(kind, text) { C.log.push({ kind: kind, text: text }); if (C.log.length > 60) C.log.shift(); }
+  function cbLow() { return C.foe.hp > 0 && C.foe.hp < C.foe.maxHp / 3; }
+
+  // The foe's plan is its NEXT move, shown as the on-screen telegraph. It is
+  // recomputed after the player damages the foe (cbFoeReplan) and advanced after
+  // the foe acts (cbFoeAdvance). When the foe drops low it begins a wind-up ->
+  // crush cycle: the wind-up turn is harmless but telegraphs the crush, giving
+  // the player a turn to raise their guard before the heavy blow lands.
+  function cbFoeReplan() {
+    if (!cbLow()) { C.foePlan = "normal"; return; }
+    if (!C.lowStarted) { C.lowStarted = true; C.foePlan = "windup"; return; }
+    if (C.foePlan === "normal") C.foePlan = "windup";   // just crossed into low mid-sequence
+  }
+  function cbFoeAdvance(justDid) {
+    if (justDid === "windup") { C.foePlan = "crush"; return; }
+    C.foePlan = cbLow() ? "windup" : "normal";          // after a crush/normal, re-read the HP
+  }
+
+  // The deterministic speed gauge, continuous in time. Accrual happens ONLY in
+  // the neutral phase (not while awaiting the player, not during the foe's
+  // pause), so pausing freezes both gauges and preserves the speed-ratio order.
+  function cbAccrue(dt) {
+    var p = C.player, f = C.foe;
+    p.gauge += p.speed * dt * CB_GAUGE_K;
+    f.gauge += f.speed * dt * CB_GAUGE_K;
+    var act = null;
+    if (p.gauge >= CB_THRESH && f.gauge >= CB_THRESH) act = (p.gauge >= f.gauge) ? p : f;  // tie -> player
+    else if (p.gauge >= CB_THRESH) act = p;
+    else if (f.gauge >= CB_THRESH) act = f;
+    if (act) { act.gauge -= CB_THRESH; cbBeginTurn(act); }
+  }
+  function cbBeginTurn(act) {
+    C.current = act;
+    act.guarding = false;                 // a combatant's guard expires when its own next turn arrives
+    if (act.side === "player") { C.awaiting = true; }
+    else { C.foeDelay = reduced ? 0 : CB_FOE_DELAY; }
+  }
+
+  // A pure forward simulation on a COPY of the gauges: the next n actors, for the
+  // live "who's next" queue. Discrete (add speed each step) like turn-clash.
+  function cbQueue(n) {
+    if (!C) return [];
+    var g = C.list.map(function (c) { return c.gauge; });
+    var out = [];
+    if (C.current) out.push(C.current);
+    var guard = 0;
+    while (out.length < n && guard++ < 10000) {
+      for (var i = 0; i < C.list.length; i++) g[i] += C.list[i].speed;
+      var bi = -1;
+      for (var j = 0; j < C.list.length; j++) if (g[j] >= CB_THRESH && (bi < 0 || g[j] > g[bi])) bi = j;
+      if (bi >= 0) { g[bi] -= CB_THRESH; out.push(C.list[bi]); }
+    }
+    return out;
+  }
+
+  // The fight ticks inside update() — unlike the other box-states it is not a
+  // frozen read, it drives its own turn/gauge logic over time.
+  function cbTick(dt) {
+    if (!C) return;
+    C.player.flash = Math.max(0, C.player.flash - dt);
+    C.foe.flash = Math.max(0, C.foe.flash - dt);
+    if (C.over) { C.endDelay -= dt; if (C.endDelay <= 0) cbExit(); return; }
+    if (C.awaiting) return;                          // the player's turn: wait for input
+    if (C.current && C.current.side === "foe") {     // the foe's turn: pause, then act
+      C.foeDelay -= dt;
+      if (C.foeDelay <= 0) cbFoeAct();
+      return;
+    }
+    cbAccrue(dt);                                    // neutral phase: fill the gauges
+  }
+
+  function cbFoeAct() {
+    var foe = C.foe, pl = C.player, plan = C.foePlan;
+    if (plan === "windup") {
+      cbLog("foe", FOE_NAME + " draws the dark inward — a crushing blow is coming.");
+    } else {
+      var crush = plan === "crush";
+      var base = foe.atk * (crush ? 2 : 1);
+      var m = multiplier(foe.element, pl.element);
+      var dmg = Math.round(base * m * (pl.guarding ? 0.5 : 1));
+      pl.hp = Math.max(0, pl.hp - dmg);
+      pl.flash = reduced ? 0 : 280;
+      var gn = pl.guarding ? " (you guard, halved)" : "";
+      var lead = crush ? FOE_NAME + "'s crushing " + foe.element : FOE_NAME + "'s " + foe.element;
+      cbLog("foe", lead + " lashes the traveler — ×" + fmtMult(m) + gn + " → " + dmg + ".");
+    }
+    cbFoeAdvance(plan);
+    C.current = null;
+    cbCheckEnd();
+  }
+
+  // Player actions. Both run the SAME code path as the on-screen buttons and the
+  // keyboard, and both IGNORE input unless it is the player's turn (awaiting).
+  function combatAttack(element) {
+    if (!C || state !== "combat" || C.over || !C.awaiting || !ELEMS[element]) return;
+    var foe = C.foe, pl = C.player;
+    var m = multiplier(element, foe.element);
+    var dmg = Math.round(pl.atk * m);
+    foe.hp = Math.max(0, foe.hp - dmg);
+    foe.flash = reduced ? 0 : 280;
+    cbLog("player", "Your " + element + " strikes " + FOE_NAME + " — " +
+      matchupWord(element, foe.element) + ", ×" + fmtMult(m) + " → " + dmg + ".");
+    cbFoeReplan();
+    C.awaiting = false; C.current = null;
+    cbCheckEnd();
+  }
+  function combatGuard() {
+    if (!C || state !== "combat" || C.over || !C.awaiting) return;
+    C.player.guarding = true;
+    cbLog("player", "You set your guard — the next blow against you is halved.");
+    C.awaiting = false; C.current = null;
+  }
+  function cbCheckEnd() {
+    if (!C || C.over) return true;
+    if (C.foe.hp <= 0) {
+      C.over = "win"; C.awaiting = false; C.current = null; C.endDelay = CB_END_DELAY;
+      flags.guardianBeaten = true;
+      cbLog("win", "The Hollow unravels into cold sparks. The way to the heart lies open.");
+      return true;
+    }
+    if (C.player.hp <= 0) {
+      C.over = "lose"; C.awaiting = false; C.current = null; C.endDelay = CB_END_DELAY;
+      cbLog("lose", "The dark throws you back into the dark. You will have to face it again.");
+      return true;
+    }
+    return false;
+  }
+  // Return to the overworld beside the Ember. HP is "restored" implicitly — the
+  // next fight builds fresh combatants — and there is NO save and NO permadeath
+  // (those are increment 6); a loss simply leaves the fight retriggerable.
+  function cbExit() { state = "play"; C = null; }
+
   // --- camera: follow the player, clamp to the world edge -----------
   function clampCam() {
     var mx = W * TILE - viewW, my = H * TILE - viewH;
@@ -576,6 +819,7 @@
   // --- actions (shared by keys, touch and test hooks) ---------------
   function start() { if (state === "title") { state = "play"; playT = 0; clampCam(); } }
   function action() {
+    if (state === "combat") { return; }   // a fight is not dismissible; it uses its own inputs
     if (state === "title") { start(); return; }
     if (state === "reading") { dismiss(); return; }
     if (state === "dialog") { dialogAdvance(); return; }
@@ -600,6 +844,9 @@
     if (dt > 40) dt = 40;
     animT += dt;
     if (toastT > 0) toastT = Math.max(0, toastT - dt);   // toast fades in every state
+    // Combat is the one box-state that is NOT a frozen read: it ticks its own
+    // turn/gauge logic here instead of early-returning like the other states.
+    if (state === "combat") { player.moving = false; cbTick(dt); return; }
     if (state !== "play") { player.moving = false; return; }
     playT += dt;
     var vx = (held.right ? 1 : 0) - (held.left ? 1 : 0);
@@ -909,10 +1156,13 @@
     screenEl.classList.toggle("choosing", state === "dialog" && !!dlgChoices);
     screenEl.classList.toggle("inv", state === "inventory");   // hides the dead D-pad
     screenEl.classList.toggle("log", state === "quests");      // hides the dead D-pad
+    // While a fight runs, the overworld controls are dead weight — the .combat
+    // class shows the combat bar and hides the D-pad, action button and HUD.
+    screenEl.classList.toggle("combat", state === "combat");
     // Keep the seed HUD in step: hidden on the title, shown everywhere else,
     // its count always current. Cheap to set every frame and never wrong.
     bagBtn.textContent = "✦ " + seedCount() + "/3";
-    hudEl.style.display = (state === "title") ? "none" : "block";
+    hudEl.style.display = (state === "title" || state === "combat") ? "none" : "block";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = "#0e0a12"; ctx.fillRect(0, 0, viewW, viewH);
 
@@ -967,6 +1217,7 @@
     if (state === "dialog") drawDialog();
     if (state === "inventory") drawInventory();
     if (state === "quests") drawQuests();
+    if (state === "combat") drawCombat();
   }
 
   function drawTitle() {
@@ -1324,6 +1575,116 @@
     }
   }
 
+  // The combat screen: drawn entirely from canvas shapes + text (no images, no
+  // fonts). A title, the live "who's next" queue, the two combatants with HP
+  // bars, the foe's readable weakness/resistance and telegraph, the last log
+  // lines, and a win/lose banner. The element buttons are real DOM controls
+  // (the .combatbar) overlaid at the bottom, so this only paints the picture.
+  function cbFighter(c, cx, y, barW, now) {
+    var col = ELEMS[c.element].color, dead = c.hp <= 0;
+    // current-actor halo (gated by reduced motion for the pulse only)
+    if (now && !dead) {
+      var pulse = reduced ? 0.16 : 0.12 + (Math.sin(animT / 260) * 0.5 + 0.5) * 0.12;
+      ctx.fillStyle = "rgba(255,207,138," + pulse.toFixed(3) + ")";
+      roundRect(cx - barW / 2 - 10, y - 20, barW + 20, 56, 12); ctx.fill();
+    }
+    ctx.textAlign = "center";
+    ctx.fillStyle = dead ? "#8a7f72" : "#f3e6d0"; ctx.font = "700 14px system-ui, sans-serif";
+    ctx.fillText(c.name + (now ? "  ▸" : ""), cx, y - 6);
+    // HP bar
+    var bx = cx - barW / 2, by = y + 2, bh = 12;
+    ctx.fillStyle = "rgba(0,0,0,.5)"; roundRect(bx, by, barW, bh, 5); ctx.fill();
+    var ratio = c.maxHp ? c.hp / c.maxHp : 0;
+    if (ratio > 0) {
+      ctx.fillStyle = ratio > 0.5 ? "#8fe0a8" : ratio > 0.25 ? "#ffcf6b" : "#ff9a8c";
+      roundRect(bx, by, Math.max(3, barW * ratio), bh, 5); ctx.fill();
+    }
+    // hit flash (zero under reduced motion)
+    if (c.flash > 0) {
+      ctx.fillStyle = "rgba(255,255,255," + (0.5 * (c.flash / 280)).toFixed(3) + ")";
+      roundRect(bx, by, barW, bh, 5); ctx.fill();
+    }
+    ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1; roundRect(bx, by, barW, bh, 5); ctx.stroke();
+    ctx.fillStyle = "rgba(230,222,206,.9)"; ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText("HP " + c.hp + "/" + c.maxHp + "    ◆ " + c.element + (c.guarding ? "    (guarding)" : ""), cx, by + bh + 15);
+  }
+
+  function drawCombat() {
+    if (!C) return;
+    ctx.fillStyle = "rgba(6,4,10,.93)"; ctx.fillRect(0, 0, viewW, viewH);
+    var cx = viewW / 2;
+    // a few drifting dark motes (seeded, cosmetic; still under reduced motion).
+    ctx.save(); ctx.globalCompositeOperation = "lighter";
+    for (var mi = 0; mi < 10; mi++) {
+      var r0 = C.rng();
+      var mx = (0.1 + C.rng() * 0.8) * viewW, my = (0.15 + C.rng() * 0.6) * viewH;
+      if (!reduced) { mx += Math.sin(animT / 1100 + mi) * 12; my += Math.cos(animT / 1300 + mi) * 9; }
+      ctx.fillStyle = "rgba(120,90,150," + (0.08 + r0 * 0.1).toFixed(3) + ")";
+      ctx.beginPath(); ctx.arc(mx, my, 2 + r0 * 2, 0, 6.3); ctx.fill();
+    }
+    ctx.restore();
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffcf8a"; ctx.font = "700 19px system-ui, sans-serif";
+    ctx.fillText("What guards the dark", cx, 32);
+
+    // the live "who's next" queue
+    var q = cbQueue(5);
+    var labels = q.map(function (c, i) { return (i === 0 ? "▸ " : "") + (c.id === "player" ? "You" : "Hollow"); });
+    ctx.fillStyle = "rgba(230,214,190,.85)"; ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText("Next: " + labels.join("    ·    "), cx, 54);
+
+    // the two combatants
+    var barW = Math.min(260, viewW * 0.72);
+    var topY = Math.min(112, viewH * 0.26);
+    cbFighter(C.player, cx, topY, barW, C.current === C.player);
+    cbFighter(C.foe, cx, topY + 84, barW, C.current === C.foe);
+
+    // the foe's readable weakness / resistance
+    ctx.fillStyle = "rgba(200,222,200,.82)"; ctx.font = "12px system-ui, sans-serif";
+    ctx.fillText("The Hollow is ◆ " + C.foe.element + " — weak to " + weaknessOf(C.foe.element) +
+      ", resists " + resistOf(C.foe.element), cx, topY + 84 + 44);
+    // its telegraph
+    var tele = C.foePlan === "windup" ? "It is winding up a crushing blow — ready your guard." :
+               C.foePlan === "crush"  ? "A crushing blow is about to land — GUARD now!" :
+               "It readies a lashing strike.";
+    ctx.fillStyle = C.foePlan === "normal" ? "rgba(220,200,170,.85)" : "rgba(255,170,110,.95)";
+    ctx.font = (C.foePlan === "normal" ? "" : "700 ") + "13px system-ui, sans-serif";
+    ctx.fillText(tele, cx, topY + 84 + 64);
+
+    // the last few log lines, above the control bar
+    ctx.font = "12px system-ui, sans-serif";
+    var shown = C.log.slice(-4);
+    var logTop = Math.min(viewH - 150, topY + 84 + 92);
+    for (var i = 0; i < shown.length; i++) {
+      var ln = shown[i];
+      ctx.fillStyle = ln.kind === "player" ? "rgba(243,230,208,.95)" :
+                      ln.kind === "foe" ? "rgba(255,180,160,.92)" :
+                      ln.kind === "win" ? "rgba(150,220,150,.95)" :
+                      ln.kind === "lose" ? "rgba(255,150,140,.95)" : "rgba(200,192,176,.7)";
+      var wrapped = wrap(ln.text, viewW - 48);
+      ctx.fillText(wrapped[0] + (wrapped.length > 1 ? "…" : ""), cx, logTop + i * 17);
+    }
+
+    // input hint for keyboard players (desktop)
+    if (!C.over) {
+      ctx.fillStyle = "rgba(200,192,176,.55)"; ctx.font = "11px system-ui, sans-serif";
+      ctx.fillText(C.awaiting ? "Your turn — 1 Ember · 2 Thorn · 3 Tide · G Guard"
+                              : "The Hollow moves…", cx, viewH - 96);
+    }
+
+    // win / lose banner
+    if (C.over) {
+      var win = C.over === "win";
+      ctx.fillStyle = "rgba(8,5,12,.78)"; ctx.fillRect(0, 0, viewW, viewH);
+      ctx.fillStyle = win ? "#9fe6a8" : "#ff9a8c"; ctx.font = "700 28px system-ui, sans-serif";
+      ctx.fillText(win ? "The dark gives way" : "The dark throws you back", cx, viewH / 2 - 8);
+      ctx.fillStyle = "#e8ddc8"; ctx.font = "15px system-ui, sans-serif";
+      ctx.fillText(win ? "The way to the heart is open." : "Gather your nerve and face it again.", cx, viewH / 2 + 22);
+    }
+    ctx.textAlign = "left";
+  }
+
   // A one-time discovery cue at the top (clear of the bottom controls): until the
   // first read, tell a newcomer how to read the valley. It fades out after a few
   // seconds or the moment they read something; under reduced motion it just shows.
@@ -1379,6 +1740,18 @@
   var KEYMAP = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
                  w: "up", s: "down", a: "left", d: "right", W: "up", S: "down", A: "left", D: "right" };
   addEventListener("keydown", function (e) {
+    // In a fight, the keyboard drives combat and nothing else: 1/2/3 (or E/T/D)
+    // attack with an element, G guards, and every other key is swallowed so no
+    // movement, box-state or action key leaks through. Out-of-turn presses are
+    // ignored inside combatAttack/combatGuard. Handled before all else.
+    if (state === "combat") {
+      var ck = e.key.toLowerCase();
+      if (ck === "1" || ck === "e") { e.preventDefault(); combatAttack("Ember"); }
+      else if (ck === "2" || ck === "t") { e.preventDefault(); combatAttack("Thorn"); }
+      else if (ck === "3" || ck === "d") { e.preventDefault(); combatAttack("Tide"); }
+      else if (ck === "g") { e.preventDefault(); combatGuard(); }
+      return;
+    }
     if (e.key === "Enter") { e.preventDefault(); if (state === "title") start(); else action(); return; }
     if (e.key === " " || e.code === "Space") { e.preventDefault(); action(); return; }
     if (e.key === "Escape") { e.preventDefault(); dismiss(); return; }
@@ -1461,6 +1834,20 @@
   });
   logBtn.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
 
+  // The combat bar (increment 5): one DOM button per element + Guard, the same
+  // single-fire discipline as btnA (pointerdown acts, touchstart only swallows
+  // the compatibility mouse event a tap raises). combatAttack/combatGuard ignore
+  // input unless it is the player's turn, so a tap during the foe's turn is safe.
+  function bindCombat(id, fn) {
+    var b = document.getElementById(id);
+    b.addEventListener("pointerdown", function (e) { e.preventDefault(); fn(); });
+    b.addEventListener("touchstart", function (e) { e.preventDefault(); }, { passive: false });
+  }
+  bindCombat("btnEmber", function () { combatAttack("Ember"); });
+  bindCombat("btnThorn", function () { combatAttack("Thorn"); });
+  bindCombat("btnTide",  function () { combatAttack("Tide"); });
+  bindCombat("btnGuard", combatGuard);
+
   // tap / click on the world begins the game, dismisses a read, and drives a
   // conversation: tapping a choice row picks it, tapping elsewhere turns the
   // page (while choosing, a tap off the choices does nothing — A / Esc still work).
@@ -1534,7 +1921,7 @@
     hintShowing: function () { return state === "play" && !hasRead && playT < HINT_MS; },
 
     // --- increment 2: people, flags, conversation ---
-    get flags() { return { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard, miraTold: flags.miraTold, bramEased: flags.bramEased, miraAsked: flags.miraAsked, miraLit: flags.miraLit }; },
+    get flags() { return { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard, miraTold: flags.miraTold, bramEased: flags.bramEased, miraAsked: flags.miraAsked, miraLit: flags.miraLit, guardianBeaten: flags.guardianBeaten }; },
     get npcs() { return NPCS.map(function (n) { return { id: n.id, tx: n.tx, ty: n.ty, name: n.name }; }); },
     // live conversation snapshot, or null unless state === "dialog".
     dialog: function () {
@@ -1595,6 +1982,36 @@
         return { id: q.id, name: q.name, complete: q.complete(),
           steps: q.steps.map(function (s) { return { id: s.id, text: s.label(), done: s.done() }; }) };
       });
+    },
+
+    // --- increment 5: combat ---
+    get combatActive() { return state === "combat"; },
+    // a live fight snapshot, or null unless state === "combat". Read-only; the
+    // numbers it reports are the same ones gameplay runs on (no balance hooks).
+    combat: function () {
+      if (state !== "combat" || !C) return null;
+      return {
+        foe: C.foe.name, foeHP: C.foe.hp, foeMaxHP: C.foe.maxHp,
+        playerHP: C.player.hp, playerMaxHP: C.player.maxHp,
+        weak: weaknessOf(C.foe.element), resist: resistOf(C.foe.element),
+        element: C.foe.element, plan: C.foePlan, guarding: C.player.guarding,
+        queue: cbQueue(6).map(function (c) { return { id: c.id, name: c.name, element: c.element }; }),
+        awaiting: C.awaiting, over: C.over,
+        log: C.log.map(function (l) { return l.text; })
+      };
+    },
+    // pokes (same code paths as real input; ignored unless it is the player's turn):
+    combatAttack: combatAttack,
+    combatGuard: combatGuard,
+    // introspection the reduced-motion test reads (mirrors walkBob): the max hit
+    // flash, zero under reduced motion, positive on a hit when motion is allowed.
+    combatFlash: function () { return C ? Math.max(C.player.flash, C.foe.flash) : 0; },
+    // TEST-ONLY convenience (clearly marked, like `place`): fill the bag to three
+    // emberseeds so the fight can be reached. The fight itself is still only
+    // entered through the REAL trigger (face the Ember at three seeds + action).
+    giveSeeds: function () {
+      while (seedCount() < 3) bag.push({ id: "seedTest" + bag.length, name: "an emberseed", kind: "seed",
+        desc: "A bright valley-stone. Three of these will wake the Ember." });
     }
   };
 })();

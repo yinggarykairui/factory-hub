@@ -793,8 +793,8 @@ async function main() {
   });
   check('at three seeds the gather step flips to done and reports (3/3)',
     threeSeed.seeds === 3 && /\(3\/3\)/.test(threeSeed.gatherText) && threeSeed.gatherDone === true);
-  check('at three seeds the return step relabels but stays undone',
-    /the way is not yet open/.test(threeSeed.returnText) && threeSeed.returnDone === false);
+  check('at three seeds the return step relabels to the fight but stays undone',
+    /guards the dark/.test(threeSeed.returnText) && threeSeed.returnDone === false);
   check('the main quest never reads complete this increment', threeSeed.complete === false);
   check('the errand is absent on a run where Mira was never asked', threeSeed.errandAbsent === true);
   // lantern reachability on foot with the door shut (the BFS the critic re-runs).
@@ -812,44 +812,263 @@ async function main() {
   });
   check('the lantern sits on a non-solid tile reachable on foot (door shut)',
     lanternReach.nonsolid === true && lanternReach.reachable === true);
+  // The increment-4 foreshadow READ at three seeds is overtaken by increment 5:
+  // facing the Ember with all three seeds, the guardian unbeaten, is the real
+  // gate and now ENTERS COMBAT instead of reading. (Full trigger coverage —
+  // including the <3-seed read and the post-win read — is section 22 below.)
   const fore = await ev(() => {
     window.__ev.dismiss(); window.__ev.place(20, 5, 'up'); window.__ev.action();
-    const t = window.__ev.signText, lit = window.__ev.state;
-    window.__ev.dismiss();
-    return { t, lit, seeds: window.__ev.seeds };
+    return { state: window.__ev.state, snap: window.__ev.combat(), reading: window.__ev.reading };
   });
-  check('facing the Ember with three seeds reads the foreshadow line (a read only, no change)',
-    /the dark between you and the heart is not done with you yet/.test(fore.t) && fore.lit === 'reading');
+  check('facing the Ember with three seeds enters combat (the real gate, not a read)',
+    fore.state === 'combat' && fore.reading === false && fore.snap && fore.snap.foe === 'the Hollow');
+
+  // ================= increment 5: what guards the dark (combat) =================
+  // A single turn-based encounter — the Hollow gates the heart. Element triangle
+  // Ember->Thorn->Tide->Ember (x1.5 weak / x0.5 resist / x1), a deterministic
+  // speed action-gauge turn order, attack with an element or Guard, the foe
+  // telegraphs and shifts when low. Win sets guardianBeaten and returns to play;
+  // lose restores HP and throws you back (retriggerable). In-memory only.
+
+  // a page-side helper: step the fight until the player's turn, or until over.
+  const COMBAT_DRIVER = `
+    window.__cb = {
+      enter: function () { window.__ev.dismiss(); window.__ev.giveSeeds(); window.__ev.place(20, 5, 'up'); window.__ev.action(); },
+      toAwait: function () { for (var i = 0; i < 600; i++) { var c = window.__ev.combat(); if (!c || c.over || c.awaiting) return c; window.__ev.step(40); } return window.__ev.combat(); },
+      toPlay:  function () { for (var i = 0; i < 300 && window.__ev.state === 'combat'; i++) window.__ev.step(40); return window.__ev.state; },
+      // run a whole fight with a per-turn strategy fn(snapshot) -> 'Ember'|'Thorn'|'Tide'|'guard'.
+      fight: function (strat) {
+        var safety = 0;
+        while (safety++ < 4000) {
+          var c = window.__ev.combat(); if (!c || c.over) break;
+          if (c.awaiting) { var mv = strat(c); if (mv === 'guard') window.__ev.combatGuard(); else window.__ev.combatAttack(mv); }
+          else window.__ev.step(40);
+        }
+        return window.__ev.combat();
+      }
+    };`;
+
+  // 22 — trigger: enters combat at three seeds, reads below three, reads (no
+  // re-fight) after the guardian is beaten.
+  {
+    const cp = await browser.newPage({ viewport: { width: 900, height: 600 } });
+    cp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(combat): ' + m.text()); });
+    cp.on('pageerror', e => consoleErrors.push('pageerror(combat): ' + e.message));
+    await cp.goto(url);
+    await cp.waitForFunction(() => window.__ev && window.__ev.state);
+    await cp.evaluate(COMBAT_DRIVER);
+    const cev = fn => cp.evaluate(fn);
+
+    await cev(() => window.__ev.start());
+    // below three seeds the Ember is still a plain read, unchanged.
+    const below = await cev(() => {
+      window.__ev.place(20, 5, 'up'); window.__ev.action();
+      const r = { reading: window.__ev.reading, state: window.__ev.state, t: window.__ev.signText }; window.__ev.dismiss(); return r;
+    });
+    check('below three seeds the Ember is still a plain read', below.reading === true && below.state === 'reading' && /barely a glow/.test(below.t));
+    // at three seeds + guardian unbeaten: action enters combat (the real path).
+    const entered = await cev(() => { window.__cb.enter(); return { state: window.__ev.state, snap: window.__ev.combat() }; });
+    check('three seeds + action at the Ember enters combat via the real trigger',
+      entered.state === 'combat' && entered.snap && entered.snap.foe === 'the Hollow' && entered.snap.over === null);
+
+    // the snapshot reports the readable weakness / resistance / HP / queue.
+    const snap = await cev(() => window.__cb.toAwait());
+    check('the fight exposes HP, the foe\'s weakness (Ember) and resistance (Tide)',
+      snap.foeHP === snap.foeMaxHP && snap.playerHP === snap.playerMaxHP && snap.weak === 'Ember' && snap.resist === 'Tide');
+    check('the gauge yields a who\'s-next queue led by the faster traveler',
+      Array.isArray(snap.queue) && snap.queue.length >= 2 && snap.queue[0].id === 'player');
+    check('it is the player\'s turn and input is awaited', snap.awaiting === true);
+
+    // element multipliers + log naming, across three turns of one fight.
+    const mul = await cev(() => {
+      var out = {};
+      var c = window.__cb.toAwait(); var h0 = c.foeHP;
+      window.__ev.combatAttack('Ember'); out.ember = { dmg: h0 - window.__ev.combat().foeHP, log: window.__ev.combat().log.slice(-1)[0] };
+      c = window.__cb.toAwait(); h0 = c.foeHP;
+      window.__ev.combatAttack('Thorn'); out.thorn = { dmg: h0 - window.__ev.combat().foeHP, log: window.__ev.combat().log.slice(-1)[0] };
+      c = window.__cb.toAwait(); h0 = c.foeHP;
+      window.__ev.combatAttack('Tide');  out.tide  = { dmg: h0 - window.__ev.combat().foeHP, log: window.__ev.combat().log.slice(-1)[0] };
+      return out;
+    });
+    check('Ember (the weakness) hits x1.5 and names elements + multiplier + damage in the log',
+      mul.ember.dmg === 21 && /Your Ember strikes the Hollow/.test(mul.ember.log) && /×1\.5/.test(mul.ember.log) && /21/.test(mul.ember.log));
+    check('Thorn (neutral) hits x1', mul.thorn.dmg === 14 && /×1 /.test(mul.thorn.log + ' '));
+    check('Tide (the resistance) hits x0.5', mul.tide.dmg === 7 && /×0\.5/.test(mul.tide.log));
+
+    // input is ignored during the foe's turn (awaiting false): a poke does nothing.
+    const offturn = await cev(() => {
+      window.__cb.toAwait();
+      window.__ev.combatAttack('Ember');                 // consume the player's turn
+      var before = window.__ev.combat();                 // awaiting now false
+      var hp0 = before.foeHP;
+      window.__ev.combatAttack('Ember'); window.__ev.combatGuard();   // off-turn pokes
+      var after = window.__ev.combat();
+      return { awaiting: before.awaiting, hpUnchanged: after.foeHP === hp0, guarding: after.guarding };
+    });
+    check('combat input is ignored during the foe\'s turn (awaiting false)',
+      offturn.awaiting === false && offturn.hpUnchanged === true && offturn.guarding === false);
+    await cp.close();
+  }
+
+  // 23 — a driven WIN: strike the weakness, guard the telegraphed crush. The
+  // guardian is beaten, HP is restored, and we return to play beside the Ember.
+  {
+    const wp = await browser.newPage({ viewport: { width: 900, height: 600 } });
+    wp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(win): ' + m.text()); });
+    wp.on('pageerror', e => consoleErrors.push('pageerror(win): ' + e.message));
+    await wp.goto(url);
+    await wp.waitForFunction(() => window.__ev && window.__ev.state);
+    await wp.evaluate(COMBAT_DRIVER);
+    const result = await wp.evaluate(() => {
+      window.__ev.start();
+      // take the Warden's charge so the relight quest is visible in the log.
+      (function talk(tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (var i = 0; i < 8; i++) { var d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        var d = window.__ev.dialog(); if (d && d.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (var j = 0; j < 8 && window.__ev.dialog(); j++) window.__ev.action();
+        window.__ev.dismiss();
+      })(20, 8, 'right', 1);
+      window.__cb.enter();
+      var faced = window.__ev.player;                    // beside the Ember, facing up
+      var end = window.__cb.fight(function (c) { return c.plan === 'crush' ? 'guard' : 'Ember'; });
+      var over = end ? end.over : null;
+      var beatenAtWin = window.__ev.flags.guardianBeaten;
+      var afterState = window.__cb.toPlay();
+      return { over: over, beatenAtWin: beatenAtWin, afterState: afterState,
+        beaten: window.__ev.flags.guardianBeaten, tx: window.__ev.player.tx, ty: window.__ev.player.ty, faced: faced };
+    });
+    check('good play wins the fight (strike the weakness, guard the crush)', result.over === 'win');
+    check('a win sets guardianBeaten', result.beatenAtWin === true && result.beaten === true);
+    check('a win returns to play beside the Ember', result.afterState === 'play' && result.tx === 20 && result.ty === 5);
+    // after the win, facing the Ember at three seeds is a plain read again (no re-fight).
+    const postWin = await wp.evaluate(() => {
+      window.__ev.dismiss(); window.__ev.place(20, 5, 'up'); window.__ev.action();
+      var r = { state: window.__ev.state, reading: window.__ev.reading, t: window.__ev.signText }; window.__ev.dismiss(); return r;
+    });
+    check('after the guardian is beaten the Ember is a plain read again (no re-fight)',
+      postWin.state === 'reading' && postWin.reading === true && /the way to the heart stands clear/.test(postWin.t));
+    // the relight quest return step now reads the open-way label, still not done.
+    const q = await wp.evaluate(() => window.__ev.quests().find(x => x.id === 'relight'));
+    check('after the win the return step reads the open way but the quest still never completes',
+      /way home lies open/.test(q.steps[3].text) && q.steps[3].done === false && q.complete === false);
+    await wp.close();
+  }
+
+  // 24 — a driven LOSE: strike the resistance, never guard. HP is restored, we
+  // return to play, the guardian is NOT beaten, and the fight is retriggerable.
+  {
+    const lp = await browser.newPage({ viewport: { width: 900, height: 600 } });
+    lp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(lose): ' + m.text()); });
+    lp.on('pageerror', e => consoleErrors.push('pageerror(lose): ' + e.message));
+    await lp.goto(url);
+    await lp.waitForFunction(() => window.__ev && window.__ev.state);
+    await lp.evaluate(COMBAT_DRIVER);
+    const lose = await lp.evaluate(() => {
+      window.__ev.start(); window.__cb.enter();
+      var end = window.__cb.fight(function () { return 'Tide'; });     // only ever the resistance
+      var over = end ? end.over : null;
+      var afterState = window.__cb.toPlay();
+      // retriggerable: face the Ember again -> a fresh fight at full HP.
+      window.__ev.place(20, 5, 'up'); window.__ev.action();
+      var re = window.__ev.combat();
+      return { over: over, afterState: afterState, beaten: window.__ev.flags.guardianBeaten,
+        reState: window.__ev.state, rePlayerHP: re ? re.playerHP : null, reMax: re ? re.playerMaxHP : null };
+    });
+    check('bad play loses the fight (strike the resistance, never guard)', lose.over === 'lose');
+    check('a loss returns to play without beating the guardian (no permadeath)',
+      lose.afterState === 'play' && lose.beaten === false);
+    check('a loss leaves the fight retriggerable at full, restored HP',
+      lose.reState === 'combat' && lose.rePlayerHP === lose.reMax && lose.rePlayerHP > 0);
+    await lp.close();
+  }
+
+  // 25 — the fight on a phone (~380px): the D-pad/HUD hide, the combat bar shows,
+  // its buttons are on-screen and a real tap attacks. Reduced motion holds the
+  // hit-flash at zero; motion lets it flash. Garbage input never crashes.
+  {
+    const mc = await browser.newContext({ viewport: { width: 380, height: 720 }, hasTouch: true, isMobile: true });
+    const mp = await mc.newPage();
+    mp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(combatPhone): ' + m.text()); });
+    mp.on('pageerror', e => consoleErrors.push('pageerror(combatPhone): ' + e.message));
+    await mp.goto(url);
+    await mp.waitForFunction(() => window.__ev && window.__ev.state);
+    await mp.evaluate(COMBAT_DRIVER);
+    await mp.locator('#btnA').tap();                                   // begin
+    await mp.evaluate(() => { window.__cb.enter(); window.__cb.toAwait(); });
+    await mp.waitForTimeout(60);                                        // let a frame apply the .combat class
+    check('the combat bar is visible at 380px', await mp.locator('#btnEmber').isVisible());
+    check('the dead D-pad is hidden during a fight (phone)',
+      (await mp.evaluate(() => getComputedStyle(document.querySelector('.dpad')).display)) === 'none');
+    check('no horizontal page scroll with the fight open (phone)',
+      await mp.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    const btns = await mp.evaluate(() => ['btnEmber', 'btnThorn', 'btnTide', 'btnGuard'].map(id => {
+      const r = document.getElementById(id).getBoundingClientRect();
+      return { on: r.left >= 0 && r.right <= window.innerWidth && r.top >= 0 && r.bottom <= window.innerHeight, w: r.width, h: r.height };
+    }));
+    check('all four combat buttons sit on-screen and tappable-sized (phone)',
+      btns.every(b => b.on && b.w > 0 && b.h >= 44));
+    const hp0 = await mp.evaluate(() => window.__ev.combat().foeHP);
+    await mp.locator('#btnEmber').tap();                               // a real tap attacks
+    check('tapping a combat button attacks (the foe takes damage)',
+      (await mp.evaluate(() => window.__ev.combat().foeHP)) === hp0 - 21);
+
+    // reduced motion gates the hit-flash; motion lets it flash.
+    const flash = await mp.evaluate(() => {
+      window.__ev.setReducedMotion(true);
+      window.__cb.toAwait(); window.__ev.combatAttack('Ember'); var rm = window.__ev.combatFlash();
+      window.__ev.setReducedMotion(false);
+      window.__cb.toAwait(); window.__ev.combatAttack('Ember'); var on = window.__ev.combatFlash();
+      return { rm: rm, on: on };
+    });
+    check('reduced motion holds the combat hit-flash at zero', flash.rm === 0);
+    check('the combat hit-flash fires when motion is allowed', flash.on > 0);
+
+    // garbage input: mash keys/buttons, act off-turn, resize mid-fight — no crash.
+    await mp.evaluate(() => {
+      var keys = ['1', '2', '3', 'g', 'e', 't', 'd', 'G', 'q', 'i', 'Escape', ' ', 'Enter', 'ArrowUp', 'w', 'a', 's', 'f'];
+      for (var i = 0; i < 300; i++) {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: keys[(Math.random() * keys.length) | 0] }));
+        if (Math.random() < 0.4) window.__ev.combatAttack(['Ember', 'Thorn', 'Tide', 'nope'][(Math.random() * 4) | 0]);
+        if (Math.random() < 0.3) window.__ev.combatGuard();
+        window.__ev.step(16);
+      }
+    });
+    for (let i = 0; i < 6; i++) await mp.setViewportSize({ width: 320 + i * 40, height: 420 + i * 30 });
+    check('survives combat garbage input + mid-fight resizes', (await mp.evaluate(() => window.__ev.state)) != null);
+    await mc.close();
+  }
 
   // Console / page errors must be clean across the whole run.
   check('zero console errors across the run', consoleErrors.length === 0);
   if (consoleErrors.length) consoleErrors.forEach(e => console.log('    ! ' + e));
 
-  // Screenshot — a real running frame on a fresh page (clean flags): the quest
-  // log open at dusk, the main quest "Relight the Ember" in progress (two
-  // emberseeds gathered) and Mira's side errand underway — increment 4's
-  // quest-thread on display, with the "✦ n/3" HUD and Quests button in the corner.
+  // Screenshot — a real running frame on a fresh page (clean flags): the fight
+  // at the heart. The traveler faces the Hollow with all three emberseeds in
+  // hand — HP bars, the foe's readable weakness (Ember) and resistance (Tide),
+  // the who's-next turn queue, the element/Guard combat bar, and the combat log
+  // a few blows in. Increment 5's "what guards the dark" on display.
   {
     const sp = await browser.newPage({ viewport: { width: 960, height: 640 } });
     await sp.goto(url);
     await sp.waitForFunction(() => window.__ev && window.__ev.state);
     await sp.evaluate(() => {
       window.__ev.start(); window.__ev.setReducedMotion(false);
-      function talk(tx, ty, facing, pick) {
-        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
-        for (let i = 0; i < 8; i++) { const d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
-        const d = window.__ev.dialog();
-        if (d && d.choosing && pick != null) window.__ev.dialogPick(pick);
-        for (let i = 0; i < 8 && window.__ev.dialog(); i++) window.__ev.action();
-        window.__ev.dismiss();
+      window.__ev.giveSeeds();                               // TEST-ONLY: three seeds in the bag
+      window.__ev.place(20, 5, 'up'); window.__ev.action();  // face the Ember (20,4) + act -> the fight
+      // Advance time until it is the player's turn (the gauge fills), then strike
+      // twice with Ember so the foe is visibly wounded and the log reads as a
+      // fight underway; end on the player's turn so the combat bar is live.
+      function toTurn() {
+        for (var i = 0; i < 200; i++) {
+          var c = window.__ev.combat();
+          if (!c || c.over || c.awaiting) return;
+          window.__ev.step(16);
+        }
       }
-      talk(20, 8, 'right', 1);                                          // the Warden's charge -> questStarted
-      // gather two of the three emberseeds (so the log shows "(2/3)")
-      window.__ev.place(15, 13, 'left'); window.__ev.press('left'); for (let i = 0; i < 30; i++) window.__ev.step(40); window.__ev.release('left');
-      window.__ev.place(32, 7, 'up'); window.__ev.press('up'); for (let i = 0; i < 24; i++) window.__ev.step(40); window.__ev.release('up');
-      talk(6, 24, 'up', null);                                          // Mira opens -> miraTold
-      talk(6, 24, 'up', 0);                                             // "I'll bring you that light" -> the errand
-      window.__ev.toggleQuests();                                       // open the quest log
+      toTurn(); window.__ev.combatAttack('Ember');
+      toTurn(); window.__ev.combatAttack('Ember');
+      toTurn();                                              // land on the player's turn, foe wounded
     });
     await sp.waitForTimeout(240);                           // let the frame settle
     await sp.screenshot({ path: shot });
