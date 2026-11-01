@@ -651,18 +651,24 @@
   var CB_GAUGE_K = 0.02;       // gauge gained per (speed*ms); turn ORDER is invariant to this
   var CB_FOE_DELAY = 420;      // ms the foe's turn pauses before it acts (readable queue)
   var CB_END_DELAY = 1200;     // ms the win/lose banner holds before returning to play
+  var CB_CRUSH = 3;            // the crushing blow's damage multiplier (x this, before elements)
+  var CB_OPEN = 1;             // plain lashes the foe opens with before its wind-up -> crush rhythm
   var C = null;                // the live fight, or null
 
   function cbMake(id, name, element, maxHp, speed, atk, side) {
     return { id: id, name: name, element: element, maxHp: maxHp, hp: maxHp,
-             speed: speed, atk: atk, side: side, gauge: 0, guarding: false, flash: 0 };
+             speed: speed, atk: atk, side: side, gauge: 0, guardCharged: false, flash: 0 };
   }
-  // Balance: good play (strike the weakness, guard the telegraphed crush) wins
-  // the traveler through with HP to spare in ~6 turns; bad play (striking the
-  // resistance, never guarding) loses. Verified by the headless suite.
+  // Balance (verified by the headless deterministic sim): good play — strike the
+  // weakness (Ember, x1.5) most turns and GUARD each telegraphed crush — carries
+  // the traveler through with ~40% HP to spare (~11 turns). Pure aggression that
+  // ignores the telegraph eats the Hollow's crushes at full and DIES by a hair
+  // (the foe falls a blow short). Guarding every turn deals no damage and loses
+  // on the clock. So Guard is necessary, not optional. The crush is x3 (Thorn
+  // x1.5 vs Tide -> 54, halved to 27 by a charged guard).
   function startCombat() {
-    var player = cbMake("player", "the traveler", "Tide", 84, 10, 14, "player");
-    var foe    = cbMake("foe", FOE_NAME, "Thorn", 100, 7, 14, "foe");
+    var player = cbMake("player", "the traveler", "Tide", 120, 11, 14, "player");
+    var foe    = cbMake("foe", FOE_NAME, "Thorn", 150, 7, 12, "foe");
     C = {
       player: player, foe: foe, list: [player, foe],   // index order = gauge tie-break (player wins ties)
       awaiting: false,       // true ONLY on the player's turn, accepting input
@@ -670,29 +676,27 @@
       foeDelay: 0,           // ms left before the foe acts on its turn
       endDelay: 0,           // ms left on the win/lose banner
       over: null,            // null | "win" | "lose"
-      foePlan: "normal",     // the foe's telegraphed NEXT move: normal | windup | crush
-      lowStarted: false,     // has the foe entered its low-HP behaviour yet
+      foeActs: 0,            // how many actions the foe has taken (drives its cadence)
+      foePlan: cbFoePlanAt(0), // the foe's telegraphed NEXT move: normal | windup | crush
       log: [], rng: mulberry32(0x1A2B3C)
     };
     cbLog("sys", "The dark gathers where the Ember failed — " + FOE_NAME + " rises between you and the heart.");
     state = "combat";
   }
   function cbLog(kind, text) { C.log.push({ kind: kind, text: text }); if (C.log.length > 60) C.log.shift(); }
-  function cbLow() { return C.foe.hp > 0 && C.foe.hp < C.foe.maxHp / 3; }
 
-  // The foe's plan is its NEXT move, shown as the on-screen telegraph. It is
-  // recomputed after the player damages the foe (cbFoeReplan) and advanced after
-  // the foe acts (cbFoeAdvance). When the foe drops low it begins a wind-up ->
-  // crush cycle: the wind-up turn is harmless but telegraphs the crush, giving
-  // the player a turn to raise their guard before the heavy blow lands.
-  function cbFoeReplan() {
-    if (!cbLow()) { C.foePlan = "normal"; return; }
-    if (!C.lowStarted) { C.lowStarted = true; C.foePlan = "windup"; return; }
-    if (C.foePlan === "normal") C.foePlan = "windup";   // just crossed into low mid-sequence
-  }
-  function cbFoeAdvance(justDid) {
-    if (justDid === "windup") { C.foePlan = "crush"; return; }
-    C.foePlan = cbLow() ? "windup" : "normal";          // after a crush/normal, re-read the HP
+  // The foe's action stream is a readable, RECURRING cadence, not an end-game
+  // surprise: CB_OPEN plain lashes to open, then an endless wind-up -> crush
+  // rhythm. `foePlan` is the foe's NEXT action — the on-screen telegraph. A
+  // wind-up turn is harmless but warns that the very next foe turn is a crushing
+  // blow (x CB_CRUSH). Because Guard is a one-shot CHARGE — set once, it persists
+  // across your own turns and lapses only when a hit consumes it — raising it the
+  // moment the crush is telegraphed reliably halves that blow, however the speed
+  // gauge happens to interleave the turns. `i` is the index of the foe's NEXT
+  // action (0-based): 0..CB_OPEN-1 lash, then windup/crush/windup/crush...
+  function cbFoePlanAt(i) {
+    if (i < CB_OPEN) return "normal";
+    return ((i - CB_OPEN) % 2 === 0) ? "windup" : "crush";
   }
 
   // The deterministic speed gauge, continuous in time. Accrual happens ONLY in
@@ -710,7 +714,10 @@
   }
   function cbBeginTurn(act) {
     C.current = act;
-    act.guarding = false;                 // a combatant's guard expires when its own next turn arrives
+    // NB: a raised guard is NOT cleared here. It is a one-shot charge that
+    // persists across the player's own turns and is spent only when an incoming
+    // hit lands (cbFoeAct), so a guard raised on the telegraph still covers the
+    // crush even when the speed edge grants an intervening player turn.
     if (act.side === "player") { C.awaiting = true; }
     else { C.foeDelay = reduced ? 0 : CB_FOE_DELAY; }
   }
@@ -751,19 +758,25 @@
   function cbFoeAct() {
     var foe = C.foe, pl = C.player, plan = C.foePlan;
     if (plan === "windup") {
-      cbLog("foe", FOE_NAME + " draws the dark inward — a crushing blow is coming.");
+      // A harmless telegraph turn: it does NO damage and does NOT spend the
+      // guard charge, so a guard raised now carries through to the crush.
+      cbLog("foe", FOE_NAME + " draws the dark inward — a crushing blow is coming next.");
     } else {
       var crush = plan === "crush";
-      var base = foe.atk * (crush ? 2 : 1);
+      var base = foe.atk * (crush ? CB_CRUSH : 1);
       var m = multiplier(foe.element, pl.element);
-      var dmg = Math.round(base * m * (pl.guarding ? 0.5 : 1));
+      var raw = Math.round(base * m);
+      var guarded = pl.guardCharged;
+      var dmg = guarded ? Math.round(raw * 0.5) : raw;   // the charge soaks THIS hit...
+      if (guarded) pl.guardCharged = false;              // ...and is spent doing so
       pl.hp = Math.max(0, pl.hp - dmg);
       pl.flash = reduced ? 0 : 280;
-      var gn = pl.guarding ? " (you guard, halved)" : "";
+      var gn = guarded ? " (you guard, halved)" : "";
       var lead = crush ? FOE_NAME + "'s crushing " + foe.element : FOE_NAME + "'s " + foe.element;
       cbLog("foe", lead + " lashes the traveler — ×" + fmtMult(m) + gn + " → " + dmg + ".");
     }
-    cbFoeAdvance(plan);
+    C.foeActs++;
+    C.foePlan = cbFoePlanAt(C.foeActs);
     C.current = null;
     cbCheckEnd();
   }
@@ -779,14 +792,13 @@
     foe.flash = reduced ? 0 : 280;
     cbLog("player", "Your " + element + " strikes " + FOE_NAME + " — " +
       matchupWord(element, foe.element) + ", ×" + fmtMult(m) + " → " + dmg + ".");
-    cbFoeReplan();
     C.awaiting = false; C.current = null;
     cbCheckEnd();
   }
   function combatGuard() {
     if (!C || state !== "combat" || C.over || !C.awaiting) return;
-    C.player.guarding = true;
-    cbLog("player", "You set your guard — the next blow against you is halved.");
+    C.player.guardCharged = true;   // a one-shot charge; held until a hit spends it
+    cbLog("player", "You brace your guard — it halves the next blow to land, and holds until it does.");
     C.awaiting = false; C.current = null;
   }
   function cbCheckEnd() {
@@ -836,7 +848,7 @@
     else if (state === "inventory") { state = "play"; }
     else if (state === "quests") { state = "play"; }
   }
-  function press(dir) { if (DIR[dir]) { held[dir] = true; if (state === "play") player.facing = dir; } }
+  function press(dir) { if (DIR[dir] && state !== "combat") { held[dir] = true; if (state === "play") player.facing = dir; } }
   function release(dir) { if (DIR[dir]) held[dir] = false; }
 
   // --- update (fixed-ish step; dt clamped so a stall never teleports) ---
@@ -1606,7 +1618,7 @@
     }
     ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1; roundRect(bx, by, barW, bh, 5); ctx.stroke();
     ctx.fillStyle = "rgba(230,222,206,.9)"; ctx.font = "12px system-ui, sans-serif";
-    ctx.fillText("HP " + c.hp + "/" + c.maxHp + "    ◆ " + c.element + (c.guarding ? "    (guarding)" : ""), cx, by + bh + 15);
+    ctx.fillText("HP " + c.hp + "/" + c.maxHp + "    ◆ " + c.element + (c.guardCharged ? "    (guard up)" : ""), cx, by + bh + 15);
   }
 
   function drawCombat() {
@@ -1644,9 +1656,11 @@
     ctx.fillStyle = "rgba(200,222,200,.82)"; ctx.font = "12px system-ui, sans-serif";
     ctx.fillText("The Hollow is ◆ " + C.foe.element + " — weak to " + weaknessOf(C.foe.element) +
       ", resists " + resistOf(C.foe.element), cx, topY + 84 + 44);
-    // its telegraph
-    var tele = C.foePlan === "windup" ? "It is winding up a crushing blow — ready your guard." :
-               C.foePlan === "crush"  ? "A crushing blow is about to land — GUARD now!" :
+    // its telegraph. Guard is a one-shot charge that holds until a hit spends
+    // it, so the instruction is: Guard the turn the crush is telegraphed as
+    // COMING, and it stays up until the blow lands — even across your own turns.
+    var tele = C.foePlan === "windup" ? "A crushing blow is coming — Guard now; it holds until the blow lands." :
+               C.foePlan === "crush"  ? "The crushing blow falls next — Guard now if you haven't!" :
                "It readies a lashing strike.";
     ctx.fillStyle = C.foePlan === "normal" ? "rgba(220,200,170,.85)" : "rgba(255,170,110,.95)";
     ctx.font = (C.foePlan === "normal" ? "" : "700 ") + "13px system-ui, sans-serif";
@@ -1728,10 +1742,16 @@
   }
 
   // --- loop ---------------------------------------------------------
-  var last = 0;
+  // `loopPaused` lets the headless suite freeze the rAF-driven updates so that
+  // ONLY explicit __ev.step() calls advance the sim (deterministic by
+  // construction). `last` keeps tracking wall-clock while paused, so resuming
+  // never applies a huge accumulated dt. render() still runs, so the canvas and
+  // its state-driven CSS classes stay live even while paused.
+  var last = 0, loopPaused = false;
   function frame(now) {
     if (!last) last = now;
-    update(now - last); last = now;
+    var dt = now - last; last = now;
+    if (!loopPaused) update(dt);
     render();
     requestAnimationFrame(frame);
   }
@@ -1904,6 +1924,10 @@
     action: action,
     dismiss: dismiss,
     step: function (ms) { update(ms || 16); },
+    // Freeze / unfreeze the rAF loop. Paused, only step() advances the sim, so a
+    // suite can drive the world a fixed step at a time with no wall-clock leak.
+    pauseLoop: function () { loopPaused = true; },
+    resumeLoop: function () { loopPaused = false; last = 0; },
     setReducedMotion: function (b) { reduced = !!b; },
     // place the traveler on a tile centre (test convenience for the scenic
     // screenshot and for reach-independent read checks); does not alter balance.
@@ -1994,7 +2018,7 @@
         foe: C.foe.name, foeHP: C.foe.hp, foeMaxHP: C.foe.maxHp,
         playerHP: C.player.hp, playerMaxHP: C.player.maxHp,
         weak: weaknessOf(C.foe.element), resist: resistOf(C.foe.element),
-        element: C.foe.element, plan: C.foePlan, guarding: C.player.guarding,
+        element: C.foe.element, plan: C.foePlan, guarding: C.player.guardCharged,
         queue: cbQueue(6).map(function (c) { return { id: c.id, name: c.name, element: c.element }; }),
         awaiting: C.awaiting, over: C.over,
         log: C.log.map(function (l) { return l.text; })

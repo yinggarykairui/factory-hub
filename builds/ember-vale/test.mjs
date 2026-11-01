@@ -33,9 +33,33 @@ async function main() {
   const wait = ms => page.waitForTimeout(ms);
   const ev = fn => page.evaluate(fn);
   const releaseAll = () => ev(() => { ['up','down','left','right'].forEach(d => window.__ev.release(d)); window.__ev.dismiss(); });
+  // Make a page deterministic: freeze its rAF loop AND seed Math.random (a fixed
+  // mulberry32) so every page's fuzz is reproducible run to run. Call it right
+  // after each page's __ev is ready, before any check drives it.
+  const freeze = (p) => p.evaluate(() => {
+    window.__ev.pauseLoop();
+    var s = 0x1234567 >>> 0;
+    Math.random = function () {
+      s = (s + 0x6D2B79F5) >>> 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  });
 
   await page.goto(url);
   await page.waitForFunction(() => window.__ev && window.__ev.state);
+  // Determinism, two parts:
+  //  (1) Freeze the rAF loop right after load so ONLY explicit step() calls
+  //      advance the sim — no wall-clock leaks between evaluate() round-trips.
+  //      The few checks that exercise REAL keyboard/d-pad motion resume it
+  //      briefly (and pause again); the screenshot page runs the loop live.
+  //  (2) Seed the in-page RNG. The fuzz sections below call Math.random() to
+  //      place() the traveler on random tiles; an unseeded run can land on a
+  //      world-item tile and consume it, flaking a later check (the lantern
+  //      errand). index.html itself uses no Math.random, so seeding is safe and
+  //      makes the whole run reproducible (deterministic by construction).
+  await freeze(page);
   await wait(60);
 
   // 1 — title screen renders, Enter starts play.
@@ -47,7 +71,9 @@ async function main() {
   await page.keyboard.press('Enter');
   check('Enter begins play', await ev(() => window.__ev.state) === 'play');
 
-  // 2 — 4-directional movement (WASD + arrows).
+  // 2 — 4-directional movement (WASD + arrows). Real key events + wall-clock
+  // motion, so the live loop runs for this block, then is frozen again.
+  await ev(() => window.__ev.resumeLoop());
   await ev(() => window.__ev.place(20, 12, 'down'));
   let before = await ev(() => window.__ev.player.x);
   await page.keyboard.down('d'); await wait(180); await page.keyboard.up('d');
@@ -56,6 +82,7 @@ async function main() {
   await page.keyboard.down('ArrowUp'); await wait(180); await page.keyboard.up('ArrowUp');
   check('arrow keys move the player (up)', (await ev(() => window.__ev.player.y)) < before - 4);
   await releaseAll();
+  await ev(() => window.__ev.pauseLoop());
 
   // 3 — axis-separated collision: slide along a wall, no corner clip, cannot enter solids.
   // Slide: against the left tree-wall (col 1), pushing left+down keeps X pinned but Y slides.
@@ -143,11 +170,13 @@ async function main() {
   check('A button is visible at 360px', await page.locator('#btnA').isVisible());
   await ev(() => { window.__ev.dismiss(); window.__ev.place(20, 12, 'down'); });
   let ty0 = await ev(() => window.__ev.player.y);
+  await ev(() => window.__ev.resumeLoop());        // real d-pad hold -> wall-clock motion
   await page.locator('.dpad .up').dispatchEvent('pointerdown');
   await wait(220);
   await page.locator('.dpad .up').dispatchEvent('pointerup');
   check('d-pad actually moves the player', (await ev(() => window.__ev.player.y)) < ty0 - 3);
   await releaseAll();
+  await ev(() => window.__ev.pauseLoop());
   await ev(() => window.__ev.place(20, 26, 'right'));
   await page.locator('#btnA').dispatchEvent('pointerdown');
   check('A button triggers a read', await ev(() => window.__ev.reading));
@@ -293,6 +322,7 @@ async function main() {
     tp.on('pageerror', e => consoleErrors.push('pageerror(touch): ' + e.message));
     await tp.goto(url);
     await tp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(tp);
     await tp.locator('#btnA').tap();
     check('tap on A begins the game from the title', (await tp.evaluate(() => window.__ev.state)) === 'play');
     await tp.evaluate(() => { window.__ev.dismiss(); window.__ev.place(20, 26, 'right'); });
@@ -331,6 +361,7 @@ async function main() {
     dp.on('pageerror', e => consoleErrors.push('pageerror(dialog): ' + e.message));
     await dp.goto(url);
     await dp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(dp);
     await dp.locator('#btnA').tap();                               // begin
     await dp.evaluate(() => window.__ev.place(16, 23, 'up'));       // face Bram at (16,22)
     await dp.locator('#btnA').tap();                               // open the conversation (page 0)
@@ -535,6 +566,7 @@ async function main() {
     ep.on('pageerror', e => consoleErrors.push('pageerror(empty): ' + e.message));
     await ep.goto(url);
     await ep.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(ep);
     await ep.evaluate(() => { window.__ev.start(); window.__ev.toggleInventory(); });
     await ep.waitForTimeout(80);
     const empty = await ep.evaluate(() => ({ open: window.__ev.inventoryOpen, n: window.__ev.bag.length,
@@ -553,6 +585,7 @@ async function main() {
     ip.on('pageerror', e => consoleErrors.push('pageerror(bag): ' + e.message));
     await ip.goto(url);
     await ip.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(ip);
     await ip.locator('#btnA').tap();                               // begin
     await ip.evaluate(() => {
       window.__ev.place(15, 13, 'left'); window.__ev.press('left'); for (let i = 0; i < 30; i++) window.__ev.step(40); window.__ev.release('left');   // seed A
@@ -630,6 +663,7 @@ async function main() {
     qp.on('pageerror', e => consoleErrors.push('pageerror(quest): ' + e.message));
     await qp.goto(url);
     await qp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(qp);
     await qp.locator('#btnA').tap();                               // begin
     // a deterministic dialogue driver: open, advance to the choices or the last
     // page, pick if choosing, finish any routed node, then dismiss.
@@ -856,6 +890,7 @@ async function main() {
     cp.on('pageerror', e => consoleErrors.push('pageerror(combat): ' + e.message));
     await cp.goto(url);
     await cp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(cp);
     await cp.evaluate(COMBAT_DRIVER);
     const cev = fn => cp.evaluate(fn);
 
@@ -918,6 +953,7 @@ async function main() {
     wp.on('pageerror', e => consoleErrors.push('pageerror(win): ' + e.message));
     await wp.goto(url);
     await wp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(wp);
     await wp.evaluate(COMBAT_DRIVER);
     const result = await wp.evaluate(() => {
       window.__ev.start();
@@ -931,14 +967,21 @@ async function main() {
       })(20, 8, 'right', 1);
       window.__cb.enter();
       var faced = window.__ev.player;                    // beside the Ember, facing up
-      var end = window.__cb.fight(function (c) { return c.plan === 'crush' ? 'guard' : 'Ember'; });
+      // Good play: strike the weakness, and Guard the moment the crush is
+      // telegraphed as coming (don't re-raise an already-held charge).
+      var end = window.__cb.fight(function (c) {
+        return (c.plan === 'windup' || c.plan === 'crush') && !c.guarding ? 'guard' : 'Ember';
+      });
       var over = end ? end.over : null;
+      var endHP = end ? end.playerHP : null, endMax = end ? end.playerMaxHP : null;
       var beatenAtWin = window.__ev.flags.guardianBeaten;
       var afterState = window.__cb.toPlay();
-      return { over: over, beatenAtWin: beatenAtWin, afterState: afterState,
+      return { over: over, endHP: endHP, endMax: endMax, beatenAtWin: beatenAtWin, afterState: afterState,
         beaten: window.__ev.flags.guardianBeaten, tx: window.__ev.player.tx, ty: window.__ev.player.ty, faced: faced };
     });
-    check('good play wins the fight (strike the weakness, guard the crush)', result.over === 'win');
+    check('good play wins the fight (strike the weakness, guard the telegraphed crush)', result.over === 'win');
+    check('good play wins with a comfortable margin (>= 1/3 HP left)',
+      result.over === 'win' && result.endHP >= result.endMax / 3 && result.endHP === 48 && result.endMax === 120);
     check('a win sets guardianBeaten', result.beatenAtWin === true && result.beaten === true);
     check('a win returns to play beside the Ember', result.afterState === 'play' && result.tx === 20 && result.ty === 5);
     // after the win, facing the Ember at three seeds is a plain read again (no re-fight).
@@ -963,6 +1006,7 @@ async function main() {
     lp.on('pageerror', e => consoleErrors.push('pageerror(lose): ' + e.message));
     await lp.goto(url);
     await lp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(lp);
     await lp.evaluate(COMBAT_DRIVER);
     const lose = await lp.evaluate(() => {
       window.__ev.start(); window.__cb.enter();
@@ -993,6 +1037,7 @@ async function main() {
     mp.on('pageerror', e => consoleErrors.push('pageerror(combatPhone): ' + e.message));
     await mp.goto(url);
     await mp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(mp);
     await mp.evaluate(COMBAT_DRIVER);
     await mp.locator('#btnA').tap();                                   // begin
     await mp.evaluate(() => { window.__cb.enter(); window.__cb.toAwait(); });
@@ -1037,6 +1082,78 @@ async function main() {
     for (let i = 0; i < 6; i++) await mp.setViewportSize({ width: 320 + i * 40, height: 420 + i * 30 });
     check('survives combat garbage input + mid-fight resizes', (await mp.evaluate(() => window.__ev.state)) != null);
     await mc.close();
+  }
+
+  // 26 — Guard semantics (the DEFECT-1 fix). Guard is a one-shot CHARGE: raised
+  // on the crush telegraph it is NOT reset when the player's own next turn
+  // arrives (the old trap), it persists across intervening player turns, and it
+  // halves the crush that finally lands (54 -> 27). A crush taken UNGUARDED is
+  // twice as bad. Pure aggression (never guard) does NOT comfortably win — it
+  // dies by a hair; pure defence (always guard) loses on the clock, dealing no
+  // damage. All deterministic (the loop is frozen; only step() advances).
+  {
+    const gp = await browser.newPage({ viewport: { width: 900, height: 600 } });
+    gp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(guard): ' + m.text()); });
+    gp.on('pageerror', e => consoleErrors.push('pageerror(guard): ' + e.message));
+    await gp.goto(url);
+    await gp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(gp);
+    await gp.evaluate(COMBAT_DRIVER);
+    const g = await gp.evaluate(() => {
+      function toAwait() { for (var i = 0; i < 600; i++) { var c = window.__ev.combat(); if (!c || c.over || c.awaiting) return c; window.__ev.step(40); } return window.__ev.combat(); }
+      function crushDmgs(end) { var d = []; ((end && end.log) || []).forEach(function (l) { var m = l.match(/crushing[^→]*→ (\d+)\./); if (m) d.push(+m[1]); }); return d; }
+      window.__ev.start();
+
+      // --- persistence: raise the guard on the wind-up telegraph, then keep
+      // taking the player's OWN turns until the crush lands; the charge must
+      // stay up across every one of them and halve the blow. ---
+      window.__cb.enter();
+      var c = toAwait(), s = 0;
+      while (c && !c.over && c.plan !== 'windup' && s++ < 40) { window.__ev.combatAttack('Ember'); c = toAwait(); }
+      var sawWindup = !!(c && c.plan === 'windup');
+      window.__ev.combatGuard();                         // raise on the wind-up (awaiting -> false)
+      c = toAwait();                                     // foe winds up (harmless); player's OWN next turn
+      var heldStates = [], persistCrushDmg = null, ownTurns = 0;
+      s = 0;
+      while (c && !c.over && s++ < 40) {
+        heldStates.push(c.guarding); ownTurns++;
+        var hpBefore = c.playerHP;
+        window.__ev.combatAttack('Ember');               // intervening own-turn attack
+        c = toAwait();
+        if (c && c.playerHP < hpBefore) {                // a foe hit landed between our turns
+          var logs = (c.log) || (window.__ev.combat() && window.__ev.combat().log) || [];
+          for (var li = logs.length - 1; li >= 0; li--) { var mm = logs[li].match(/crushing[^→]*→ (\d+)\./); if (mm) { persistCrushDmg = +mm[1]; break; } }
+          if (persistCrushDmg != null) break;
+        }
+      }
+      var heldOnOwnTurn = heldStates.length > 0 && heldStates[0] === true;
+      var stayedUp = heldStates.length > 0 && heldStates.every(function (h) { return h === true; });
+      window.__cb.fight(function () { return 'guard'; }); // play this one out (guard-only loses -> no guardianBeaten)
+
+      // --- strategy matrix (all lose; none sets guardianBeaten) ---
+      window.__cb.toPlay(); window.__cb.enter();
+      var never = window.__cb.fight(function () { return 'Ember'; });     // pure aggression
+      window.__cb.toPlay(); window.__cb.enter();
+      var always = window.__cb.fight(function () { return 'guard'; });    // pure defence
+
+      return {
+        sawWindup: sawWindup, heldOnOwnTurn: heldOnOwnTurn, stayedUp: stayedUp,
+        ownTurns: ownTurns, persistCrushDmg: persistCrushDmg,
+        never: { over: never.over, playerHP: never.playerHP, foeHP: never.foeHP, crush: crushDmgs(never) },
+        always: { over: always.over, foeHP: always.foeHP, foeMaxHP: always.foeMaxHP, crush: crushDmgs(always) }
+      };
+    });
+    check('a guard raised on the crush telegraph is still up on the player\'s own next turn (one-shot charge, not reset at turn start)',
+      g.sawWindup === true && g.heldOnOwnTurn === true && g.stayedUp === true && g.ownTurns >= 1);
+    check('the guard charge survives intervening player turns and halves the crush that lands (54 -> 27)',
+      g.persistCrushDmg === 27);
+    check('an UNGUARDED crush lands at full (54) — exactly twice as bad as a guarded one',
+      g.never.crush.length >= 2 && g.never.crush.every(d => d === 54) && 27 * 2 === 54);
+    check('pure aggression (never guard) does NOT comfortably win — it loses by a hair',
+      g.never.over === 'lose' && g.never.playerHP === 0 && g.never.foeHP > 0);
+    check('pure defence (always guard) loses on the clock, dealing no damage',
+      g.always.over === 'lose' && g.always.foeHP === g.always.foeMaxHP && g.always.crush.every(d => d === 27));
+    await gp.close();
   }
 
   // Console / page errors must be clean across the whole run.
