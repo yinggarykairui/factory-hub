@@ -106,7 +106,7 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   her window — her later lines, and a warm glow at her tile, reflect it. New
   flags `miraAsked`/`miraLit`; new `__ev` quest snapshot. In-memory only.
   **Shipped day 075** (143/143 headless; 107 increment-1/2/3 checks preserved).
-- [ ] **5/6 — What guards the dark (combat).** Turn-based encounters (the
+- [x] **5/6 — What guards the dark (combat).** Turn-based encounters (the
   turn-clash pattern) — **the guardian of the return.** The done-map's first
   wording ("a guardian holds the last emberseed") was overtaken by the
   increment-3/4 design: all three seeds are already placed and gatherable, and
@@ -115,10 +115,18 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   facing the Ember + action calls up **the Hollow** (the shade that gathered
   where the Ember failed). Element triangle Ember→Thorn→Tide→Ember (×1.5 weak /
   ×0.5 resist / ×1.0), a deterministic speed action-gauge turn queue, attack
-  with an element or Guard, the foe telegraphs and shifts when low; win sets
-  `flags.guardianBeaten` and returns beside the Ember, lose restores HP and
-  throws you back (retriggerable). The `relight` quest `complete()` stays false
-  and `guardianBeaten` is in-memory only — the relight + ending + saves are 6/6.
+  with an element or Guard. After an opening lash the Hollow runs a recurring
+  wind-up→crush rhythm, each crush telegraphed; Guard is a one-shot charge that
+  halves the next blow and holds until it lands, so it covers the crush through
+  the speed-edge extra turn. Win sets `flags.guardianBeaten` and returns beside
+  the Ember; lose restores HP and throws you back (retriggerable). The `relight`
+  quest `complete()` stays false and `guardianBeaten` is in-memory only — the
+  relight + ending + saves are 6/6. **Shipped day 077** (174/174 headless, 143
+  increment-1–4 checks preserved; one combined adversarial critic pass →
+  APPROVE-WITH-MINORS, fixer cycle 1 closed two MAJORs — the Guard mechanic was
+  a trap (pure aggression dominated) and the step()-driven suite leaked the
+  page's rAF loop and flaked; both fixed and the balance re-verified: good play
+  wins ~40% HP, never-guard loses by a hair, always-guard loses on the clock).
 - [ ] **6/6 — Relight and remember (saves + ending).** Save/load the run (the
   save-crystal pattern); relighting the Ember resolves the story; an ending
   screen. The epic closes `shipped` when this done-map completes.
@@ -140,12 +148,15 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   lesson). It must persist the full in-memory run: the `flags` object (now
   including `miraAsked`/`miraLit`), the `bag`, the drained world/errand item
   lists, and each door's unlocked (MAP-rewritten) state.
-- The main quest's "return to the Ember" step is intentionally non-completable in
-  increment 4 (`done` always false, `complete()` always false). Increment 5
-  (combat clears the guardian holding the last seed) and increment 6 (relight +
-  ending) must wire this step's done-state and the quest's completion to those
-  events — the quest-thread derives from state, so they only need the backing
-  flags/conditions, not a rewrite of the log.
+- The main quest's "return to the Ember" step. Increment 5 added the fight that
+  gates the return and sets `flags.guardianBeaten` on a win; the return step's
+  **label** now reflects it ("The way home lies open — relight the Ember"), but
+  its `done` and the quest's `complete()` are **deliberately still false** — the
+  relight is increment 6. Increment 6 (relight + ending) wires this step's
+  done-state and the quest's completion to the relight event; the quest-thread
+  derives from state, so it needs the backing flag/condition, not a rewrite of
+  the log. (`guardianBeaten` is in-memory until increment 6's save blob persists
+  it alongside the flags, bag, drained item lists, and unlocked doors.)
 - The dialogue graph gained a `give` field (a node/choice may hand a bag item
   over on resolve, via `applyGive`), introduced for Mira's lantern delivery.
   Later deliver/trade interactions should reuse it rather than add a parallel
