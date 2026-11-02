@@ -99,26 +99,102 @@
     return /^https?:\/\//i.test(url) ? url : null;
   }
 
-  // The KPI line is prose that carries markdown links. Rendered as one
-  // textContent it showed readers the raw [text](url) source -- and the URL
-  // inside it was the longest unbreakable token on the page. Emit real nodes:
-  // text stays text, links become links, nothing is parsed as HTML.
-  function renderKpi(line) {
-    var re = /\[([^\]]*)\]\(([^)\s]+)\)/g, at = 0, m;
-    kpiEl.textContent = '';
-    while ((m = re.exec(line)) !== null) {
-      if (m.index > at) kpiEl.appendChild(document.createTextNode(line.slice(at, m.index)));
-      var href = safeHref(m[2]);
-      if (href) {
-        var a = document.createElement('a');
-        a.href = href; a.textContent = m[1];
-        kpiEl.appendChild(a);
-      } else {
-        kpiEl.appendChild(document.createTextNode(m[1]));
-      }
-      at = m.index + m[0].length;
+  // Match a code span (CommonMark 6.5) at a backtick run starting at `pos`: an
+  // opening run of N backticks closed by the next run of exactly N. Returns the
+  // span's bounds, or null when the run has no equal-length closer -- then the
+  // backticks are literal, as CommonMark says.
+  function matchCodeSpan(s, pos) {
+    var n = s.length, i = pos;
+    while (i < n && s.charAt(i) === '`') i++;
+    var openLen = i - pos, contentStart = i;
+    while (i < n) {
+      if (s.charAt(i) === '`') {
+        var runStart = i;
+        while (i < n && s.charAt(i) === '`') i++;
+        if (i - runStart === openLen) return { end: i, contentStart: contentStart, contentEnd: runStart };
+      } else i++;
     }
-    kpiEl.appendChild(document.createTextNode(line.slice(at)));
+    return null;
+  }
+
+  // Match a link [label](url) at the `[` at `pos`. The closing `]` is found
+  // skipping any code span in the label, so a `]` inside backticks does not end
+  // the label. url keeps the original [^)\s]+ shape: non-empty, no whitespace,
+  // terminated by `)`. Returns bounds or null. charAt past the end yields '',
+  // which fails every char test, so no bounds guard is needed.
+  function matchLink(s, pos) {
+    var n = s.length, i = pos + 1, labelStart = i;
+    while (i < n) {
+      var c = s.charAt(i);
+      if (c === '`') { var cs = matchCodeSpan(s, i); if (cs) { i = cs.end; continue; } i++; continue; }
+      if (c === ']') break;
+      i++;
+    }
+    if (s.charAt(i) !== ']') return null;
+    var labelEnd = i;
+    i++;
+    if (s.charAt(i) !== '(') return null;
+    i++;
+    var urlStart = i;
+    while (i < n && s.charAt(i) !== ')' && !/\s/.test(s.charAt(i))) i++;
+    if (s.charAt(i) !== ')' || i === urlStart) return null;
+    return { end: i + 1, labelStart: labelStart, labelEnd: labelEnd, url: s.slice(urlStart, i) };
+  }
+
+  // Render the inline-markdown subset the KPI line uses -- code spans and links
+  // -- into `parent` as real DOM nodes, never innerHTML. Code spans bind
+  // tighter than links (CommonMark 6.5): a complete code span protects its
+  // contents, so `[x](y)` inside backticks stays literal code and never becomes
+  // a link (the "order matters" case #104 names). A link label is rendered
+  // recursively, so a code span inside a label renders as <code> within the
+  // link. An unbalanced backtick and a non-link `[` fall through as literal
+  // text. Followable URLs are gated by safeHref; a non-http(s) link renders
+  // just its label text, as the first link-only renderer did.
+  function appendInline(parent, s) {
+    var n = s.length, i = 0, textStart = 0;
+    function flush(upto) {
+      if (upto > textStart) parent.appendChild(document.createTextNode(s.slice(textStart, upto)));
+    }
+    while (i < n) {
+      var c = s.charAt(i);
+      if (c === '`') {
+        var cs = matchCodeSpan(s, i);
+        if (cs) {
+          flush(i);
+          var code = document.createElement('code');
+          code.textContent = s.slice(cs.contentStart, cs.contentEnd);
+          parent.appendChild(code);
+          i = cs.end; textStart = i; continue;
+        }
+      } else if (c === '[') {
+        var lk = matchLink(s, i);
+        if (lk) {
+          flush(i);
+          var label = s.slice(lk.labelStart, lk.labelEnd), href = safeHref(lk.url);
+          if (href) {
+            var a = document.createElement('a');
+            a.href = href;
+            appendInline(a, label);
+            parent.appendChild(a);
+          } else {
+            appendInline(parent, label);
+          }
+          i = lk.end; textStart = i; continue;
+        }
+      }
+      i++;
+    }
+    flush(n);
+  }
+
+  // The KPI line is prose carrying inline code spans and markdown links.
+  // Rendered as one textContent it showed readers raw backticks and the
+  // [text](url) source -- and the URL was the longest unbreakable token on the
+  // page. Emit real nodes: text stays text, code spans become <code>, links
+  // become links, nothing is parsed as HTML.
+  function renderKpi(line) {
+    kpiEl.textContent = '';
+    appendInline(kpiEl, line);
   }
 
   function parse(md) {
