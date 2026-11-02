@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.16.0
+manual_version: 1.17.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -1237,6 +1237,48 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.17.0** (2026-11-02) — meta #104, day 078: the hub's Pages renderer stops
+  printing the KPI line's inline code spans as literal backticks. Since
+  `cccaf94` the line's **links** rendered as links while every `` `sha` ``,
+  `` `filename` ``, `` `identifier` `` and `` `label` `` on it — dozens — still
+  showed raw backticks, the most visible defect on the factory's own storefront.
+
+  **One renderer, two inline constructs, and the precedence between them is the
+  whole fix.** `renderKpi` was a single global-regex pass over links; it now
+  walks the line through `matchCodeSpan` + `matchLink` + `appendInline`, emitting
+  real DOM nodes (`createTextNode`/`createElement`), never `innerHTML` — so the
+  §15 "ledger text is data" guarantee and `safeHref`'s `javascript:`/`data:` gate
+  are untouched. **Code spans bind tighter than links** (CommonMark §6.5): a
+  *complete* code span protects its contents, so `` `[x](y)` `` inside backticks
+  stays literal code and never becomes a link — the "order matters" the issue
+  names. A link label is rendered recursively, so a code span inside a label
+  becomes `<code>` within the link; an **unbalanced** backtick and a non-link
+  `[` fall through as literal text.
+
+  **Verified twice, the brief's own way.** Headless against the live served page
+  (the issue's repro): no backtick in `innerText`, code spans as `<code>`, links
+  intact, no raw `[text](url)` source, 0px horizontal overflow at 320/360/390/1200
+  px, no console errors. And the **shipped functions, extracted from `index.html`**,
+  against every negative control the brief lists: a code span holding `[x](y)` or a
+  bare URL stays code (no link); a code span holding `]` does not end its label
+  early; an unbalanced backtick is literal; a real link still links; a code span
+  inside a label renders as `<code>` within the `<a>`; a `javascript:` URL is not
+  followed; raw `<img …>` and `` `<b>` `` are text, not HTML; and the overlap case
+  `[a `` ` ``b](c)`` ` `` d` resolves code-span-first. 21/21 assertions green.
+
+  **Scope held.** `index.html` only, plus this version/changelog block. The index
+  *table* cells were already correct (no backticks there) and are untouched;
+  emphasis and other markdown constructs are out of scope; no CSS restyle of
+  `<code>` beyond the inherited mono KPI font. **No canary:** this edits
+  `index.html` and the version/changelog block, none of §1–§3 or §7–§9 (§14's
+  canary list). This ship touches the hub's web storefront, so its must-pass set is
+  a web page's seven, judged against the hub: the build renders correctly (verified
+  headless against the served files, byte-identical to what Pages serves), but the
+  hub's own missing LICENSE and root README (**#65**) fail two lines, and the live
+  `*.github.io` render cannot be fetched from the sandbox (**#136**) — both
+  pre-existing, untouched here, §11's *Unverifiable* rather than a failure of this
+  ship. The phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.16.0** (2026-10-31) — meta #94, day 076: the §16 graduation-audit tool day
   034 scoped out now exists, at `scripts/graduation_audit.py`, with
