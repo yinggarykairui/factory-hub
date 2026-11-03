@@ -4,7 +4,7 @@ A short 2D role-playing game, built one piece at a time. You arrive in a valley 
 
 ![screenshot](screenshot.png)
 
-*The fight at the heart — the traveler faces the Hollow with all three emberseeds in hand. A crushing blow is telegraphed ("Guard now; it holds until the blow lands"), above both HP bars, the foe's readable weakness (Ember) and resistance (Tide), the who's-next turn queue, the element/Guard combat bar, and the combat log a few blows in.*
+*The ending — the Ember relit, the night closed. "The Ember is lit" rests over the now-lit vale: the heart-fire has climbed back to a steady gold, the dusk lifting toward dawn, with the run's close in a few lines and the choice to stay in the warm valley or begin again.*
 
 **[Live demo](https://yinggarykairui.github.io/ember-vale/)**
 
@@ -20,7 +20,9 @@ Walk into Ember Vale at dusk and explore it. Move the traveler with the arrow ke
 
 **What guards the dark.** Gather all three emberseeds and face the Ember to carry the light home, and the dark that gathered where the fire failed rises against you — **the Hollow**. The fight is turn-based: you and the Hollow fill a speed gauge, and a small queue shows who acts next. Attack with **Ember**, **Thorn**, or **Tide** — the three run on a ring, and striking into the foe's weakness lands for half again while its resisted element lands for half; every blow names the elements and the number in the log. The Hollow is weak to Ember and shrugs off Tide, and it tells you so on screen. After an opening lash it settles into a rhythm: it draws the dark inward — a **wind-up** that telegraphs a **crushing blow** on its next turn — then crushes, then winds up again. **Guard** the moment the crush is telegraphed. Your guard is a charge: it halves the next blow to land and holds until it does, so it covers the crush even when your speed edge grants you a turn in between — you never have to time it to the exact frame. The crush hits hard enough that trading blows and ignoring the telegraph loses the fight, and guarding every turn deals no damage and loses on the clock; guard each crush and strike the weakness between them and you come through with HP to spare. Beat it and the way to the heart stands open; fall and the dark throws you back to try again. On a keyboard: `1`/`E` Ember, `2`/`T` Thorn, `3`/`D` Tide, `G` Guard — or tap the buttons on a phone.
 
-This is **increment 5 of 6**, built on the increment-1 overworld, the increment-2 people, the increment-3 items, and the increment-4 quest log. The fight that guards the return is in; what's left, tracked in [PROJECT.md](PROJECT.md), is saving the run and the ending that actually relights the Ember (6). Beating the Hollow opens the way but does not relight the fire, and nothing is saved yet — quest progress, what you carry, which doors you opened, and whether the guardian is beaten are remembered only while the page is open.
+**Relight and remember.** Beat the Hollow and the way to the heart stands open. Face the Ember with the three seeds and press action, and you set them into the cold fire. It catches. The heart-fire climbs back to a steady gold, the dusk lifts toward dawn, and the night closes on an ending that reads back what you did. The vale stays lit — stay and wander it, or begin anew. And the whole run saves itself as you play: seeds picked up, doors opened, people spoken to, the Hollow beaten, the Ember lit. Close the tab and the title offers **Continue**, so the night is yours to finish in your own time. One save, kept in your browser; an old or unreadable save is refused, never half-loaded.
+
+This is the **complete game** — the overworld (1), the people who stayed (2), what you carry (3), the thread of the quest (4), what guards the dark (5), and now the relight, the ending, and saves (6). The factory's 15-part RPG arc finishes here as one short, resumable game you can play from dusk to dawn. The six increments are tracked in [PROJECT.md](PROJECT.md).
 
 ## How to run
 
@@ -42,4 +44,4 @@ Seeded ([#88](https://github.com/yinggarykairui/factory-hub/issues/88)) — the 
 
 ---
 
-*Day 077 of an autonomous build factory — the ember-vale epic began on day 069; this is its fifth increment. [factory-hub](https://github.com/yinggarykairui/factory-hub)*
+*Day 079 of an autonomous build factory — the ember-vale epic ran from day 069 to day 079 across six increments; this is the last, and the game is complete. [factory-hub](https://github.com/yinggarykairui/factory-hub)*

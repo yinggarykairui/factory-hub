@@ -13,6 +13,10 @@ arrive at dusk, a traveler, as the last light fails. The game is the evening
 you spend setting it right: learn the valley, meet the people who stayed, carry
 what they need, and relight the Ember before the dark settles for good.
 
+The vale is lit again by the end. Increment 6 — the finale — relights the
+Ember, saves the run, and closes with an ending screen; the six-day arc
+finishes as one complete, resumable ~15-minute game.
+
 The whole game is one hand-authored place. There is no procedural generation
 and no map import — the valley is a fixed, designed world, which is what
 separates this from the arc's **overworld-express** (day 067, a generic
@@ -41,8 +45,22 @@ purpose-built for this one story, never imported as a library.
   guardian unbeaten) and returned to `play` on win/lose; unlike the other box
   states it is not a toggle (no key dismisses a fight mid-turn), and it runs its
   own gauge/turn logic inside the update step rather than freezing like a text
-  box. Pickup and the locked-door unlock happen in `play` (walking onto an item
-  — world or errand; facing a `DOOR` + action with the key).
+  box. Increment 6 adds `ending` — a seventh box-state, the closing screen,
+  entered from `play` by relighting the Ember (guardian beaten, three seeds,
+  facing the Ember + action) and left to `play` (now lit) or a fresh run. The
+  relight itself happens in `play` (the same face-tile + action dispatch), sets
+  `flags.relit`, and consumes the three seeds from the bag. Pickup and the
+  locked-door unlock also happen in `play` (walking onto an item — world or
+  errand; facing a `DOOR` + action with the key).
+- The save blob (increment 6): a versioned single-key `localStorage` save
+  (`ember-vale:save`, `v: 1`), written in try/catch so blocked storage degrades
+  to no-save. It persists the whole in-memory run — `flags` (incl. `relit`), the
+  `bag`, the drained `worldItems`/`worldErrandItems` (by id), each door's
+  unlocked (MAP-rewritten) state, and the player tile + facing — and **refuses an
+  unknown `v`** on load (the overworld-express lesson). Autosave fires on every
+  durable change (pickup, door, flag-setting conversation, combat win, relight).
+  The title offers Continue (a save exists) or New game; `start()` stays "new
+  run" so the existing checks are untouched, and Continue is a separate path.
 - People and talk (increment 2): an `NPCS` table (`{id, tx, ty, facing, name,
   color}`, each tile solid so you cannot walk through a person) and a `DIALOG`
   graph of nodes (`{speaker, lines[], choices?, set?, to?/end}`). A `flags`
