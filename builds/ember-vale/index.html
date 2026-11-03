@@ -87,6 +87,10 @@
   .combatbar button:active { background: rgba(230,150,60,.85); color: #2a1405; border-color: #ffd27a; }
   #screen.combat .combatbar { display: flex; }
   #screen.combat .dpad, #screen.combat .act, #screen.combat .hud { display: none; }
+  /* The ending screen (increment 6) is a frozen close like a read: its two
+     choices are drawn on the canvas and tapped, so every overworld control is
+     dead weight and hidden. */
+  #screen.ending .dpad, #screen.ending .act, #screen.ending .hud, #screen.ending .combatbar { display: none; }
 </style>
 </head>
 <body>
@@ -117,7 +121,7 @@
 "use strict";
 (function () {
   // ===================================================================
-  // EMBER VALE — increments 1–4.
+  // EMBER VALE — the complete game, increments 1–6.
   //   1: the overworld — a hand-authored dusk valley you walk and read.
   //   2: the people who stayed — NPCs you can walk up to and talk with,
   //      branching flag-gated dialogue, and the Warden setting the main quest
@@ -130,16 +134,25 @@
   //      fully-completable side errand (fetch a lantern, deliver it to Mira).
   //      Every step's done-state is derived from live state (flags + bag +
   //      seed count), never a parallel bookkeeping copy.
+  //   5: what guards the dark — turn-based combat (the Hollow guards the heart):
+  //      an element ring (Ember->Thorn->Tide), a deterministic speed-gauge turn
+  //      queue, attack or Guard the telegraphed crush; a win opens the way.
+  //   6: relight and remember — facing the Ember with the guardian beaten and
+  //      three seeds RELIGHTS it (the seeds are consumed, flags.relit set, the
+  //      vale lit), an ending screen closes the story, and the whole run is
+  //      saved to a versioned localStorage slot (Continue on the title). THE
+  //      ARC IS COMPLETE: one resumable ~15-minute RPG.
   // Vanilla JS + <canvas>, zero dependencies, no network, no images, no fonts.
   // Everything is drawn from code so it runs offline from file://.
   // State: "title" -> "play" <-> "reading"   (signposts/Ember, one-shot read)
   //                           <-> "dialog"    (people, pages + choices)
   //                           <-> "inventory" (the bag panel; movement frozen)
-  //                           <-> "quests"    (the quest log; movement frozen).
-  // Quest state is the in-memory `flags` object; the bag + the door's unlocked
-  // state are in memory only too — the save blob arrives in increment 6. The
-  // box-states never overlap. The quest log derives, never bookkeeps; no
-  // combat, no save, no relight yet.
+  //                           <-> "quests"    (the quest log; movement frozen)
+  //                            -> "combat"    (the Hollow; its own turn/gauge loop)
+  //                            -> "ending"    (the relight close; Stay / New game).
+  // Quest + run state lives in memory and is persisted to a versioned save slot
+  // (increment 6), which refuses an unknown schema on load. The box-states never
+  // overlap; the quest log derives, never bookkeeps.
   // ===================================================================
 
   var TILE = 32;              // world tile size, px
@@ -349,7 +362,7 @@
   // Quest state. In memory only (increment 6 adds the save blob); read when an
   // NPC picks its opening node, written when a node or a choice resolves.
   var flags = { questStarted: false, wardenHeard: false, miraTold: false, bramEased: false,
-                miraAsked: false, miraLit: false, guardianBeaten: false };
+                miraAsked: false, miraLit: false, guardianBeaten: false, relit: false };
 
   // --- what you carry (increment 3): items, the bag, the locked door ---
   // Collectibles sit on non-solid (walkable) tiles. Walking onto an item's tile
@@ -399,23 +412,24 @@
   var QUESTS = [
     { id: "relight", name: "Relight the Ember",
       visible:  function () { return flags.questStarted; },
-      complete: function () { return false; },                 // never completable this increment
+      complete: function () { return flags.relit; },           // completes when the Ember is relit (increment 6)
       steps: [
         { id: "charge", label: function () { return "Take the Warden's charge"; },
           done: function () { return flags.wardenHeard; } },
         { id: "ask",    label: function () { return "Ask the valley folk where the emberseeds lie"; },
           done: function () { return flags.miraTold; } },
-        { id: "gather", label: function () { return "Gather emberseeds (" + seedCount() + "/3)"; },
-          done: function () { return seedCount() === 3; } },
+        { id: "gather", label: function () { return "Gather emberseeds (" + (flags.relit ? 3 : seedCount()) + "/3)"; },
+          done: function () { return seedCount() === 3 || flags.relit; } },   // the relight consumes the seeds; stays done after
         { id: "return", label: function () {
-            // The return step evolves with state but is never completable here
-            // (the relight is increment 6): before three seeds it names the
+            // The return step evolves with state: before three seeds it names the
             // gathering; at three seeds it names the fight that bars the heart;
-            // once the guardian is beaten it names the open way to the relight.
+            // once the guardian is beaten it names the open way; once relit it is
+            // done and names the warm vale (increment 6 wires done() to flags.relit).
+            if (flags.relit)          return "The Ember is lit — Ember Vale is warm again";
             if (flags.guardianBeaten) return "The way home lies open — relight the Ember";
             if (seedCount() === 3)    return "Face what guards the dark at the heart";
             return "Carry three emberseeds to the heart of the vale"; },
-          done: function () { return false; } }               // foreshadowed, not completable (incr 5+6)
+          done: function () { return flags.relit; } }           // completes on the relight (increment 6)
       ] },
     { id: "lantern", name: "A light for Mira's window",
       visible:  function () { return flags.miraAsked; },        // flag-gated: invisible until Mira asks
@@ -427,9 +441,11 @@
           done: function () { return flags.miraLit; } }
       ] }
   ];
-  // Post-fight (increment 5): once the Hollow is beaten, facing the Ember is a
-  // plain read again — the way is open, but the relighting itself waits (incr 6).
-  var EMBER_OPEN_LINE = "The Hollow is gone, and the way to the heart stands clear. The three seeds are warm in your hand — but relighting the Ember is a thing for the small hours, and the night is not done yet.";
+  // Post-relight (increment 6): once the Ember is lit, facing it is a plain warm
+  // read — never a re-relight. (Increment 5's EMBER_OPEN_LINE — "the night is
+  // not done yet" — was the 5/6 placeholder; increment 6 turns that interaction
+  // into the actual relight, so the read is only reached after the Ember burns.)
+  var EMBER_LIT_LINE = "The Ember burns steady and gold, and its warmth reaches the far cottages. Ember Vale is awake again — and you are the reason the dark turned back tonight.";
 
   // A brief floating toast ("Picked up an emberseed.", "The iron key turns.").
   // `toast` keeps the last text (for the test hook); `toastT` is its fade timer.
@@ -438,7 +454,7 @@
   function setToast(t) { toast = t; toastT = TOAST_MS; }
 
   // --- state --------------------------------------------------------
-  var state = "title";                  // "title" | "play" | "reading" | "dialog" | "inventory" | "quests" | "combat"
+  var state = "title";                  // "title" | "play" | "reading" | "dialog" | "inventory" | "quests" | "combat" | "ending"
   var player = { px: (SPAWN_TX + 0.5) * TILE, py: (SPAWN_TY + 0.5) * TILE, facing: "up", moving: false };
   var cam = { x: 0, y: 0 };
   var held = { up: false, down: false, left: false, right: false };
@@ -508,13 +524,19 @@
     if (npc) { openDialog(npc); return; }
     if (MAP[f.ty] && MAP[f.ty][f.tx] === DOOR) { tryDoor(f.tx, f.ty); return; }
     var line = READS[f.tx + "," + f.ty];
-    // The heart (increment 5): facing the Ember with all three seeds is the real
-    // gate. If the guardian still holds it, action CALLS UP THE FIGHT (not a read).
-    // Once the Hollow is beaten it is a plain read again — the way is open, the
-    // relighting waits (increment 6). Below three seeds it reads its base line.
-    if (f.tx === EMBER_TX && f.ty === EMBER_TY && seedCount() === 3) {
-      if (!flags.guardianBeaten) { startCombat(); return; }
-      line = EMBER_OPEN_LINE;
+    // The heart. The Ember is the story's hinge, dispatched by what you carry and
+    // what you have done (increments 5 and 6):
+    //   - once relit, it is a plain warm read (EMBER_LIT_LINE) — never re-fought
+    //     or re-lit, whatever the seed count;
+    //   - at three seeds, guardian unbeaten: action CALLS UP THE FIGHT (incr 5);
+    //   - at three seeds, guardian beaten, not yet relit: action RELIGHTS it (incr 6);
+    //   - otherwise (fewer than three seeds, not relit): its dim base read.
+    if (f.tx === EMBER_TX && f.ty === EMBER_TY) {
+      if (flags.relit) { line = EMBER_LIT_LINE; }
+      else if (seedCount() === 3) {
+        if (!flags.guardianBeaten) { startCombat(); return; }
+        startRelight(); return;
+      }
     }
     if (line != null) { signText = line; state = "reading"; hasRead = true; screenEl.classList.add("reading"); }
   }
@@ -523,7 +545,7 @@
   // bag; without the key it stays shut, the toast naming what would open it.
   function tryDoor(tx, ty) {
     var hasKey = bag.some(function (it) { return it.kind === "key"; });
-    if (hasKey) { MAP[ty][tx] = FLOOR; setToast("The iron key turns."); }
+    if (hasKey) { MAP[ty][tx] = FLOOR; setToast("The iron key turns."); saveGame(); }   // unlocking is durable (autosave)
     else { setToast("It's locked. Something small and iron would turn it."); }
   }
 
@@ -539,14 +561,14 @@
     state = "play"; dlgNode = null; dlgChoices = null; dlgChoiceRects = [];
     screenEl.classList.remove("talking");
   }
-  function applySet(set) { if (set) for (var k in set) if (set.hasOwnProperty(k)) flags[k] = set[k]; }
+  function applySet(set) { if (set) { for (var k in set) if (set.hasOwnProperty(k)) flags[k] = set[k]; saveGame(); } }   // a resolved flag is durable (autosave)
   // The give hook (increment 4), mirroring applySet: a node or choice that names
   // `give: "<kind>"` hands one bag item of that kind over on resolve — the
   // delivery half of Mira's lantern errand. One source of truth: the item simply
   // leaves the bag, so seedCount/hasLantern reflect it with no second flag.
   function applyGive(kind) {
     if (!kind) return;
-    for (var i = 0; i < bag.length; i++) if (bag[i].kind === kind) { bag.splice(i, 1); return; }
+    for (var i = 0; i < bag.length; i++) if (bag[i].kind === kind) { bag.splice(i, 1); saveGame(); return; }   // handing an item over is durable
   }
   // resolve the current node once its last page has been read.
   function resolveNode() {
@@ -806,6 +828,7 @@
     if (C.foe.hp <= 0) {
       C.over = "win"; C.awaiting = false; C.current = null; C.endDelay = CB_END_DELAY;
       flags.guardianBeaten = true;
+      saveGame();   // beating the guardian persists even if you close before relighting (increment 6)
       cbLog("win", "The Hollow unravels into cold sparks. The way to the heart lies open.");
       return true;
     }
@@ -821,6 +844,114 @@
   // (those are increment 6); a loss simply leaves the fight retriggerable.
   function cbExit() { state = "play"; C = null; }
 
+  // --- save / load: the save-crystal pattern (increment 6) ----------
+  // One versioned slot in localStorage. The save holds the WHOLE in-memory run —
+  // flags (incl. relit), the bag, the drained world/errand item lists (by id),
+  // each door's unlocked (MAP-rewritten) state, and the player's tile + facing —
+  // so a dropped session resumes exactly where it was. A load REFUSES an unknown
+  // schema version (the overworld-express lesson): a `v` that is not SAVE_VERSION
+  // is ignored, never half-applied. Every localStorage touch is wrapped so a
+  // private window or blocked storage degrades to "no save" instead of throwing.
+  var SAVE_KEY = "ember-vale:save", SAVE_VERSION = 1;
+  function serialize() {
+    return {
+      v: SAVE_VERSION,
+      player: { tx: tileOf(player.px), ty: tileOf(player.py), facing: player.facing },
+      flags: { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard,
+               miraTold: flags.miraTold, bramEased: flags.bramEased, miraAsked: flags.miraAsked,
+               miraLit: flags.miraLit, guardianBeaten: flags.guardianBeaten, relit: flags.relit },
+      bag: bag.map(function (it) { return { id: it.id, name: it.name, kind: it.kind, desc: it.desc }; }),
+      world:  worldItems.map(function (it) { return it.id; }),
+      errand: worldErrandItems.map(function (it) { return it.id; }),
+      doors:  DOORS.map(function (d) { return { tx: d.tx, ty: d.ty, unlocked: MAP[d.ty][d.tx] !== DOOR }; })
+    };
+  }
+  function saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(serialize())); } catch (e) {} }
+  function readSave() {
+    try {
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      var s = JSON.parse(raw);
+      if (!s || s.v !== SAVE_VERSION) return null;   // refuse an unknown / old schema
+      return s;
+    } catch (e) { return null; }
+  }
+  function hasSave() { return !!readSave(); }
+  function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} }
+  function applySaved(s) {
+    var f = s.flags || {};
+    flags.questStarted = !!f.questStarted; flags.wardenHeard = !!f.wardenHeard;
+    flags.miraTold = !!f.miraTold; flags.bramEased = !!f.bramEased;
+    flags.miraAsked = !!f.miraAsked; flags.miraLit = !!f.miraLit;
+    flags.guardianBeaten = !!f.guardianBeaten; flags.relit = !!f.relit;
+    bag = (s.bag || []).map(function (b) { return { id: b.id, name: b.name, kind: b.kind, desc: b.desc }; });
+    var wset = {}; (s.world  || []).forEach(function (id) { wset[id] = true; });
+    worldItems = ITEMS.filter(function (it) { return wset[it.id]; });
+    var eset = {}; (s.errand || []).forEach(function (id) { eset[id] = true; });
+    worldErrandItems = ERRAND_ITEMS.filter(function (it) { return eset[it.id]; });
+    (s.doors || []).forEach(function (d) {
+      if (MAP[d.ty] && typeof MAP[d.ty][d.tx] !== "undefined") MAP[d.ty][d.tx] = d.unlocked ? FLOOR : DOOR;
+    });
+    var p = s.player || {};
+    var ptx = (typeof p.tx === "number") ? p.tx : SPAWN_TX, pty = (typeof p.ty === "number") ? p.ty : SPAWN_TY;
+    player.px = (ptx + 0.5) * TILE; player.py = (pty + 0.5) * TILE;
+    if (p.facing && DIR[p.facing]) player.facing = p.facing;
+    player.moving = false;
+  }
+
+  // --- new game / continue (increment 6) ----------------------------
+  // newGame resets the whole mutable run to its opening state (and re-locks the
+  // door). It does NOT clear the save slot — the first autosave of the fresh run
+  // overwrites it, so a stray title nudge never destroys a save outright.
+  function newGame() {
+    flags.questStarted = flags.wardenHeard = flags.miraTold = flags.bramEased = false;
+    flags.miraAsked = flags.miraLit = flags.guardianBeaten = flags.relit = false;
+    bag = [];
+    worldItems = ITEMS.map(function (it) { return it; });
+    worldErrandItems = ERRAND_ITEMS.map(function (it) { return it; });
+    DOORS.forEach(function (d) { if (MAP[d.ty]) MAP[d.ty][d.tx] = DOOR; });   // re-lock the cottage
+    player.px = (SPAWN_TX + 0.5) * TILE; player.py = (SPAWN_TY + 0.5) * TILE;
+    player.facing = "up"; player.moving = false;
+    signText = ""; toast = ""; toastT = 0; C = null; endingT = 0;
+    state = "play"; playT = 0; clampCam();
+  }
+  function continueGame() {
+    var s = readSave();
+    if (!s) { newGame(); return; }   // nothing valid to load -> a fresh run
+    applySaved(s);
+    signText = ""; C = null; endingT = 0;
+    state = "play"; playT = 0; clampCam();
+  }
+  // The title's primary action: Continue a saved run, else begin a fresh one.
+  function beginFromTitle() { if (state !== "title") return; if (hasSave()) continueGame(); else newGame(); }
+
+  // --- the relight + the ending (increment 6) -----------------------
+  // The story's resolution. With the guardian beaten and three seeds carried,
+  // facing the Ember + action calls this: the three seeds are set into the cold
+  // heart (consumed from the bag), the Ember catches (flags.relit), the run is
+  // saved, and the game enters the ending screen. endingT is a cosmetic swell
+  // timer (zero under reduced motion); the ending is interactive immediately.
+  var endingT = 0;
+  function startRelight() {
+    for (var n = 0; n < 3; n++) {
+      for (var i = 0; i < bag.length; i++) { if (bag[i].kind === "seed") { bag.splice(i, 1); break; } }
+    }
+    flags.relit = true;
+    endingT = reduced ? 0 : 1600;
+    saveGame();
+    state = "ending";
+  }
+  // The two ending choices. Stay returns to the now-lit vale; New game opens a
+  // fresh run. endingSel tracks the keyboard/tap highlight; endingOptionRects are
+  // the view-space hit rects rebuilt each draw (the dialogue-choice pattern).
+  var endingSel = 0, endingOptionRects = [];
+  function endingStay() { if (state === "ending") { state = "play"; playT = 0; clampCam(); } }
+  function endingChoose(i) {
+    if (state !== "ending") return;
+    if (i === 1) newGame(); else endingStay();
+  }
+  function endingMove(d) { if (state === "ending") endingSel = (endingSel + d + 2) % 2; }
+
   // --- camera: follow the player, clamp to the world edge -----------
   function clampCam() {
     var mx = W * TILE - viewW, my = H * TILE - viewH;
@@ -829,10 +960,14 @@
   }
 
   // --- actions (shared by keys, touch and test hooks) ---------------
-  function start() { if (state === "title") { state = "play"; playT = 0; clampCam(); } }
+  // start() begins a FRESH run from the title (used by the test hook and as the
+  // new-game path). Continue is the separate beginFromTitle()/continueGame() path,
+  // so a stale save never auto-applies and the existing checks (all fresh) hold.
+  function start() { if (state === "title") newGame(); }
   function action() {
     if (state === "combat") { return; }   // a fight is not dismissible; it uses its own inputs
-    if (state === "title") { start(); return; }
+    if (state === "title") { beginFromTitle(); return; }   // Continue if a save exists, else a fresh run
+    if (state === "ending") { endingChoose(endingSel); return; }   // confirm the highlighted ending choice
     if (state === "reading") { dismiss(); return; }
     if (state === "dialog") { dialogAdvance(); return; }
     if (state === "inventory") { toggleInventory(); return; }   // action closes the bag
@@ -848,7 +983,7 @@
     else if (state === "inventory") { state = "play"; }
     else if (state === "quests") { state = "play"; }
   }
-  function press(dir) { if (DIR[dir] && state !== "combat") { held[dir] = true; if (state === "play") player.facing = dir; } }
+  function press(dir) { if (DIR[dir] && state !== "combat" && state !== "ending") { held[dir] = true; if (state === "play") player.facing = dir; } }
   function release(dir) { if (DIR[dir]) held[dir] = false; }
 
   // --- update (fixed-ish step; dt clamped so a stall never teleports) ---
@@ -859,6 +994,9 @@
     // Combat is the one box-state that is NOT a frozen read: it ticks its own
     // turn/gauge logic here instead of early-returning like the other states.
     if (state === "combat") { player.moving = false; cbTick(dt); return; }
+    // The ending screen is frozen like a read, but it ticks its cosmetic relight
+    // swell (endingT) so the glow can bloom; interactivity never waits on it.
+    if (state === "ending") { player.moving = false; if (endingT > 0) endingT = Math.max(0, endingT - dt); return; }
     if (state !== "play") { player.moving = false; return; }
     playT += dt;
     var vx = (held.right ? 1 : 0) - (held.left ? 1 : 0);
@@ -881,6 +1019,7 @@
         var it = worldItems.splice(i, 1)[0];
         bag.push(it);
         setToast("Picked up " + it.name + ".");
+        saveGame();   // a pickup is a durable change (increment 6 autosave)
         return;
       }
     }
@@ -891,6 +1030,7 @@
         var e = worldErrandItems.splice(j, 1)[0];
         bag.push(e);
         setToast("Picked up " + e.name + ".");
+        saveGame();   // a pickup is a durable change (increment 6 autosave)
         return;
       }
     }
@@ -1171,10 +1311,13 @@
     // While a fight runs, the overworld controls are dead weight — the .combat
     // class shows the combat bar and hides the D-pad, action button and HUD.
     screenEl.classList.toggle("combat", state === "combat");
+    // The ending screen hides every overworld control (like combat, minus the
+    // combat bar) — its own tappable choices are drawn on the canvas.
+    screenEl.classList.toggle("ending", state === "ending");
     // Keep the seed HUD in step: hidden on the title, shown everywhere else,
     // its count always current. Cheap to set every frame and never wrong.
     bagBtn.textContent = "✦ " + seedCount() + "/3";
-    hudEl.style.display = (state === "title" || state === "combat") ? "none" : "block";
+    hudEl.style.display = (state === "title" || state === "combat" || state === "ending") ? "none" : "block";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = "#0e0a12"; ctx.fillRect(0, 0, viewW, viewH);
 
@@ -1186,13 +1329,23 @@
       drawTile(MAP[ty][tx], Math.round(tx * TILE - cam.x), Math.round(ty * TILE - cam.y), tx, ty);
     }
 
-    // the Ember's warm radial glow, falling off with distance (additive).
+    // the Ember's warm radial glow, falling off with distance (additive). Once
+    // the Ember is relit (increment 6) the glow swells to a steady, brighter gold
+    // — and blooms further during the ending's relight beat (endingT) — so the
+    // lit vale is visibly warmer than the dying dusk you arrived in.
     var egx = (EMBER_TX + 0.5) * TILE - cam.x, egy = (EMBER_TY + 0.5) * TILE - cam.y;
-    var gr = 150 + (reduced ? 0 : Math.sin(animT / 650) * 22);
+    var bloom = (state === "ending" && !reduced) ? (endingT / 1600) * 120 : 0;   // transient swell on relight
+    var gr = (flags.relit ? 230 : 150) + (reduced ? 0 : Math.sin(animT / 650) * 22) + bloom;
     var g = ctx.createRadialGradient(egx, egy, 6, egx, egy, gr);
-    g.addColorStop(0, "rgba(255,150,60,.55)");
-    g.addColorStop(0.5, "rgba(230,110,50,.22)");
-    g.addColorStop(1, "rgba(230,110,50,0)");
+    if (flags.relit) {
+      g.addColorStop(0, "rgba(255,196,96,.78)");
+      g.addColorStop(0.5, "rgba(245,150,70,.34)");
+      g.addColorStop(1, "rgba(245,150,70,0)");
+    } else {
+      g.addColorStop(0, "rgba(255,150,60,.55)");
+      g.addColorStop(0.5, "rgba(230,110,50,.22)");
+      g.addColorStop(1, "rgba(230,110,50,0)");
+    }
     ctx.globalCompositeOperation = "lighter";
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(egx, egy, gr, 0, 6.3); ctx.fill();
 
@@ -1212,14 +1365,22 @@
     drawPlayer();
 
     // dusk: a sky-to-ground tint plus a breathing vignette over the whole view.
+    // Once the Ember is relit (increment 6) the dusk lifts toward a warm dawn —
+    // the tint warms and the vignette thins — the payoff of the finished run.
     var sky = ctx.createLinearGradient(0, 0, 0, viewH);
-    sky.addColorStop(0, "rgba(70,40,80,.30)");
-    sky.addColorStop(0.55, "rgba(30,20,45,.12)");
-    sky.addColorStop(1, "rgba(10,6,16,.45)");
+    if (flags.relit) {
+      sky.addColorStop(0, "rgba(90,60,70,.20)");
+      sky.addColorStop(0.55, "rgba(60,40,45,.08)");
+      sky.addColorStop(1, "rgba(30,18,22,.30)");
+    } else {
+      sky.addColorStop(0, "rgba(70,40,80,.30)");
+      sky.addColorStop(0.55, "rgba(30,20,45,.12)");
+      sky.addColorStop(1, "rgba(10,6,16,.45)");
+    }
     ctx.fillStyle = sky; ctx.fillRect(0, 0, viewW, viewH);
     var vr = Math.max(viewW, viewH) * (0.72 + (reduced ? 0 : Math.sin(animT / 2600) * 0.03));
     var vg = ctx.createRadialGradient(viewW / 2, viewH / 2, vr * 0.42, viewW / 2, viewH / 2, vr);
-    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(6,3,10,.7)");
+    vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, flags.relit ? "rgba(8,5,10,.42)" : "rgba(6,3,10,.7)");
     ctx.fillStyle = vg; ctx.fillRect(0, 0, viewW, viewH);
 
     if (state === "play" && !hasRead && playT < HINT_MS) drawHint();
@@ -1230,6 +1391,28 @@
     if (state === "inventory") drawInventory();
     if (state === "quests") drawQuests();
     if (state === "combat") drawCombat();
+    if (state === "ending") drawEnding();
+  }
+
+  // A centered stack of tappable menu buttons (title + ending reuse it). Draws
+  // each option as a rounded button and pushes its view-space hit rect — the same
+  // tap pattern as the dialogue choices and the inventory slots. `sel` highlights
+  // one row for the keyboard path; rectsOut is cleared and refilled each draw.
+  var titleOptionRects = [];
+  function drawMenu(options, cx, topY, rectsOut, sel) {
+    rectsOut.length = 0;
+    var bw = Math.min(260, viewW - 48), bh = 42, gap = 12;
+    for (var k = 0; k < options.length; k++) {
+      var x = cx - bw / 2, y = topY + k * (bh + gap), on = (k === sel);
+      ctx.fillStyle = on ? "rgba(230,150,60,.90)" : "rgba(32,22,38,.82)";
+      roundRect(x, y, bw, bh, 10); ctx.fill();
+      ctx.strokeStyle = on ? "#ffd27a" : "rgba(240,200,120,.4)"; ctx.lineWidth = 1.5;
+      roundRect(x, y, bw, bh, 10); ctx.stroke();
+      ctx.fillStyle = on ? "#2a1405" : "#f3e6d0";
+      ctx.font = "600 16px system-ui, sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(options[k].label, cx, y + bh / 2 + 5);
+      rectsOut.push({ x: x, y: y, w: bw, h: bh, i: options[k].i });
+    }
   }
 
   function drawTitle() {
@@ -1238,14 +1421,63 @@
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffcf8a";
     ctx.font = "700 " + Math.min(64, viewW * 0.12) + "px system-ui, sans-serif";
-    ctx.fillText("EMBER VALE", cx, cy - 26);
+    ctx.fillText("EMBER VALE", cx, cy - 60);
     ctx.fillStyle = "#d8c3b0";
     ctx.font = "16px system-ui, sans-serif";
-    ctx.fillText("A valley at dusk, and a heart-fire going out.", cx, cy + 8);
-    var blink = reduced ? 1 : (Math.sin(animT / 450) * 0.5 + 0.5);
-    ctx.fillStyle = "rgba(255,220,150," + (0.35 + 0.65 * blink) + ")";
+    ctx.fillText("A valley at dusk, and a heart-fire going out.", cx, cy - 28);
+    titleOptionRects.length = 0;
+    if (hasSave()) {
+      // A saved run: offer Continue (primary) and New game. Enter/tap continues,
+      // N starts over; either row is tappable.
+      drawMenu([{ label: "Continue", i: 0 }, { label: "New game", i: 1 }], cx, cy, titleOptionRects, -1);
+      ctx.fillStyle = "#9c8f7f"; ctx.font = "13px system-ui, sans-serif";
+      ctx.fillText("Enter / tap — continue  ·  N — new game", cx, cy + 128);
+    } else {
+      var blink = reduced ? 1 : (Math.sin(animT / 450) * 0.5 + 0.5);
+      ctx.fillStyle = "rgba(255,220,150," + (0.35 + 0.65 * blink) + ")";
+      ctx.font = "15px system-ui, sans-serif";
+      ctx.fillText("Press Enter / tap to begin", cx, cy + 16);
+    }
+    ctx.textAlign = "left";
+  }
+
+  // The ending screen (increment 6): the story's close. A full-bleed warm wash
+  // over the now-lit vale, a closing title, a short denouement that READS LIVE
+  // STATE (Mira's window named only when lit, Bram only when eased), and two
+  // tappable choices — Stay in the lit vale, or begin a New game.
+  function endingLines() {
+    var ls = ["The three emberseeds take, and the heart-fire climbs gold into the dark. Ember Vale wakes."];
+    if (flags.miraLit) ls.push("A lantern already burns in Mira's window to meet it — she will not watch the dawn alone.");
+    else ls.push("Across the valley the shutters open, one by one, to the new warmth.");
+    if (flags.bramEased) ls.push("Bram got to watch the Ember wake, just as the Warden promised him.");
+    ls.push("You came a stranger at dusk; the vale is warm again because you stayed the night.");
+    return ls;
+  }
+  function drawEnding() {
+    // a warm wash that deepens as the relight blooms (endingT), then settles.
+    var warm = 0.30 + (endingT > 0 ? (endingT / 1600) * 0.30 : 0);
+    ctx.fillStyle = "rgba(24,10,6," + warm.toFixed(3) + ")"; ctx.fillRect(0, 0, viewW, viewH);
+    ctx.fillStyle = "rgba(10,6,16,.52)"; ctx.fillRect(0, 0, viewW, viewH);
+    var cx = viewW / 2;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffd79a";
+    ctx.font = "700 " + Math.min(44, viewW * 0.085) + "px system-ui, sans-serif";
+    var titleY = Math.max(64, viewH * 0.16);
+    ctx.fillText("The Ember is lit", cx, titleY);
+    // denouement body, wrapped to the view width, centered.
     ctx.font = "15px system-ui, sans-serif";
-    ctx.fillText("Press Enter / tap to begin", cx, cy + 44);
+    var maxw = Math.min(viewW - 48, 460), ly = titleY + 34, lh = 21;
+    var lines = endingLines();
+    for (var i = 0; i < lines.length; i++) {
+      var ws = wrap(lines[i], maxw);
+      for (var j = 0; j < ws.length; j++) {
+        ctx.fillStyle = "#ece0cf"; ctx.fillText(ws[j], cx, ly); ly += lh;
+      }
+      ly += 8;   // a little air between paragraphs
+    }
+    // the choices sit below the text, clamped so they never leave the viewport.
+    var menuTop = Math.min(ly + 10, viewH - 120);
+    drawMenu([{ label: "Stay in the vale", i: 0 }, { label: "New game", i: 1 }], cx, menuTop, endingOptionRects, endingSel);
     ctx.textAlign = "left";
   }
 
@@ -1772,7 +2004,22 @@
       else if (ck === "g") { e.preventDefault(); combatGuard(); }
       return;
     }
-    if (e.key === "Enter") { e.preventDefault(); if (state === "title") start(); else action(); return; }
+    // On the ending screen the keyboard drives the two choices and nothing else:
+    // up/down move the highlight, Enter/Space/A confirm it, N jumps to a new
+    // game, Esc stays in the vale, every other key is swallowed.
+    if (state === "ending") {
+      var ek = e.key.toLowerCase();
+      if (ek === "n") { e.preventDefault(); newGame(); return; }
+      if (e.key === "ArrowUp"   || ek === "w") { e.preventDefault(); endingMove(-1); return; }
+      if (e.key === "ArrowDown" || ek === "s") { e.preventDefault(); endingMove(1); return; }
+      if (e.key === "Enter" || e.key === " " || e.code === "Space") { e.preventDefault(); endingChoose(endingSel); return; }
+      if (e.key === "Escape") { e.preventDefault(); endingStay(); return; }
+      e.preventDefault(); return;
+    }
+    // N on the title starts a NEW run even when a save exists (Continue is the
+    // primary Enter/tap path). Elsewhere N is free for the default dir handling.
+    if (state === "title" && (e.key === "n" || e.key === "N")) { e.preventDefault(); newGame(); return; }
+    if (e.key === "Enter") { e.preventDefault(); action(); return; }   // action() routes title -> beginFromTitle
     if (e.key === " " || e.code === "Space") { e.preventDefault(); action(); return; }
     if (e.key === "Escape") { e.preventDefault(); dismiss(); return; }
     // I / i opens or closes the bag (only from play / inventory, so it never
@@ -1800,7 +2047,7 @@
       if (state === "inventory") { inventoryMove((dir === "left" || dir === "up") ? -1 : 1); return; }
       // The quest log is read-only: swallow the arrows so no held direction sticks.
       if (state === "quests") { return; }
-      if (state === "title") start();
+      if (state === "title") { beginFromTitle(); return; }   // movement begins (or continues) the run
       press(dir);
     }
   }, { passive: false });
@@ -1809,7 +2056,7 @@
 
   // --- input: touch / click -----------------------------------------
   function bindHold(btn, dir) {
-    function on(e) { e.preventDefault(); if (state === "title") start(); press(dir); }
+    function on(e) { e.preventDefault(); if (state === "title") { beginFromTitle(); return; } press(dir); }
     function off(e) { if (e) e.preventDefault(); release(dir); }
     btn.addEventListener("pointerdown", on);
     btn.addEventListener("pointerup", off);
@@ -1872,7 +2119,32 @@
   // conversation: tapping a choice row picks it, tapping elsewhere turns the
   // page (while choosing, a tap off the choices does nothing — A / Esc still work).
   cv.addEventListener("pointerdown", function (e) {
-    if (state === "title") { start(); return; }
+    if (state === "title") {
+      // With a save, the title shows two tappable rows (Continue / New game);
+      // a tap on one picks it, a tap elsewhere continues (the primary action).
+      // With no save, any tap begins a fresh run.
+      if (titleOptionRects.length) {
+        var rt = cv.getBoundingClientRect(), tx = e.clientX - rt.left, ty = e.clientY - rt.top;
+        for (var ti = 0; ti < titleOptionRects.length; ti++) {
+          var tr = titleOptionRects[ti];
+          if (tx >= tr.x && tx <= tr.x + tr.w && ty >= tr.y && ty <= tr.y + tr.h) {
+            if (tr.i === 1) newGame(); else continueGame();
+            return;
+          }
+        }
+      }
+      beginFromTitle(); return;
+    }
+    if (state === "ending") {
+      // tap a choice row (Stay / New game); a tap elsewhere confirms the
+      // highlighted choice (Stay by default).
+      var re = cv.getBoundingClientRect(), ex = e.clientX - re.left, ey = e.clientY - re.top;
+      for (var ei = 0; ei < endingOptionRects.length; ei++) {
+        var er = endingOptionRects[ei];
+        if (ex >= er.x && ex <= er.x + er.w && ey >= er.y && ey <= er.y + er.h) { endingChoose(er.i); return; }
+      }
+      endingChoose(endingSel); return;
+    }
     if (state === "reading") { dismiss(); return; }
     if (state === "inventory") {
       var ri = cv.getBoundingClientRect();
@@ -1945,7 +2217,7 @@
     hintShowing: function () { return state === "play" && !hasRead && playT < HINT_MS; },
 
     // --- increment 2: people, flags, conversation ---
-    get flags() { return { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard, miraTold: flags.miraTold, bramEased: flags.bramEased, miraAsked: flags.miraAsked, miraLit: flags.miraLit, guardianBeaten: flags.guardianBeaten }; },
+    get flags() { return { questStarted: flags.questStarted, wardenHeard: flags.wardenHeard, miraTold: flags.miraTold, bramEased: flags.bramEased, miraAsked: flags.miraAsked, miraLit: flags.miraLit, guardianBeaten: flags.guardianBeaten, relit: flags.relit }; },
     get npcs() { return NPCS.map(function (n) { return { id: n.id, tx: n.tx, ty: n.ty, name: n.name }; }); },
     // live conversation snapshot, or null unless state === "dialog".
     dialog: function () {
@@ -2036,7 +2308,28 @@
     giveSeeds: function () {
       while (seedCount() < 3) bag.push({ id: "seedTest" + bag.length, name: "an emberseed", kind: "seed",
         desc: "A bright valley-stone. Three of these will wake the Ember." });
-    }
+    },
+
+    // --- increment 6: the relight, the ending, saves ---
+    get relit() { return flags.relit; },
+    get endingActive() { return state === "ending"; },
+    get endingSel() { return endingSel; },
+    // the ending-choice hit rects (view coords), for the tap test.
+    endingOptionRects: function () { return endingOptionRects.map(function (r) { return { x: r.x, y: r.y, w: r.w, h: r.h, i: r.i }; }); },
+    endingMove: endingMove,
+    endingChoose: endingChoose,
+    endingStay: endingStay,
+    // the title-menu hit rects (view coords); empty unless a save exists.
+    titleOptionRects: function () { return titleOptionRects.map(function (r) { return { x: r.x, y: r.y, w: r.w, h: r.h, i: r.i }; }); },
+    // save-slot introspection + pokes (same localStorage path as autosave).
+    hasSave: hasSave,
+    saveNow: saveGame,
+    clearSave: clearSave,
+    continueGame: continueGame,
+    newGame: newGame,
+    // write a raw object into the save slot (test convenience for the schema-
+    // refusal check — e.g. an unknown version); clearly marked, like `place`.
+    writeRawSave: function (obj) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(obj)); } catch (e) {} }
   };
 })();
 </script>
