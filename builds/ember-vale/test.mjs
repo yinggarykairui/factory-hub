@@ -1,8 +1,9 @@
-// Headless checks for Ember Vale (increments 1-2). Drives the SHIPPED
-// index.html over a file:// URL — never a replica. Fails on any console error
-// or page error, at any point. Prints "PASS n/n" and exits non-zero on any
-// failure. Sections 1-8/7b cover the overworld (increment 1); 9-13 cover the
-// people and the branching, flag-gated dialogue (increment 2).
+// Headless checks for Ember Vale (increments 1-6, the complete game). Drives the
+// SHIPPED index.html over a file:// URL — never a replica. Fails on any console
+// error or page error, at any point. Prints "PASS n/n" and exits non-zero on any
+// failure. The overworld + reading (1), people + dialogue (2), items + inventory
+// + the locked door (3), the quest log (4), turn-based combat (5), and the
+// relight + ending + versioned saves (6) each have their own section below.
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { createRequire } from 'module';
@@ -984,17 +985,23 @@ async function main() {
       result.over === 'win' && result.endHP >= result.endMax / 3 && result.endHP === 48 && result.endMax === 120);
     check('a win sets guardianBeaten', result.beatenAtWin === true && result.beaten === true);
     check('a win returns to play beside the Ember', result.afterState === 'play' && result.tx === 20 && result.ty === 5);
-    // after the win, facing the Ember at three seeds is a plain read again (no re-fight).
-    const postWin = await wp.evaluate(() => {
-      window.__ev.dismiss(); window.__ev.place(20, 5, 'up'); window.__ev.action();
-      var r = { state: window.__ev.state, reading: window.__ev.reading, t: window.__ev.signText }; window.__ev.dismiss(); return r;
-    });
-    check('after the guardian is beaten the Ember is a plain read again (no re-fight)',
-      postWin.state === 'reading' && postWin.reading === true && /the way to the heart stands clear/.test(postWin.t));
-    // the relight quest return step now reads the open-way label, still not done.
+    // Increment-5 semantics, re-read at the PRE-relight moment (before increment 6
+    // turns the Ember interaction into the relight): the return step reads the
+    // open way and the quest is still not complete.
     const q = await wp.evaluate(() => window.__ev.quests().find(x => x.id === 'relight'));
-    check('after the win the return step reads the open way but the quest still never completes',
+    check('after the win the return step reads the open way and the quest is not yet complete',
       /way home lies open/.test(q.steps[3].text) && q.steps[3].done === false && q.complete === false);
+    // Increment 6: facing the Ember after the win (three seeds carried) now
+    // RELIGHTS it — it is no longer the increment-5 placeholder read. (This is the
+    // one increment-5 assertion the spec'd behaviour change adapts, exactly as
+    // increment 5 adapted the increment-4 foreshadow read into the combat trigger.)
+    const relight = await wp.evaluate(() => {
+      window.__ev.dismiss(); window.__ev.place(20, 5, 'up'); window.__ev.action();
+      return { state: window.__ev.state, relit: window.__ev.flags.relit, seeds: window.__ev.seeds,
+               complete: window.__ev.quests().find(x => x.id === 'relight').complete };
+    });
+    check('after the win, facing the Ember + action relights it (the increment-6 resolution, not a read)',
+      relight.state === 'ending' && relight.relit === true && relight.seeds === 0 && relight.complete === true);
     await wp.close();
   }
 
@@ -1156,38 +1163,237 @@ async function main() {
     await gp.close();
   }
 
+  // ================= increment 6: relight, ending, saves =================
+  // The finale. With the guardian beaten and three seeds carried, facing the
+  // Ember relights it (seeds consumed, flags.relit, the vale lit), an ending
+  // screen closes the story, and the whole run is saved to a versioned
+  // localStorage slot (Continue on the title; an unknown schema is refused).
+
+  // 28 — the relight + the ending.
+  {
+    const rp = await browser.newPage({ viewport: { width: 960, height: 640 } });
+    rp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(relight): ' + m.text()); });
+    rp.on('pageerror', e => consoleErrors.push('pageerror(relight): ' + e.message));
+    await rp.goto(url);
+    await rp.waitForFunction(() => window.__ev && window.__ev.state);
+    await rp.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await freeze(rp);
+    await rp.evaluate(COMBAT_DRIVER);
+
+    // a fresh load (cleared storage) has no save; the title offers only Begin.
+    const fresh = await rp.evaluate(() => ({ has: window.__ev.hasSave(), state: window.__ev.state, titleRects: window.__ev.titleOptionRects().length }));
+    check('a fresh load has no save and the title offers no Continue row', fresh.has === false && fresh.state === 'title' && fresh.titleRects === 0);
+
+    // win the Hollow (good play), then face the Ember + action to RELIGHT it.
+    const relit = await rp.evaluate(() => {
+      window.__ev.start();
+      // take the Warden's charge so the relight quest is visible in the log.
+      (function talk(tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (var i = 0; i < 8; i++) { var d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        var dd = window.__ev.dialog(); if (dd && dd.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (var j = 0; j < 8 && window.__ev.dialog(); j++) window.__ev.action();
+        window.__ev.dismiss();
+      })(20, 8, 'right', 1);
+      window.__cb.enter();
+      window.__cb.fight(function (c) { return (c.plan === 'windup' || c.plan === 'crush') && !c.guarding ? 'guard' : 'Ember'; });
+      window.__cb.toPlay();
+      var beaten = window.__ev.flags.guardianBeaten, seedsBefore = window.__ev.seeds;
+      window.__ev.place(20, 5, 'up'); window.__ev.action();   // the real relight path
+      return { beaten: beaten, seedsBefore: seedsBefore, state: window.__ev.state,
+               relit: window.__ev.flags.relit, seedsAfter: window.__ev.seeds,
+               complete: window.__ev.quests().find(x => x.id === 'relight').complete };
+    });
+    check('the relight consumes the three seeds and enters the ending',
+      relit.beaten === true && relit.seedsBefore === 3 && relit.state === 'ending' && relit.relit === true && relit.seedsAfter === 0);
+    check('the relight completes the main quest', relit.complete === true);
+    check('the relight autosaved the run', await rp.evaluate(() => window.__ev.hasSave()) === true);
+    await rp.waitForTimeout(50);   // let a frame draw so the ending's option rects exist
+    check('the ending screen offers two choices', await rp.evaluate(() => window.__ev.endingOptionRects().length) === 2);
+
+    // "Stay in the vale" returns to a lit play world; the Ember no longer re-lights.
+    const stay = await rp.evaluate(() => {
+      window.__ev.endingStay();
+      var s1 = window.__ev.state;
+      window.__ev.place(20, 5, 'up'); window.__ev.action();   // face the lit Ember -> a plain warm read
+      var r = { state1: s1, state2: window.__ev.state, reading: window.__ev.reading, t: window.__ev.signText, relit: window.__ev.flags.relit };
+      window.__ev.dismiss(); return r;
+    });
+    check('Stay returns to the lit vale and the Ember is a plain warm read, never re-lit',
+      stay.state1 === 'play' && stay.state2 === 'reading' && stay.reading === true && /burns steady/.test(stay.t) && stay.relit === true);
+    await rp.close();
+  }
+
+  // 29 — save round-trip: play, autosave, reload, Continue restores the run.
+  {
+    const sv = await browser.newPage({ viewport: { width: 900, height: 600 } });
+    sv.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(save): ' + m.text()); });
+    sv.on('pageerror', e => consoleErrors.push('pageerror(save): ' + e.message));
+    await sv.goto(url);
+    await sv.waitForFunction(() => window.__ev && window.__ev.state);
+    await sv.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await freeze(sv);
+
+    const before = await sv.evaluate(() => {
+      window.__ev.start();
+      window.__ev.place(33, 21, 'down'); window.__ev.step(16);   // walk onto the iron key -> bag
+      window.__ev.place(32, 6, 'down');  window.__ev.step(16);   // walk onto seed B -> bag
+      window.__ev.place(26, 22, 'down'); window.__ev.action();   // the key turns the SE cottage door
+      window.__ev.place(20, 12, 'left');                         // a distinctive tile + facing (no item here)
+      window.__ev.saveNow();                                     // capture this exact position (autosave fires on events, not every move)
+      return { has: window.__ev.hasSave(), seeds: window.__ev.seeds, bag: window.__ev.bag.length,
+               unlocked: window.__ev.doorLocked(26, 23) === false,
+               tx: window.__ev.player.tx, ty: window.__ev.player.ty, facing: window.__ev.player.facing };
+    });
+    check('a played run autosaves (pickup + door unlock)',
+      before.has === true && before.bag === 2 && before.seeds === 1 && before.unlocked === true);
+
+    await sv.reload();
+    await sv.waitForFunction(() => window.__ev && window.__ev.state);
+    const after = await sv.evaluate(() => {
+      var has = window.__ev.hasSave(), st0 = window.__ev.state;
+      window.__ev.continueGame();
+      return { has: has, st0: st0, state: window.__ev.state, seeds: window.__ev.seeds, bag: window.__ev.bag.length,
+               unlocked: window.__ev.doorLocked(26, 23) === false,
+               tx: window.__ev.player.tx, ty: window.__ev.player.ty, facing: window.__ev.player.facing };
+    });
+    check('after a reload the save is detected and the game boots to the title', after.has === true && after.st0 === 'title');
+    check('Continue restores the bag, seed count, unlocked door and player tile + facing',
+      after.state === 'play' && after.bag === 2 && after.seeds === 1 && after.unlocked === true &&
+      after.tx === 20 && after.ty === 12 && after.facing === 'left');
+
+    // a save with an unknown schema version is refused (treated as no save).
+    const refuse = await sv.evaluate(() => {
+      window.__ev.writeRawSave({ v: 999, flags: {}, bag: [] });
+      var refused = window.__ev.hasSave() === false;
+      window.__ev.clearSave();
+      return { refused: refused, afterClear: window.__ev.hasSave() };
+    });
+    check('a save with an unknown schema version is refused (treated as no save)', refuse.refused === true && refuse.afterClear === false);
+
+    // New game resets the whole run (and re-locks the door).
+    const reset = await sv.evaluate(() => {
+      window.__ev.newGame();                                     // a known fresh baseline (start() is a no-op mid-run)
+      window.__ev.place(33, 21, 'down'); window.__ev.step(16);   // key -> bag
+      window.__ev.place(26, 22, 'down'); window.__ev.action();   // unlock the door
+      var pre = { bag: window.__ev.bag.length, unlocked: window.__ev.doorLocked(26, 23) === false };
+      window.__ev.newGame();
+      return { pre: pre, bag: window.__ev.bag.length, seeds: window.__ev.seeds, locked: window.__ev.doorLocked(26, 23),
+               relit: window.__ev.flags.relit, items: window.__ev.items.length, state: window.__ev.state };
+    });
+    check('New game resets the run: empty bag, no seeds, door re-locked, four world items, not relit, back in play',
+      reset.pre.bag === 1 && reset.pre.unlocked === true &&
+      reset.bag === 0 && reset.seeds === 0 && reset.locked === true && reset.relit === false && reset.items === 4 && reset.state === 'play');
+    await sv.close();
+  }
+
+  // 30 — the relit state persists across a reload.
+  {
+    const pv = await browser.newPage({ viewport: { width: 900, height: 600 } });
+    pv.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(persist): ' + m.text()); });
+    pv.on('pageerror', e => consoleErrors.push('pageerror(persist): ' + e.message));
+    await pv.goto(url);
+    await pv.waitForFunction(() => window.__ev && window.__ev.state);
+    await pv.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await freeze(pv);
+    await pv.evaluate(COMBAT_DRIVER);
+    await pv.evaluate(() => {
+      window.__ev.start();
+      (function talk(tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (var i = 0; i < 8; i++) { var d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        var dd = window.__ev.dialog(); if (dd && dd.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (var j = 0; j < 8 && window.__ev.dialog(); j++) window.__ev.action();
+        window.__ev.dismiss();
+      })(20, 8, 'right', 1);
+      window.__cb.enter();
+      window.__cb.fight(function (c) { return (c.plan === 'windup' || c.plan === 'crush') && !c.guarding ? 'guard' : 'Ember'; });
+      window.__cb.toPlay();
+      window.__ev.place(20, 5, 'up'); window.__ev.action();   // relight (autosaves relit)
+      window.__ev.endingStay();
+    });
+    await pv.reload();
+    await pv.waitForFunction(() => window.__ev && window.__ev.state);
+    const cont = await pv.evaluate(() => {
+      window.__ev.continueGame();
+      return { relit: window.__ev.flags.relit, complete: window.__ev.quests().find(x => x.id === 'relight').complete, state: window.__ev.state };
+    });
+    check('the relit state persists across a reload (Continue -> relit, quest complete)',
+      cont.relit === true && cont.complete === true && cont.state === 'play');
+    await pv.close();
+  }
+
+  // 31 — the ending on a phone (~360px): renders, choices on-screen & tappable,
+  // reduced motion makes it instant, and non-exit garbage keeps it in the ending.
+  {
+    const ep = await browser.newPage({ viewport: { width: 360, height: 720 } });
+    ep.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(endPhone): ' + m.text()); });
+    ep.on('pageerror', e => consoleErrors.push('pageerror(endPhone): ' + e.message));
+    await ep.goto(url);
+    await ep.waitForFunction(() => window.__ev && window.__ev.state);
+    await ep.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await ep.evaluate(COMBAT_DRIVER);
+    await ep.evaluate(() => {
+      window.__ev.setReducedMotion(true);   // the relight/ending should be instant
+      window.__ev.pauseLoop();
+      window.__ev.start(); window.__cb.enter();
+      window.__cb.fight(function (c) { return (c.plan === 'windup' || c.plan === 'crush') && !c.guarding ? 'guard' : 'Ember'; });
+      window.__cb.toPlay();
+      window.__ev.place(20, 5, 'up'); window.__ev.action();   // relight -> ending
+    });
+    await ep.waitForTimeout(60);   // let one frame draw the ending's option rects
+    const es = await ep.evaluate(() => ({ state: window.__ev.state, rects: window.__ev.endingOptionRects().length }));
+    check('the ending renders its two choices at phone width (360px)', es.state === 'ending' && es.rects === 2);
+    check('no horizontal page scroll with the ending open (phone)',
+      await ep.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth) === true);
+    check('the ending choices sit fully on-screen (phone)',
+      await ep.evaluate(() => window.__ev.endingOptionRects().every(r => r.x >= 0 && r.x + r.w <= window.innerWidth && r.y >= 0 && r.y + r.h <= window.innerHeight)) === true);
+    const garbage = await ep.evaluate(() => {
+      for (var i = 0; i < 200; i++) {
+        var k = ['a', '1', 'g', 'ArrowUp', 'ArrowDown', 'q', 'i', 'w', 's', 'x', 'Tab'][(Math.random() * 11) | 0];
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: k }));
+      }
+      return window.__ev.state;
+    });
+    check('non-exit garbage input in the ending keeps it in the ending (no crash)', garbage === 'ending');
+    await ep.close();
+  }
+
   // Console / page errors must be clean across the whole run.
   check('zero console errors across the run', consoleErrors.length === 0);
   if (consoleErrors.length) consoleErrors.forEach(e => console.log('    ! ' + e));
 
-  // Screenshot — a real running frame on a fresh page (clean flags): the fight
-  // at the heart. The traveler faces the Hollow with all three emberseeds in
-  // hand — HP bars, the foe's readable weakness (Ember) and resistance (Tide),
-  // the who's-next turn queue, the element/Guard combat bar, and the combat log
-  // a few blows in. Increment 5's "what guards the dark" on display.
+  // Screenshot — a real running frame on a fresh page: the FINISHED game's close.
+  // The Hollow beaten and the Ember relit, the ending screen ("The Ember is lit")
+  // rests over the now-lit vale — the gold glow still blooming behind the
+  // denouement and the Stay / New game choices. Increment 6's resolution, the
+  // payoff of the six-day arc, on display (not the fight — that was increment 5).
   {
     const sp = await browser.newPage({ viewport: { width: 960, height: 640 } });
+    sp.on('pageerror', e => consoleErrors.push('pageerror(shot): ' + e.message));
     await sp.goto(url);
     await sp.waitForFunction(() => window.__ev && window.__ev.state);
+    await sp.evaluate(COMBAT_DRIVER);
     await sp.evaluate(() => {
-      window.__ev.start(); window.__ev.setReducedMotion(false);
-      window.__ev.giveSeeds();                               // TEST-ONLY: three seeds in the bag
-      window.__ev.place(20, 5, 'up'); window.__ev.action();  // face the Ember (20,4) + act -> the fight
-      // Advance time until it is the player's turn (the gauge fills), then strike
-      // twice with Ember so the foe is visibly wounded and the log reads as a
-      // fight underway; end on the player's turn so the combat bar is live.
-      function toTurn() {
-        for (var i = 0; i < 200; i++) {
-          var c = window.__ev.combat();
-          if (!c || c.over || c.awaiting) return;
-          window.__ev.step(16);
-        }
-      }
-      toTurn(); window.__ev.combatAttack('Ember');
-      toTurn(); window.__ev.combatAttack('Ember');
-      toTurn();                                              // land on the player's turn, foe wounded
+      try { localStorage.clear(); } catch (e) {}
+      window.__ev.setReducedMotion(false);
+      window.__ev.pauseLoop();
+      window.__ev.start();
+      // take the Warden's charge and ease Bram so the denouement reads full.
+      (function talk(tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (var i = 0; i < 8; i++) { var d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        var dd = window.__ev.dialog(); if (dd && dd.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (var j = 0; j < 8 && window.__ev.dialog(); j++) window.__ev.action();
+        window.__ev.dismiss();
+      })(20, 8, 'right', 1);
+      window.__cb.enter();                                   // face the Ember at three seeds -> the fight
+      window.__cb.fight(function (c) { return (c.plan === 'windup' || c.plan === 'crush') && !c.guarding ? 'guard' : 'Ember'; });
+      window.__cb.toPlay();                                  // good play wins
+      window.__ev.place(20, 5, 'up'); window.__ev.action();  // relight the Ember -> the ending screen
+      window.__ev.resumeLoop();                              // run live so the gold glow blooms
     });
-    await sp.waitForTimeout(240);                           // let the frame settle
+    await sp.waitForTimeout(240);                            // catch the ending mid-bloom
     await sp.screenshot({ path: shot });
     await sp.close();
   }
