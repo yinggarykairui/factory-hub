@@ -145,9 +145,17 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   a trap (pure aggression dominated) and the step()-driven suite leaked the
   page's rAF loop and flaked; both fixed and the balance re-verified: good play
   wins ~40% HP, never-guard loses by a hair, always-guard loses on the clock).
-- [ ] **6/6 — Relight and remember (saves + ending).** Save/load the run (the
+- [x] **6/6 — Relight and remember (saves + ending).** Save/load the run (the
   save-crystal pattern); relighting the Ember resolves the story; an ending
-  screen. The epic closes `shipped` when this done-map completes.
+  screen. **Shipped day 079** (190/190 headless, 174 increment-1–5 checks
+  preserved + the increment-6 section; the two increment-5 post-win assertions
+  that read the now-replaced `EMBER_OPEN_LINE` adapted to the relight). The
+  three seams increment 5 left are closed: the relight consumes the three
+  seeds and enters the ending, the `relight` quest completes off `flags.relit`,
+  and the whole run (flags incl. `relit`, bag, drained world/errand items,
+  unlocked doors, player tile) autosaves to a versioned localStorage slot that
+  refuses an unknown schema. **The done-map completes here and the epic closes
+  `shipped` — the six-day arc is finished.**
 
 ## Open threads
 
