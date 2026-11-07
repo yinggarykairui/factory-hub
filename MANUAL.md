@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.17.0
+manual_version: 1.18.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -441,6 +441,23 @@ rises on purpose, not by drift.
    changelog says why.
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
+   **A font is not one of those assets.** A screenshot the factory commits is
+   self-generated — a terminal capture painted from the program's own cells, or
+   a headless capture of the build's own page — and the glyph shapes a font
+   lends it carry none of the font's own separately-redistributable content, so
+   the CC0 bar does not reach the font a screenshot was rendered with. The
+   carve-out is fonts, and only fonts, on exactly that ground: an imported image
+   or audio clip *composited into* the frame keeps its copyrightable content in
+   the output, so it stays an asset and keeps the bar — "it was a rendering
+   input" is not a licence launderer. What a font owes is *disclosure*, not a
+   licence — name it in the README credits line as rendered, not embedded, e.g.
+   `Fonts: DejaVu Sans Mono, Noto Sans CJK — rendered into the screenshot, not
+   embedded`, which is a distinct note from the `<source, CC0>` a genuine asset
+   carries (§9.4, STYLE.md). This covers both a terminal capture's
+   monospace/CJK faces and the system UI font a browser draws a web capture
+   with; where the build does not choose the face and the browser falls back to
+   the host's UI font, disclose that — "the system default UI font" — rather
+   than guessing a family.
 4. README, following the `STYLE.md` template: what it is, why it exists,
    screenshot, how to run, and the provenance footer: *"Day N of an
    autonomous build factory — [hub link]"*.
@@ -1237,6 +1254,74 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.18.0** (2026-11-07) — meta #107, day 080: §9.3 stops forbidding, read
+  literally, every screenshot the factory takes. The rule said *"All visual and
+  audio assets self-generated or CC0 only"*; a terminal `screenshot.png` is
+  painted from the program's own cell data (self-generated in the sense the rule
+  protects) but rasterises glyph outlines from **DejaVu Sans Mono** (Bitstream
+  Vera license) and **Noto Sans CJK** (SIL OFL 1.1), neither CC0 — so a literal
+  read bars every terminal capture and every web screenshot rendered in a system
+  font. Two day-038 hygiene critics (#52) hit the edge, reached the same answer,
+  and neither should have had to derive it.
+
+  **This changes what §9.3 passes — intentionally, and in one direction only.**
+  A short clarifying passage (not one sentence — the first draft said so and the
+  cold critic corrected it) now states that a font is not one of §9.3's assets:
+  the committed screenshot is self-generated and the glyph shapes a font lends it
+  carry none of the font's own separately-redistributable content, so the CC0
+  bar does not reach it. A self-generated screenshot that the pre-edit rule's
+  literal reading would have failed on its fonts now passes — that *is* a grading
+  change, and the point of the issue. What is **not** relaxed is the CC0 bar on
+  genuine assets: an imported image or audio clip composited into the frame keeps
+  its copyrightable content in the output and stays an asset.
+
+  **The carve-out is fonts and only fonts, because "rendering input" was a
+  launderer.** The first draft exempted *"fonts and other rendering inputs"*; the
+  cold critic (cycle 1, clean context) rejected it — the stated rationale
+  ("what they render is self-generated") fits a copyrighted photo used as a
+  texture or a non-free icon baked into a canvas just as well as it fits a font,
+  so "other rendering inputs" generalised past the one ground that makes fonts
+  safe (rendered glyphs leave no separately-licensable expression) and handed a
+  future build a licence launderer. Scoped back to fonts, with the limiting test
+  written in: an input is exempt only where it leaves none of its own
+  redistributable content in the output, which composited images and audio do
+  not satisfy.
+
+  **Disclosure form, and the web case, both from the same review.** The template
+  credits line is `<what> — <source, CC0>`; a font is not CC0, so naming it there
+  verbatim prints a false CC0 tag (the critic's second finding). §9.3 now gives a
+  distinct form — `Fonts: <families> — rendered into the screenshot, not
+  embedded` — disclosure without a licence claim. And the web system-UI case the
+  issue flagged is often host-substituted and unknowable (the critic's third
+  finding), so §9.3 says to disclose "the system default UI font" where the build
+  does not choose the face, rather than guess a family.
+
+  **STYLE.md is left alone, deliberately.** It already routes asset provenance
+  through *"the README's credits line"* (line 16–17 and the template's credits
+  comment) — it names the mechanism this clarification points at, so it is
+  consistent, not contradictory; editing it (including adding the font sub-form
+  to its template comment) would be scope creep and overlaps #145 (STYLE.md /
+  canary list), filed there rather than folded in. §13's *"no CDN fonts"* is a
+  longevity rule about what a demo loads at runtime, a different question from
+  what a committed screenshot was rendered with, and is untouched.
+
+  **Canary (§14), run and sane.** §9.3 is inside §9, on §14's canary list, so
+  the edit was applied on a local branch and a hypothetical build dry-run against
+  it before merge: a CLI build that commits a terminal `screenshot.png` now
+  passes §9's hygiene with a `Fonts: … — rendered, not embedded` disclosure,
+  where the literal pre-edit rule would have failed it; no other §9 item changes
+  meaning under the edit (the LICENSE/description/topics clause and the
+  genuine-asset bar read exactly as before). Merged `--no-ff` into the
+  integration branch. The cold critic that forced the three fixes above then
+  re-reviewed the revised passage.
+
+  **Must-pass set and scope.** Doctrine-only `meta` ship; its must-pass set is
+  the five of §16 clause 5, two of which (LICENSE, root README) fail pre-existing
+  on **#65** at the hub — untouched here, §11's *Unverifiable* rather than a
+  failure of this ship. `MANUAL.md` only (§9.3 plus this version/changelog
+  block); no `scripts/`, `agents/`, or storefront code touched. The phase gate
+  does **not** move: `phase: 0`, unchanged.
 
 - **1.17.0** (2026-11-02) — meta #104, day 078: the hub's Pages renderer stops
   printing the KPI line's inline code spans as literal backticks. Since
