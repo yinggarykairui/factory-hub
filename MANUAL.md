@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.18.0
+manual_version: 1.19.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -439,6 +439,72 @@ rises on purpose, not by drift.
    your command with `--allow-empty`"* — so the `--exec` fails, the rebase stops
    mid-flight, and the branch is left short and still grey. `--empty=keep` is deliberately absent; the
    changelog says why.
+
+   **No co-attribution trailer, and no run metadata, in a factory commit.** The
+   author and committer fields are not the only identity GitHub reads. A
+   `Co-Authored-By:` trailer in the commit *body* co-attributes the commit to a
+   second person, and the harness a shift runs under appends a
+   `Co-Authored-By: Claude …` trailer and a `Claude-Session:` line unless the
+   message is written without them. GitHub then adds **Claude** — one of the five
+   grey identities 1.6.0 exists to eliminate — to the repo's contributor list,
+   and the `Claude-Session:` URL publishes a private session address permanently
+   into public commit metadata. The author check above greens the square and
+   never sees the trailer; co-attribution is a weaker form of the exact harm
+   1.6.0 closed. So a factory commit carries **no** `Co-Authored-By` (or other
+   co-attribution) trailer and **no** `Claude-Session:` line — run provenance and
+   the session link belong in the §10 sign-off and on the issue, not in the
+   commit itself. The check below bans the trailer **by key, not by value**: a
+   `Co-Authored-By` naming even the owner is redundant (the owner is already the
+   author) and equally disallowed, which keeps the check a simple key scan and
+   the rule and its enforcement in step. The cure is to write the message
+   without the lines; the harness re-injects nothing (no hook, no commit
+   template), so omitting them is sufficient. The **window is at the commit:** a
+   trailer is strippable only by **rewriting the message** while the commit is
+   still local — an interactive-rebase reword, or a `git rebase <start> --exec` /
+   `git filter-branch --msg-filter` that drops the lines (`git commit --trailer`
+   only *adds* a trailer, it cannot remove one) — and impossible after §15
+   forbids the force-push, so the check below runs **immediately before the
+   push**, beside the author check, the only place a run reliably looks.
+   Already-pushed trailers stay the owner's (§15): this rule is forward-looking
+   like the rest of §9.2, and #112's historical count is a count only.
+
+   ```
+   git fetch -q origin \
+   && [ -n "$(git log --format=%H <base>..HEAD)" ] \
+   && t="$(git log --format=%B <base>..HEAD <base>..origin/<ref>)" \
+   && ! printf '%s\n' "$t" | grep -iqE '^(Co-Authored-By|Claude-Session):'
+   ```
+
+   **Same substitutions, same range, same two degradations as the author
+   check**, and it **fails closed** at every link as that one does. `<base>` and
+   `<ref>` are its literals, substituted identically; the **first two links are
+   its own, verbatim** — the `git fetch` for a fresh `origin/<ref>`, and the
+   `-n` guard that makes an empty or **unsubstituted** `<base>` a loud failure,
+   because the final test passes on empty output and without the guard a
+   mis-pasted `<base>` would read as *clean* (the silent-zero trap 1.12.0 closed
+   for the author check, here in inverted form). The **third link captures the
+   range into `t`** rather than piping straight to `grep`, and that is not
+   cosmetic: a `git log` over an unresolvable `<base>..origin/<ref>` — a mistyped
+   `<ref>`, or the *no-remote-ref* degradation forgotten — exits non-zero, and
+   the `&&` on the assignment makes that **fail the check** instead of printing
+   nothing and reading as clean; the author check fails closed on the same error
+   (empty ≠ the owner literal) and a pipe-to-grep here would not. It scans
+   `<base>..HEAD` **and** `<base>..origin/<ref>` for the author check's own
+   reason: a sibling clone's trailered commit is invisible to `<base>..HEAD`
+   until it is on the remote, and the reconcile a non-fast-forward rejection
+   forces would pull it onto `main` behind a check that already ran. `grep` is
+   anchored at line start and case-insensitive, so it matches the trailer block
+   git writes and nothing a message happens to contain mid-line; **exit 0 — no
+   match — is the pass**, the `!` inverting grep's found/not-found. The two
+   degradations key on the same two facts and no others: *no base* — this run
+   **created** the repo, so there is no pre-run history to exclude and every
+   reachable commit is this run's — drops `<base>..` from the second and third
+   links; *no remote ref yet* — the branch you are about to push has never been
+   pushed — drops the `<base>..origin/<ref>` operand from the third. **Re-run it
+   before every later push in this run**, exactly as the author check is (§9.8's
+   dashboard and storefront pushes included): the harness appends the trailer per
+   commit, so each new commit is a fresh chance to leak it.
+
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
    **A font is not one of those assets.** A screenshot the factory commits is
@@ -1254,6 +1320,80 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.19.0** (2026-11-10) — meta #112, day 081: §9.2 gains a clause — **a
+  factory commit carries no `Co-Authored-By` trailer and no `Claude-Session:`
+  line.** The author and committer fields are not the only identity GitHub
+  reads: a `Co-Authored-By:` trailer co-attributes the commit to a second
+  person, and the harness a shift runs under appends a `Co-Authored-By: Claude …`
+  trailer and a `Claude-Session:` URL to every commit unless the message is
+  written without them. GitHub then adds **Claude** — one of the five grey
+  identities 1.6.0 exists to eliminate — to the repo's contributor list, and the
+  session URL publishes a private address permanently into public commit
+  metadata. The author check (1.6.0/1.12.0) greens the square and never sees the
+  trailer, so a shift following the manual exactly still leaked it. Resolves
+  **#112 q1** (yes, §9.2 should address trailers) and **q2** (strip); **q3**
+  stays a count only — already-pushed trailers sit on effectively every recent
+  commit and §15 leaves published history alone, so the rule is forward-looking
+  like the rest of §9.2.
+
+  **The check is the author check's own first two links, verbatim, and fails
+  closed like it at every link.** `git fetch`; the `-n "$(git log --format=%H
+  <base>..HEAD)"` range guard; then it **captures the range into a variable**
+  (`t="$(git log --format=%B <base>..HEAD <base>..origin/<ref>)"`) and scans it
+  (`! printf '%s\n' "$t" | grep -iqE '^(Co-Authored-By|Claude-Session):'`). Two
+  fail-safes are load-bearing and were both reproduced. The `-n` guard: a
+  `[ -z ]`/grep test passes on empty output, so without it a mis-pasted or empty
+  `<base>` — whose range collapses to nothing — would read as *clean* and pass
+  silently, the exact silent-zero trap 1.12.0 closed for the author check,
+  re-appearing inverted. The **variable capture**: piping `git log` straight to
+  `grep` would fail **open** — a `git log` over an unresolvable
+  `<base>..origin/<ref>` (a mistyped `<ref>`, or the no-remote-ref degradation
+  forgotten) errors, prints nothing, and `grep` then matches nothing and reads
+  as clean; the author check fails **closed** on the identical error (empty ≠ the
+  owner literal), so the parallel the clause claims only holds once the
+  assignment's exit status is chained with `&&`. `<base>`, `<ref>` and the two
+  degradations (no base → drop `<base>..`; no remote ref yet → drop the
+  `<base>..origin/<ref>` operand) are the author check's, substituted and keyed
+  identically; re-run before every later push, the harness appending the trailer
+  per commit.
+
+  **Canary (§14), run and sane — and the clean-context critic earned its
+  keep.** §9.2 is inside §9, on §14's canary list, so the edit was applied on
+  branch `meta/112-noon-1.19.0` and dry-run against real throwaway repos with a
+  remote. The first draft passed its six canaries and a critic on clean context
+  still **BLOCK**ed it on three defects, each the factory's own recurring class:
+  the strip-window named `git commit --trailer`, which only *adds* a trailer and
+  cannot remove one — a false mechanism, now replaced by message-rewrite with the
+  trap named in the clause; the prose carved out "any identity but the owner's"
+  while the value-agnostic grep bans the key outright — rule and enforcement
+  disagreed, now reconciled by banning the key and saying so; and the fail-open
+  ref path above, which the final nine-scenario canary confirms closed (a
+  mistyped `<ref>` now exits 128 FAIL, not a silent pass). The nine: a clean
+  build **PASSES**; a trailered commit **FAILS**; an unsubstituted `<base>`
+  **fails loud**; an unresolvable `<ref>` **fails closed**; the no-remote-ref
+  degradation **PASSES** clean and **FAILS** trailered; a sibling's trailered
+  commit on `origin/main` with a clean local tip **FAILS** (the second operand
+  earning its place); a created-repo (no-base) build **PASSES** clean and
+  **FAILS** trailered. No other §9 item changes meaning: the clause is additive,
+  and the existing author/committer check block and the repair block are
+  **byte-identical**. Merged `--no-ff` into `main`.
+
+  **The rule, lived.** Every day-081 commit — this one included — is authored
+  *and* committed `Kairui Ying <yinggarykairui@gmail.com>` with **no**
+  `Co-Authored-By`/`Claude-Session` trailer; verified empirically this session,
+  the harness re-injects nothing (no hook, no commit template), so omitting the
+  lines from the message is sufficient.
+
+  **Must-pass set and scope.** Doctrine-only `meta` ship; its must-pass set is
+  the five of §16 clause 5, two of which (LICENSE, root README) fail
+  pre-existing on **#65** at the hub — untouched here, §11's *Unverifiable*
+  rather than a failure of this ship, and §16 clause 5's consequence stands (a
+  `meta` ship day cannot be a clean evening while #65 is open). `MANUAL.md` only
+  (the §9.2 clause plus this version/changelog block); no `scripts/`, `agents/`
+  or storefront code touched — the STYLE.md font sub-form (#149) and the canary
+  list (#145) are filed separately. The phase gate does **not** move: `phase: 0`,
+  unchanged.
 
 - **1.18.0** (2026-11-07) — meta #107, day 080: §9.3 stops forbidding, read
   literally, every screenshot the factory takes. The rule said *"All visual and
