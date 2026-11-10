@@ -439,6 +439,62 @@ rises on purpose, not by drift.
    your command with `--allow-empty`"* — so the `--exec` fails, the rebase stops
    mid-flight, and the branch is left short and still grey. `--empty=keep` is deliberately absent; the
    changelog says why.
+
+   **No co-attribution trailer, and no run metadata, in a factory commit.** The
+   author and committer fields are not the only identity GitHub reads. A
+   `Co-Authored-By:` trailer in the commit *body* co-attributes the commit to a
+   second person, and the harness a shift runs under appends
+   `Co-Authored-By: Claude <noreply@anthropic.com>` and a `Claude-Session:` line
+   unless the message is written without them. GitHub then adds **Claude** — one
+   of the five grey identities 1.6.0 exists to eliminate — to the repo's
+   contributor list, and the `Claude-Session:` URL publishes a private session
+   address permanently into public commit metadata. The author check above
+   greens the square and never sees the trailer; co-attribution is a weaker form
+   of the exact harm 1.6.0 closed. So a factory commit carries **no**
+   `Co-Authored-By` (or other co-attribution) trailer naming any identity but
+   the owner's, and **no** `Claude-Session:` line — run provenance and the
+   session link belong in the §10 sign-off and on the issue, not in the owner's
+   commit bodies. The cure is to write the message without the lines; the
+   harness re-injects nothing (no hook, no commit template), so omitting them is
+   sufficient. The **window is at the commit:** a trailer is strippable with
+   `git rebase <start> --exec 'git commit --amend --no-edit --trailer ...'` (or
+   by rewriting the message) while the commit is still local, and impossible
+   after §15 forbids the force-push — so the check below runs **immediately
+   before the push**, beside the author check, the only place a run reliably
+   looks. Already-pushed trailers stay the owner's (§15): this rule is
+   forward-looking like the rest of §9.2, and #112's historical count is a count
+   only.
+
+   ```
+   git fetch -q origin \
+   && [ -n "$(git log --format=%H <base>..HEAD)" ] \
+   && [ -z "$(git log --format=%B <base>..HEAD <base>..origin/<ref> | grep -iE '^(Co-Authored-By|Claude-Session):')" ]
+   ```
+
+   **Same substitutions, same range, same two degradations as the author
+   check.** `<base>` and `<ref>` are that check's literals, substituted
+   identically, and the **first two links are its own, verbatim** — the
+   `git fetch` for a fresh `origin/<ref>`, and the `-n` guard that makes an
+   empty or **unsubstituted** `<base>` a loud failure rather than a false pass
+   (a `[ -z ]` test passes on empty output, so without the guard a mis-pasted
+   `<base>` would read as *clean* — the silent-zero trap 1.12.0 closed, here in
+   its own form). The third link scans the same `<base>..HEAD` **and**
+   `<base>..origin/<ref>` for the author check's own reason: a sibling clone's
+   trailered commit is invisible to `<base>..HEAD` until it is on the remote,
+   and the reconcile a non-fast-forward rejection forces would pull it onto
+   `main` behind a check that already ran. `grep` is anchored at line start and
+   case-insensitive, so it matches the trailer block git writes and nothing a
+   subject happens to contain mid-line; exit 0 is the pass. The two degradations
+   key on the same two facts and no others: *no base* — this run **created** the
+   repo, so there is no pre-run history to exclude and every reachable commit is
+   this run's — drops `<base>..` from all three operands; *no remote ref yet* —
+   the branch you are about to push has never been pushed — drops the
+   `<base>..origin/<ref>` operand, which would otherwise name a ref that is not
+   there. **Re-run it before every later push in this run**, exactly as the
+   author check is (§9.8's dashboard and storefront pushes included): the harness
+   appends the trailer per commit, so each new commit is a fresh chance to leak
+   it.
+
 3. LICENSE (config default), repo description, topics. All visual and audio
    assets self-generated or CC0 only, provenance noted in the README.
    **A font is not one of those assets.** A screenshot the factory commits is
