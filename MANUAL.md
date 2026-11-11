@@ -91,14 +91,16 @@ Rules: at most one issue is `building` at any time. Never delete labels'
 history — move issues forward, don't rewrite. A closed issue labeled
 `shipped` or `verified` is immutable: never reopen or amend it — with one
 carve-out, for the `verified` lifecycle step alone. §11 verifies ships *after*
-they close, so a closed **`shipped`** issue admits exactly two amendments: the
-`shipped` → `verified` relabel, and §11's verification comment on it (the
-`EVENING VERIFIED` block, or a debt-paying shift's `EVENING SPOT-CHECK`
-`PASS`/`FAIL`/`UNVERIFIABLE` block — the `FAIL` and `UNVERIFIABLE` forms comment
-without relabelling). Nothing else amends it, nothing reopens it, and a closed
-**`verified`** issue admits nothing at all. The carve-out never licenses editing
-the build or its sign-off — only the one relabel and the one comment §11 exists
-to add.
+they close, so a closed **`shipped`** issue admits only two *kinds* of
+amendment, and no others: the one-way `shipped` → `verified` relabel, and §11's
+verification comment(s) on it — the `EVENING VERIFIED` block, or one or more debt
+`EVENING SPOT-CHECK` `PASS`/`FAIL`/`UNVERIFIABLE` blocks (a `FAIL` or
+`UNVERIFIABLE` block carries no relabel, and may be followed on a later evening,
+once its blocking issue closes, by a re-check's `PASS` block *and* the relabel —
+the issue stays closed throughout; nothing reopens it). Nothing else amends it,
+and a closed **`verified`** issue admits neither kind: it is immutable outright.
+The carve-out never licenses editing the build or its sign-off — only the
+`verified` relabel and §11's own verification comments.
 
 ---
 
@@ -267,12 +269,13 @@ must-pass line: *"Web: usable at phone width. CLI: `--help` is accurate"* has a
 web branch and a CLI branch and **no `meta` branch**, and *"Web: the Pages demo
 link actually loads"* applies to web ships only. So the applicable must-pass set
 is **seven** for a web build, **six** for a CLI build, and **five** for a
-doctrine-only `meta` ship — the arithmetic §16 clause 5 and §10's `rubric:` line
-run on, stated here at its source. These lines are referred to **by name, never
-by number**: the list is left unnumbered on purpose, so that inserting a line
-here can never silently re-map a rule elsewhere that counts "§8 line N" — the
-same hazard §9.8, §11.2's fourth sub-check and §16 clause 5 each avoid by naming
-the line they mean. (Numbering §8 once, floated as #116 item 4, was declined on
+doctrine-only `meta` ship — the arithmetic §16 clause 5 runs on, stated here at
+its source (§10's template prints `7/7` and clause 5 notes a non-web ship writing
+it there is rounding). These lines are referred to **by name, never by number**:
+the list is left unnumbered on purpose, so that inserting a line here can never
+silently re-map a rule elsewhere that counts "§8 line N" — the same hazard
+§11.2's fourth sub-check and §16 clause 5 each avoid by naming the line they
+mean. (Numbering §8 once, floated as #116 item 4, was declined on
 exactly this ground: it would reintroduce the re-map hazard the naming
 convention exists to remove.)
 
@@ -660,9 +663,10 @@ Boot per §2, then:
 1. **Today `verified`?** Nothing to do. Exit quietly.
 2. **Today `shipped`?** Spot-check: demo link loads, README screenshot exists,
    gitleaks clean, and one further must-pass rubric line — drawn at random from
-   the lines that apply to this ship *less the three this spot-check has already
-   tested* (the demo-link line, the screenshot clause of the README line, and
-   gitleaks) — re-tested. Pass → relabel `verified`. Fail → treat as mid-flight,
+   the lines that apply to this ship *less what this spot-check has already
+   tested* (the gitleaks line, the screenshot clause of the README line, and —
+   on a web ship — the demo-link line) — re-tested. Pass → relabel `verified`.
+   Fail → treat as mid-flight,
    below. (The verification-debt paragraph's fourth sub-check restricts its draw
    the same way and for the same reason — three draws in seven would otherwise
    re-run a check already done; this is the one draw rule, stated in both
@@ -1084,8 +1088,12 @@ gate is audited, never argued:
    evening, and never counts here.
 2. **It did not build or finish what it verified** (§6: no role grades its own
    work). Two artifacts decide it, and nothing else: the day's `SHIP` sign-off
-   and the `EVENING VERIFIED` comment were posted by **different shifts**, and the
-   evening's own comment records no §11.3 rescue and no §11.4 build. The polish
+   and the `EVENING VERIFIED` comment were posted by **different shifts** — the
+   sign-off's `shift:` field (§10) names which posted it, the evening comment is
+   the other — and the evening's own comment records no §11.3 rescue and no §11.4
+   build. (The field makes the two shifts readable from an artifact; this clause
+   still trusts that reading on citation, as the §16 hand-check below says, rather
+   than machine-checking it — that is a later tool change, not this one.) The polish
    cycles §11's mandate *orders* are not disqualifying — if they were, the mandate
    would forbid the evidence it asks for — so "how much polish is too much" is not
    a question this clause asks; a shift that thinks an evening polished its way
