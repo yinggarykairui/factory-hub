@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.19.0
+manual_version: 1.20.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -1367,6 +1367,98 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.20.0** (2026-11-11) — meta #116, day 082: the four day-041 (#55, 1.9.0)
+  verification-debt residuals, resolved. Three were clean doctrine fixes and one
+  was a part-fix with a documented decline.
+
+  **Item 1 — §3's immutability rule stops contradicting the verification it
+  licenses.** §3 read *"A closed issue labeled `shipped` or `verified` is
+  immutable: never reopen or amend it,"* yet §11.2's same-day Pass and the
+  verification-debt paragraph both relabel a closed `shipped` issue `verified`
+  and comment on it — a literal self-contradiction a hygiene critic could read to
+  void every verification the factory has ever made. §3 now carries a single
+  carve-out, scoped to the `verified` lifecycle step alone: a closed **`shipped`**
+  issue admits only two *kinds* of amendment — the one-way `shipped`→`verified`
+  relabel, and §11's verification comment(s) (the `EVENING VERIFIED` block, or one
+  or more debt `EVENING SPOT-CHECK` `PASS`/`FAIL`/`UNVERIFIABLE` blocks, a
+  `FAIL`/`UNVERIFIABLE` possibly followed on a later evening, once its blocking
+  issue closes, by a re-check's `PASS` block *and* the relabel). The clause is
+  deliberately a *bound on kinds, not a count*: the clean-context critic BLOCKed
+  the first draft precisely because it said "exactly two amendments," which a
+  FAIL-then-PASS recovery (two comments + one relabel on one still-closed issue)
+  exceeds — the identical literalist trap the item exists to close, re-created in
+  the fix. A closed **`verified`** issue admits neither kind — immutable outright
+  — and the carve-out never licenses editing the build or its sign-off. §3 is on
+  §14's canary list.
+
+  **Item 2 — §11.2's same-day fourth draw gets the restriction its own copy
+  already has.** §11.2 step 2 still read *"one must-pass rubric line re-tested at
+  random"* — unrestricted — so its fourth sub-check could re-draw the demo-link,
+  screenshot or gitleaks line its first three sub-checks had just run. 1.9.0
+  fixed exactly this in the *debt* paragraph (draw from the applicable lines
+  *less what §11.2 already tested*) but #55's spec forbade touching §11.2, so the
+  every-evening path kept the defective draw. Step 2 now carries the same
+  restriction (with the demo-link line subtracted only on a web ship, where it
+  applies), and a note that the one draw rule is stated in both places. Distinct
+  from **#122**, which is about which §8 lines are *available* to the fourth
+  sub-check at all (several need a browser this shift lacks), not the draw pool;
+  #122 stays open. §11 is not on the canary list.
+
+  **Item 3 — §10 gains a `shift:` field, so clause-2 auditing rests on an
+  artifact.** Nothing on a ship recorded which shift built it, so §16 clause 2
+  ("built and verified by **different shifts**") and §11's debt eligibility gate
+  ("a ship this shift had no hand in") rested on a run's memory of its own night —
+  fine for tonight's ship, worthless for establishing non-involvement in a
+  six-week-old one. §10's sign-off template now carries `shift: <noon|evening>`;
+  §16 clause 2 cites it. It is a *comment* field: §9.2's no-trailer rule governs
+  commit bodies and itself routes run provenance to the §10 sign-off, so this is
+  consistent with it, not a breach. **What this does not do yet:** it makes
+  clause 2 readable from an artifact *by hand*, but §16's by-hand paragraph and
+  `scripts/graduation_audit.py` still flag clause 2 `HAND`/trusted-on-citation —
+  the day-076 tool was built when §10 had no shift id, and teaching it (and
+  reconciling §16's wording) to machine-check "different shifts" is its own
+  increment, filed as **#151**. Clause 2 therefore still *trusts* the reading on
+  citation; 1.20.0 only gives it something to cite. §10 is not on the canary list.
+
+  **Item 4 — §8 states its own line arithmetic; numbering is declined.** §16
+  clause 5's 5/6/7 arithmetic depends on §8's two conditional lines each counting
+  as one must-pass line — which clause 5 explained but §8 never stated. §8 now
+  says it at the source: the two conditional lines each count as one, so the
+  applicable set is seven (web) / six (CLI) / five (`meta`). The issue's other
+  half — *number* §8's bullets — was **declined** on the manual's own standing
+  ground: §11.2's fourth sub-check and §16 clause 5 refer to §8 lines *by name*
+  precisely because an unnumbered list cannot silently re-map a "§8 line N"
+  reference when a line is inserted; numbering would reintroduce that hazard. The
+  decline is recorded on #116 as well as here, since the owner filed numbering as
+  an explicit ask. §8 is on the canary list.
+
+  **Canary (§14), and the clean-context critic earned its keep.** Items 1 (§3)
+  and 4 (§8) touch canary-listed sections, so the edits were applied on branch
+  `meta/116-noon-1.20.0` and dry-run before merge — a hypothetical `meta` build's
+  §9 hygiene against the edited §8 (a doctrine-only ship's must-pass set reads as
+  five, LICENSE/README still #65-failing, unchanged), and a hypothetical evening
+  spot-check *and* a debt-paying FAIL-then-PASS recovery reasoned against the
+  edited §3 and §11.2. The first draft passed its scenarios and a critic on clean
+  context still **BLOCK**ed it: the §3 carve-out said "exactly two amendments,"
+  which the FAIL-then-PASS recovery exceeds (fixed to bound kinds, not count); the
+  §8 note cited §9.8 as a line-naming site (it names none — dropped) and claimed
+  §10's `rubric:` line computes the arithmetic (it prints `7/7`, rounding — reworded);
+  §11.2's subtraction over-counted the demo-link line on non-web ships (scoped to
+  web); and §16 clause 2 gained the `shift:` cross-reference the item's own point
+  requires. No other §1–§3 or §7–§9 item changes meaning under the edits. Merged
+  `--no-ff`.
+
+  **Must-pass set and scope.** Doctrine-only `meta` ship; its must-pass set is the
+  five of §16 clause 5, two of which (LICENSE, root README) fail pre-existing on
+  **#65** at the hub — untouched here, §11's *Unverifiable* rather than a failure
+  of this ship, and §16 clause 5's consequence stands (a `meta` ship day cannot be
+  a clean evening while #65 is open). `MANUAL.md` only (§3, §8, §10, §11.2, §16
+  clause 2, plus this version/changelog block); no `scripts/`, `agents/` or
+  storefront code touched (#151 carries the `graduation_audit.py` follow-on).
+  Every day-082 commit is authored *and* committed `Kairui Ying
+  <yinggarykairui@gmail.com>` with no `Co-Authored-By`/`Claude-Session` trailer
+  (§9.2, 1.19.0). The phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.19.0** (2026-11-10) — meta #112, day 081: §9.2 gains a clause — **a
   factory commit carries no `Co-Authored-By` trailer and no `Claude-Session:`
