@@ -89,7 +89,16 @@ epic, §4) · `type:web` `type:cli` `type:game` `type:lib` `type:agent` ·
 
 Rules: at most one issue is `building` at any time. Never delete labels'
 history — move issues forward, don't rewrite. A closed issue labeled
-`shipped` or `verified` is immutable: never reopen or amend it.
+`shipped` or `verified` is immutable: never reopen or amend it — with one
+carve-out, for the `verified` lifecycle step alone. §11 verifies ships *after*
+they close, so a closed **`shipped`** issue admits exactly two amendments: the
+`shipped` → `verified` relabel, and §11's verification comment on it (the
+`EVENING VERIFIED` block, or a debt-paying shift's `EVENING SPOT-CHECK`
+`PASS`/`FAIL`/`UNVERIFIABLE` block — the `FAIL` and `UNVERIFIABLE` forms comment
+without relabelling). Nothing else amends it, nothing reopens it, and a closed
+**`verified`** issue admits nothing at all. The carve-out never licenses editing
+the build or its sign-off — only the one relabel and the one comment §11 exists
+to add.
 
 ---
 
@@ -252,6 +261,20 @@ malfunctioning; skepticism is the job.
 - LICENSE present, repo description and topics set
 - No secrets anywhere in history — gitleaks scan is clean (§12)
 - Web: the Pages demo link actually loads the working build
+
+Two of these seven lines are **conditional**, and each still counts as **one**
+must-pass line: *"Web: usable at phone width. CLI: `--help` is accurate"* has a
+web branch and a CLI branch and **no `meta` branch**, and *"Web: the Pages demo
+link actually loads"* applies to web ships only. So the applicable must-pass set
+is **seven** for a web build, **six** for a CLI build, and **five** for a
+doctrine-only `meta` ship — the arithmetic §16 clause 5 and §10's `rubric:` line
+run on, stated here at its source. These lines are referred to **by name, never
+by number**: the list is left unnumbered on purpose, so that inserting a line
+here can never silently re-map a rule elsewhere that counts "§8 line N" — the
+same hazard §9.8, §11.2's fourth sub-check and §16 clause 5 each avoid by naming
+the line they mean. (Numbering §8 once, floated as #116 item 4, was declined on
+exactly this ground: it would reintroduce the re-map hazard the naming
+convention exists to remove.)
 
 **Scored 1–5 — recorded, not blocking in phase 0:**
 
@@ -561,11 +584,21 @@ base:    <that repo's sha when the run first took it (§9.2), or created>
 rubric:  must-pass 7/7 · delight 4 · clarity 4 · readme 5 · scope 5
 critics: correctness PASS · ux PASS · hygiene PASS
 lesson:  <one line, or "none">
+shift:   <noon or evening — which shift posted this sign-off>
 manual_version: <version that built> · model: <model that built>
 ```
 
 The sign-off is the factory's memory. Foreman, retro, patrol, and any run
 resuming a dead shift all read these before acting.
+
+**`shift:`** names which shift posted this sign-off — `noon` or `evening`.
+Nothing else on a ship records which shift built it, so §16 clause 2 ("built and
+verified by **different shifts**") and §11's debt eligibility gate ("a ship this
+shift had no hand in building or finishing") were resting on a run's memory of
+its own night to supply what an audit cannot read; this field makes the gate
+decidable from an artifact, the way §16's other clauses are. An evening that
+rescued or built today's ship (§11.3–.4) and signs it off writes `evening`
+there — which is exactly the case clause 2 uses it to catch.
 
 **`base..sha` is the range §9.2's authorship check covers**, and recording both
 ends is what stops that range living only in the conducting run's head, which
@@ -626,8 +659,14 @@ Boot per §2, then:
 
 1. **Today `verified`?** Nothing to do. Exit quietly.
 2. **Today `shipped`?** Spot-check: demo link loads, README screenshot exists,
-   gitleaks clean, one must-pass rubric line re-tested at random. Pass →
-   relabel `verified`. Fail → treat as mid-flight, below.
+   gitleaks clean, and one further must-pass rubric line — drawn at random from
+   the lines that apply to this ship *less the three this spot-check has already
+   tested* (the demo-link line, the screenshot clause of the README line, and
+   gitleaks) — re-tested. Pass → relabel `verified`. Fail → treat as mid-flight,
+   below. (The verification-debt paragraph's fourth sub-check restricts its draw
+   the same way and for the same reason — three draws in seven would otherwise
+   re-run a check already done; this is the one draw rule, stated in both
+   places.)
 3. **Mid-flight or `needs-retry`?** Finish it under §7 rules. The loop cap
    counts cycles already spent today.
 4. **Nothing landed at all?** Build the smallest viable version of today's
