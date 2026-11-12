@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.20.0
+manual_version: 1.21.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -825,7 +825,7 @@ this, and the permission would be dead on the page.
   (present) and at the previous ship's sha (absent). The literal has to **survive
   the markdown conversion**, which is a narrower set than "text in the file": the
   `<title>`, the meta description, and text in the DOM all come back — a fetch of
-  `noise-poster` returned its six control labels verbatim — while CSS, comments,
+  `noise-poster` returned its six DOM text literals verbatim — while CSS, comments,
   other attributes, and **anything drawn into a canvas** do not. A page whose
   entire content is canvas-drawn returns its title and meta description and
   nothing else, and its marker has to come from those.
@@ -877,6 +877,17 @@ the first line that matches.
    failure of the ship.
 4. Every applicable sub-check ran and passed → **Pass**.
 
+These four partition the conditions a hub issue **records**. A §8 line failing on
+a disowned condition that **no open issue yet records** matches none of them — not
+the ship's own tree or deploy (line 1); no recorded blocker to cite (line 2); its
+sub-check *did* run, so not *could not run* (line 3); and not everything passed
+(line 4). The window is narrow and self-closing: it lasts only until some shift
+records the condition — as #65 was recorded — after which line 2 matches. No shift
+is routed to a wrong outcome while it stands; the ship simply stays unverified,
+with no artifact, until the record exists. The order partitions the **recorded**
+space, which is the space a later evening can act on; the unrecorded window is a
+gap only on paper.
+
 **Line 1 is scoped to the ship, and line 2 is why.** The fourth sub-check draws
 a §8 line at random from the lines that apply *less what §11.2 already tested*,
 which on a `meta` ship is a pool of four — gitleaks is retired — of which #65
@@ -918,8 +929,9 @@ leaves none.
   carrying a FAIL block is skipped until its follow-up closes**, or every
   evening files the same issue again.
 - **Unverifiable** → nothing this shift can test fails, but a §8 line applying
-  to the ship is failing for a reason outside it, and §16 clause 5 says an
-  evening cannot verify past a failing must-pass line. Do not relabel, do not
+  to the ship is failing on a condition this build does not own, and §16 clause
+  5 says an evening cannot verify past a failing must-pass line. Do not relabel,
+  do not
   file; post the block with `result: UNVERIFIABLE` and the blocking issue in
   `blocked-by:`. Later evenings skip the ship until that issue closes. While
   #65 stands this is every `meta` ship, and recording it is not failing it.
@@ -937,8 +949,10 @@ leaves none.
   step 1 however well §10 records — its deploy half cannot be confirmed by
   anything this shift has — while a revisited CLI or `meta` ship has no deploy
   half and is unaffected. That is the honest size of what this paragraph can
-  drain today. A skip leaves no artifact — there is no issue it is safe to comment on — so it
-  costs the next evening the same two minutes. That is the price of not
+  drain today.
+
+  A skip leaves no artifact — there is no issue it is safe to comment on — so
+  it costs the next evening the same two minutes. That is the price of not
   guessing, and it is the cheap half of the trade.
 
 ```
@@ -1367,6 +1381,64 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.21.0** (2026-11-12) — meta #118, day 083: four of the six day-043 (#55,
+  1.9.1) residuals #118 filed — the clean textual set. The remaining two (item 2,
+  the §11.6 structural promotion; item 6, the §11.2 draw-pool yield) are filed as
+  follow-ups, item 6 routed to #122 where it belongs.
+
+  **Item 1 — §11's *Unverifiable* bullet stops contradicting the outcome-order
+  gloss it sits under.** The bullet read *"a §8 line applying to the ship is
+  failing **for a reason outside it**"*, while the numbered order's line 2 and its
+  own line-2 paragraph twenty lines above both say *"failing on a condition the
+  ship does not own"* — the point being that on a `meta` ship the hub's own LICENSE
+  *is* fixable on the ship, so "outside it" is exactly the loose framing §11
+  disowns. Aligned to *"failing on a condition this build does not own."* No shift
+  is routed differently; the numbered order already governed by construction.
+
+  **Item 3 — the four-outcome order says it partitions only the space it actually
+  partitions.** A §8 line failing on a disowned condition that *no open hub issue
+  yet records* matches none of the four lines (not the ship's tree/deploy → not
+  line 1; no recorded blocker → not line 2; the sub-check ran → not line 3; not all
+  passed → not line 4). The gap is real but narrow, self-closing once the condition
+  is recorded (as #65 was), and routes no shift to a wrong outcome — the ship just
+  stays unverified with no artifact until the record exists. A new paragraph after
+  the four lines states this **without changing any mechanism**: it does not
+  instruct the *Unverifiable* pass to file (that bullet's "do not file" stands), it
+  only makes the implicit "partition" claim honest — the exact test the
+  clean-context critic held it to before ship.
+
+  **Item 4 — the noise-poster probe is cited by an accurate noun.** §11's "Deriving
+  the marker" and the 1.9.x changelog both said a `WebFetch` of `noise-poster`
+  returned *"its six **control labels** verbatim"*. The count (6) and the inference
+  (DOM text survives the markdown conversion) are right, but two of the six literals
+  are the `<h1>` and the tagline, not controls. Both citations now read *"six **DOM
+  text literals**"*. A factual correction to the prose, not a history rewrite (§15
+  governs git history, not changelog wording).
+
+  **Item 5 — §11's *Skip* bullet stops fusing two paragraphs.** *"A skip leaves no
+  artifact…"* was stranded onto the end of the two-causes paragraph, so the point
+  about what §10 can and cannot fix and the point about what a skip costs read as
+  one. Split into its own paragraph. No wording change.
+
+  **Scope held.** Item 2 is `size:s` structure (a real §11.6 with sub-headings) and
+  its own build; item 6 edits §11.2's draw pool and overlaps #122 and #116's second
+  residual, so it is decided there, not improvised here. Filing the clean subset and
+  deferring the two that need more is the day-041 lesson #118 was filed under.
+
+  **Canary (§14): not required.** None of items 1/3/4/5 touch §1–§3 or §7–§9 — all
+  are §11 and the 1.9.x changelog line. A clean-context critic reviewed the full
+  diff regardless (the meta-edit discipline the 1.19.0/1.20.0 changelogs record).
+
+  **Must-pass set and scope.** Doctrine-only `meta` ship; its must-pass set is the
+  five of §16 clause 5, two of which (LICENSE, root README) fail pre-existing on
+  **#65** at the hub — untouched here, §11's *Unverifiable* rather than a failure of
+  this ship, and §16 clause 5's consequence stands (a `meta` ship day cannot be a
+  clean evening while #65 is open). `MANUAL.md` only (§11, the 1.9.x changelog line,
+  plus this version/changelog block); no `scripts/`, `agents/` or storefront code
+  touched. Every day-083 commit is authored *and* committed `Kairui Ying
+  <yinggarykairui@gmail.com>` with no `Co-Authored-By`/`Claude-Session` trailer
+  (§9.2, 1.19.0). The phase gate does **not** move: `phase: 0`, unchanged.
 
 - **1.20.0** (2026-11-11) — meta #116, day 082: the four day-041 (#55, 1.9.0)
   verification-debt residuals, resolved. Three were clean doctrine fixes and one
@@ -2390,8 +2462,8 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
   **The marker has to survive the transport, which is narrower than "text in the
   file".** `WebFetch` converts to markdown: the `<title>`, the meta description
-  and DOM text come back — a fetch of `noise-poster` returned its six control
-  labels verbatim — while CSS, comments, other attributes and anything drawn into
+  and DOM text come back — a fetch of `noise-poster` returned its six DOM text
+  literals verbatim — while CSS, comments, other attributes and anything drawn into
   a canvas do not. A page that is all canvas returns a title and a meta
   description and nothing else. The first draft of this rule said "not an
   attribute", which would have excluded the one channel such a page has. And
