@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.21.0
+manual_version: 1.22.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -1381,6 +1381,88 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.22.0** (2026-11-13) — meta #121, day 084: `STYLE.md`'s provenance-footer
+  rule gains an explicit **revisit** form, so the next repo the factory picks
+  again stops guessing. The rule said the footer is *"verbatim except `<NNN>`"* —
+  true only while there was one form — and a revisited repo has two day numbers
+  for one slot. The factory's own corpus already carried several answers: the
+  day-032 shift's dashboard note records *"three conventions across five repos"*
+  (`git-mood`/`maze-dash` keep the bare **origin** day unchanged on revisit;
+  `pixel-garden` keeps origin **plus a full list** — `Day 001 (revisited days
+  003, 007 and 010)`; `trace-lens`/`orbit-doodle` keep the bare **latest**), and
+  later ships added one more **form**: `snake-flee` d042 and `regex-lab` d044's
+  origin + a **singular** latest (`Day 022 (revisited day 042)` / `Day 023
+  (revisited day 044)`). `countup` d040's overwrite to a bare `Day 040` is the
+  day-032 *bare-latest* form reached by a different route, not a fourth
+  convention — **four** distinct forms in all. critic-hygiene flagged the drift
+  on both of day 044's rounds and
+  declined to block twice (#121). The day-032 note filed the inconsistency "for a
+  `meta` issue"; this discharges it.
+
+  **The two forms, stated.** First ship: `Day <NNN>`. A later ship of a repo
+  shipped before on an earlier day: `Day <NNN> (revisited day <MMM>)`, `<NNN>`
+  the origin day and `<MMM>` **this ship's** day — the `snake-flee`/`regex-lab`
+  convention, chosen because it keeps the origin day the footer exists to
+  disclose (§9.4) while naming the latest visit. **Only the latest revisit is
+  named** — a fifth visit carries one `<MMM>`, never a list, because a list adds
+  nothing the dashboard index does not already hold. The lead clause now reads
+  *"verbatim except for its day line, which takes one of two forms"* (and, for an
+  epic mid-build, optional arc free text in the body), since the revisit form
+  adds a parenthetical and the epic form adds body prose — so the footer is no
+  longer "verbatim except a number." Both forms satisfy §9.4's looser wording (*"Day N of an autonomous
+  build factory — [hub link]"*), which is untouched — the gap was in `STYLE.md`'s
+  stricter template rule, not in §9.4.
+
+  **Forward-looking, and the grandfather is explicit.** The rule edits nothing
+  already shipped: `pixel-garden`'s list footer, `git-mood`/`maze-dash`'s bare
+  origin, and the bare-latest footers (`trace-lens`, `orbit-doodle`, and
+  `countup` d040 by overwrite) all sit on closed `shipped`/`verified` issues and
+  are immutable (§3).
+  This matters because the no-list rule would otherwise **bar** `pixel-garden`'s
+  live footer, and `pixel-garden` is a revisit series (days 001/003/007/010), not
+  an epic — so the epic carve-out below does not cover it; without the grandfather
+  clause the rule would have silently overridden a shipped footer by the very
+  reasoning that spares `ember-vale`. The day-032 census stays as immutable
+  past-shift narrative (1.15.0 / day-048 precedent); this changelog does not
+  rewrite it, it reconciles to it.
+
+  **The epic gaps, closed in the same edit.** The owner's brief covered revisits,
+  not epics, and the bare *"every later ship carries (revisited day <MMM>)"*
+  reading would have contradicted `ember-vale`'s shipped day-079 footer (`Day 079
+  … the epic ran from day 069 to day 079 …`, an immutable §3 artifact). The rule
+  now says an epic (§4) **mid-build** is one continuing build, not a revisit: its
+  increments ship to the same repo on consecutive picked days and its footer
+  carries the current increment's day with optional arc free text, never the
+  `(revisited day <MMM>)` form. And **once an epic has closed**, a later
+  maintenance pick of that repo is an ordinary revisit taking `Day <NNN>
+  (revisited day <MMM>)` with `<NNN>` the epic's first increment day — stated so a
+  post-completion pick is not left two-way.
+
+  **Scope and no canary.** `STYLE.md` only (the one footer rule), plus this
+  version/changelog block and the `manual_version` field. `STYLE.md` is **not**
+  on §14's canary list (§1–§3, §7–§9) and §9.4 is untouched, so no canary (the
+  1.15.0 precedent for a `STYLE.md` meta edit). `agents/critic-hygiene.md`
+  enforces the template **by reference** with no hardcoded footer copy, and
+  `agents/shipper.md` points at `STYLE.md` for the detail — neither needs an edit
+  (1.15.0 precedent). **A clean-context critic BLOCKed the first draft** on three
+  findings, all fixed above and verified against primary sources: the lead clause
+  still claimed "verbatim except a number" after the forms added a parenthetical
+  (defect 1); the draft's "three ships / three answers" census contradicted the
+  repo's own day-032 five-repo / three-convention note and its "never a list"
+  rule silently overrode `pixel-garden`'s shipped list footer (defect 2, the
+  substantive one — grandfather clause and accurate census added); and the epic
+  clause left a closed-epic maintenance pick two-way (defect 3). The epic
+  carve-out itself the critic confirmed sound, not scope creep.
+
+  **Must-pass set and scope.** Doctrine-only `meta` ship; its must-pass set is
+  the five of §16 clause 5, two of which (LICENSE, root README) fail pre-existing
+  on **#65** at the hub — untouched here, §11's *Unverifiable* rather than a
+  failure of this ship, and §16 clause 5's consequence stands (a `meta` ship day
+  cannot be a clean evening while #65 is open). Every day-084 commit is authored
+  *and* committed `Kairui Ying <yinggarykairui@gmail.com>` with no
+  `Co-Authored-By`/`Claude-Session` trailer (§9.2, 1.19.0). The phase gate does
+  **not** move: `phase: 0`, unchanged.
 
 - **1.21.0** (2026-11-12) — meta #118, day 083: four of the six day-043 (#55,
   1.9.1) residuals #118 filed — the clean textual set. The remaining two (item 2,
