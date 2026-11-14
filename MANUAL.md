@@ -775,7 +775,8 @@ this, and the permission would be dead on the page.
   values asserted to fire **before** the clean result is read; **and the fourth
   sub-check's §8 line, exercised against that same clone** — a browser-needing
   line (loads/runs without errors, survives garbage, phone width) by serving the
-  clone locally and driving this shift's **own headless browser**, which is a
+  clone locally and driving this shift's **own headless browser** where it has one
+  (the *available* framing above governs when it does not), which is a
   different channel from the `github.io` egress deploy-scope needs and #136
   blocks. *Deploy-scope*
   asks one question — **is the live page the tree under test?** — and answers it
@@ -856,35 +857,63 @@ this, and the permission would be dead on the page.
   unnumbered list, and an insertion into it would silently re-map a numbered
   draw.
 
-  **Exercised against the shipped tree, never the live deploy — and so its draw
-  pool is not restricted.** The drawn line is re-tested in *repo-scope*, against
-  the clone at the shipped sha: the same scope the first three sub-checks' repo
-  half uses, and the same tree noon grades at build time. *Deploy-scope* (steps 1
-  and 2 above) separately and solely carries the other question — which tree
-  `github.io` serves — so the fourth sub-check never re-asks it and is never
-  hostage to the egress #136 blocks. This settles the two readings #122 records,
-  in favour of the one consistent with the section's existing structure: a line is
-  **available** when this shift can exercise it against that local clone, and the
-  browser-needing lines — loads/runs without errors, survives garbage input,
-  usable at phone width — are therefore available **whenever the shift has a local
-  headless browser to drive the served clone**, which the cloud environment
-  provides. (Verified at this edit: a served clone of a shipped web build loads
-  with zero console errors, resizes to 320 px with zero horizontal overflow, and
-  survives null bytes, injected markup and key-mashing with zero new errors —
-  none of it reaching `github.io`.) The 2026-09-06 evening's "three of five web
-  draws need a browser this shift does not have" conflated two channels —
-  *reaching* `github.io` (blocked, #136, a deploy-scope matter) with *driving a
-  local browser against a served clone* (available) — so the pool is **not**
-  trimmed: every §8 line left after §11.2's own subtraction is exercisable against
-  the shipped tree, the demo-link line having already been retired to
-  deploy-scope. A line is *unavailable* here only where this shift genuinely
-  cannot exercise it against the clone — recorded as such, never read as a failure
-  (the scope rule above), the residual case being a future shift that has no
-  browser at all. **This relaxes nothing §16 guards:** a loads/garbage/phone-width
-  line tested against a locally-served clone with a real browser is the strong
-  test noon runs at build time, so a Pass it yields is earned, not the
-  generous-direction reading §16 rejects — the gate stays as hard as it was and
-  recovers only the draws the "no browser" reading wrongly forfeited.
+  **Exercised against the shipped tree, never the live deploy — so its draw pool
+  is not *further* restricted beyond §11.2's own subtraction.** The drawn line is
+  re-tested in *repo-scope*, against the clone at the shipped sha: the same scope
+  the first three sub-checks' repo half uses, and — by §6's playtester — the same
+  tree and the same local headless browser noon grades these very lines with at
+  build time. *Deploy-scope* (steps 1 and 2 above) separately and solely carries
+  the other question — which tree `github.io` serves — so the fourth sub-check
+  never re-asks it and is never hostage to the egress #136 blocks. This settles
+  the two readings #122 records, in favour of the one consistent with the
+  section's existing structure: a line is **available** when this shift can
+  exercise it against that local clone, and the browser-needing lines — loads/runs
+  without errors, survives garbage input, usable at phone width — are therefore
+  available **whenever the shift has a local headless browser to drive the served
+  clone**, which the cloud environment provides. (Verified at this edit: a served
+  clone of a shipped web build loads with zero console errors, resizes to 320 px
+  with zero horizontal overflow, and survives null bytes, injected markup and
+  key-mashing with zero new errors — none of it reaching `github.io`.) The
+  2026-09-06 evening's "three of five web draws need a browser this shift does not
+  have" conflated two channels — *reaching* `github.io` (blocked, #136, a
+  deploy-scope matter) with *driving a local browser against a served clone*
+  (available) — so the pool is **not** trimmed: every §8 line left after §11.2's
+  own subtraction is exercisable against the shipped tree, the demo-link line
+  having already been retired to deploy-scope. A line is *unavailable* here only
+  where this shift genuinely cannot exercise it against the clone — recorded as
+  such, never read as a failure (the scope rule above), the residual case being a
+  future shift that has no browser at all.
+
+  **What this does and does not buy — because #122's title is about
+  *payability*.** It fixes the *scope* question, not the web-debt yield #118 item
+  6 measured, and those are different. Item 6's **premise** was false (the browser
+  exists); its **conclusion** — web debt is largely unpayable today — still holds,
+  now for the reason #136 records rather than the one item 6 gave. A web ship's
+  Pass needs *every applicable* sub-check to have run, and its deploy-scope
+  demo-link line is #136-blocked, so the outcome order below (*"a web ship whose
+  deploy half is unavailable cannot Pass… its demo-link line would be untested and
+  the `verified` is irreversible"*) still makes it a **Skip**. This edit does not
+  move that: it corrects *why* the three browser lines were thought unavailable, it
+  does not make a web ship verifiable while #136 stands. What it buys is the CLI,
+  `meta`, and (in a #136-resolved world) web fourth-sub-check draws that the "no
+  browser" reading wrongly forfeited.
+
+  **Why this is not the generosity §16 rejects — stated honestly, not by
+  denial.** Relative to the 2026-09-06 reading those three draws were *Skips*
+  (recorded unavailable), and this edit makes a sound ship's draw on them an earned
+  *Pass* — so it is a change, not "nothing." It is not a **generous** change in
+  §16's sense (passing what should fail): these are build-time/local lines by §8's
+  own nature, graded by §6's playtester against a locally-served clone, so the
+  clone is their native target and a Pass against it is the strong test noon runs,
+  not a weaker substitute. The honest residual, named rather than hidden: routing
+  loads/runs, garbage and phone-width permanently to the *local* clone means a ship
+  that works locally but diverges on the live deploy (a build-step or asset-path
+  difference — real only for the `job`-lane builds §13 exempts, since the default
+  stack has no build step and serves the tree byte-for-byte) has those lines Passed
+  while deploy-scope *"cannot prove the app runs"* (the `LESSONS.md` ceiling). No
+  single line then checks live runtime. That gap is pre-existing in §11.2's
+  repo/deploy scope split; this edit cements which scope owns these lines and so
+  should say so, which is what this paragraph does.
 
 Four outcomes. **Eligibility decides first; sub-check results decide the rest.**
 
@@ -1459,13 +1488,34 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   the clone — the residual being a future shift with no browser at all, recorded
   *unavailable*, never read as a failure.
 
-  **Why this is not the generous-direction reading §16 rejects.** Making the
-  browser-needing lines available enlarges what a web debt-check can *run*, not what
-  it *passes*: a loads/garbage/phone-width line tested against a locally-served clone
-  with a real browser is the strong test noon runs at build time, so a Pass it
-  yields is earned. The gate stays as hard as it was and recovers only the draws the
-  "no browser" reading wrongly forfeited — the opposite of the day-034
-  clause-checker §16 scoped out for being permissive.
+  **But scope is not payability — and #122's title is about payability.** Fixing
+  the fourth sub-check's scope does **not** make a web ship verifiable while #136
+  stands. A Pass needs *every applicable* sub-check to have run, and a web ship's
+  deploy-scope demo-link line is #136-blocked, so §11.2's outcome order (*"a web
+  ship whose deploy half is unavailable cannot Pass… its demo-link line would be
+  untested and the `verified` is irreversible"*) still makes it a **Skip**. Item
+  6's **premise** was false; its **conclusion** — web debt is largely unpayable
+  today — still holds, now for #136's reason rather than item 6's. What this edit
+  recovers is the CLI, `meta`, and (in a #136-resolved world) web fourth-sub-check
+  draws the "no browser" reading wrongly forfeited — not web payability, which #136
+  still gates.
+
+  **Why this is not the generosity §16 rejects — honestly, not by denial.**
+  Relative to the 2026-09-06 reading those three draws were *Skips* (recorded
+  unavailable); this edit makes a sound ship's draw on them an earned *Pass*, so it
+  is a change, not "nothing." It is not a **generous** change in §16's sense
+  (passing what should fail): these are build-time/local lines by §8's own nature,
+  graded by §6's playtester against a locally-served clone, so the clone is their
+  native target and a Pass against it is the strong test noon runs, not a weaker
+  substitute. The honest residual, named in §11.2 rather than hidden: routing
+  loads/runs, garbage and phone-width permanently to the *local* clone means a ship
+  that works locally but diverges on the live deploy (a build-step or asset-path
+  difference — real only for the `job`-lane builds §13 exempts, the default
+  no-build stack serving the tree byte-for-byte) has those lines Passed while
+  deploy-scope *"cannot prove the app runs."* No single line then checks live
+  runtime — a gap pre-existing in §11.2's scope split that this edit cements and so
+  states, unlike the day-034 clause-checker §16 scoped out for being silently
+  permissive.
 
   **What #122 also raised, and where it stands.** §122 noted §10 "still has no sha
   field" — already closed: §10 carries `sha:` from 1.11.0 and `shift:` from 1.20.0
