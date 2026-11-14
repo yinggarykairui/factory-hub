@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.22.0
+manual_version: 1.23.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -772,7 +772,12 @@ this, and the permission would be dead on the page.
   is recorded as such and never read as a failure. *Repo-scope*, against a clone
   at the shipped sha: `screenshot.png` present and referenced by the README;
   gitleaks clean over history, with a control built from randomly generated
-  values asserted to fire **before** the clean result is read. *Deploy-scope*
+  values asserted to fire **before** the clean result is read; **and the fourth
+  sub-check's §8 line, exercised against that same clone** — a browser-needing
+  line (loads/runs without errors, survives garbage, phone width) by serving the
+  clone locally and driving this shift's **own headless browser**, which is a
+  different channel from the `github.io` egress deploy-scope needs and #136
+  blocks. *Deploy-scope*
   asks one question — **is the live page the tree under test?** — and answers it
   with the clone and `WebFetch`, which is the only channel to `github.io` this
   shift has. Neither reading names an outcome; both record a result the ordered
@@ -850,6 +855,36 @@ this, and the permission would be dead on the page.
   ship they are the two likeliest to have rotted. Named, not numbered: §8 is an
   unnumbered list, and an insertion into it would silently re-map a numbered
   draw.
+
+  **Exercised against the shipped tree, never the live deploy — and so its draw
+  pool is not restricted.** The drawn line is re-tested in *repo-scope*, against
+  the clone at the shipped sha: the same scope the first three sub-checks' repo
+  half uses, and the same tree noon grades at build time. *Deploy-scope* (steps 1
+  and 2 above) separately and solely carries the other question — which tree
+  `github.io` serves — so the fourth sub-check never re-asks it and is never
+  hostage to the egress #136 blocks. This settles the two readings #122 records,
+  in favour of the one consistent with the section's existing structure: a line is
+  **available** when this shift can exercise it against that local clone, and the
+  browser-needing lines — loads/runs without errors, survives garbage input,
+  usable at phone width — are therefore available **whenever the shift has a local
+  headless browser to drive the served clone**, which the cloud environment
+  provides. (Verified at this edit: a served clone of a shipped web build loads
+  with zero console errors, resizes to 320 px with zero horizontal overflow, and
+  survives null bytes, injected markup and key-mashing with zero new errors —
+  none of it reaching `github.io`.) The 2026-09-06 evening's "three of five web
+  draws need a browser this shift does not have" conflated two channels —
+  *reaching* `github.io` (blocked, #136, a deploy-scope matter) with *driving a
+  local browser against a served clone* (available) — so the pool is **not**
+  trimmed: every §8 line left after §11.2's own subtraction is exercisable against
+  the shipped tree, the demo-link line having already been retired to
+  deploy-scope. A line is *unavailable* here only where this shift genuinely
+  cannot exercise it against the clone — recorded as such, never read as a failure
+  (the scope rule above), the residual case being a future shift that has no
+  browser at all. **This relaxes nothing §16 guards:** a loads/garbage/phone-width
+  line tested against a locally-served clone with a real browser is the strong
+  test noon runs at build time, so a Pass it yields is earned, not the
+  generous-direction reading §16 rejects — the gate stays as hard as it was and
+  recovers only the draws the "no browser" reading wrongly forfeited.
 
 Four outcomes. **Eligibility decides first; sub-check results decide the rest.**
 
@@ -1381,6 +1416,81 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.23.0** (2026-11-14) — meta #122, day 085: §11.2 says, at last, **what scope
+  its fourth sub-check runs in** — resolving the disagreement two evenings left on
+  the page, and with it #118's sixth residual (routed to #122, the comment thread).
+
+  **The defect.** §11.2's fourth sub-check re-tests one §8 must-pass line, but the
+  file never said whether that line is exercised *against the live deploy* or
+  *against the shipped tree*. Two evenings read it oppositely: the 2026-09-06
+  evening (day 043, #55/1.9.1) read it as against the deploy, found three of five
+  web-draw lines (loads/runs, survives garbage, phone width) need a browser it
+  thought it lacked, and concluded the debt paragraph is *"close to dead on web
+  ships whatever their condition."* The 2026-09-07 evening cloned day 026 at its
+  shipped sha, served it, drove it with its own Chromium, and **passed** the
+  garbage-input line. The gap decides roughly three-fifths of every web ship's draw,
+  and the outcome is an irreversible `verified` (§3) — exactly the kind of thing §16
+  says must not turn on which shift is on that night.
+
+  **The resolution: reading (b), the one consistent with §11.2's own structure.**
+  The fourth sub-check is now stated to run in *repo-scope*, against the clone at
+  the shipped sha — the same scope the first three sub-checks' repo half already
+  uses, and the same tree noon grades at build time. *Deploy-scope* (steps 1–2)
+  separately and solely carries the other question, which tree `github.io` serves,
+  so the fourth sub-check never re-asks it and is never hostage to the egress
+  **#136** blocks. The two-scopes bullet now lists the fourth sub-check among
+  repo-scope's duties and names its channel for the browser-needing lines: **serve
+  the clone locally and drive this shift's own headless browser**.
+
+  **#118 item 6's premise was false, and a dry run proved it.** Item 6 measured
+  that three of five web-draw lines are *"unavailable whatever the ship's
+  condition"* because they "need a browser this cloud shift does not have." They
+  do not: the cloud environment ships Chromium + Playwright, and #136 blocks only
+  *reaching* `github.io` (a deploy-scope matter), not *driving a local browser
+  against a served clone*. Verified at this edit against a real shipped web build
+  (`tile-forge`): the served clone loads with **0** console errors, resizes to 320 px
+  with **0** horizontal overflow, and survives null bytes, injected `<script>`
+  markup and key-mashing with **0** new errors — none of it touching `github.io`.
+  So the draw pool is **not** trimmed (the direction item 6 floated): every §8 line
+  left after §11.2's own subtraction is exercisable against the shipped tree, the
+  demo-link line having already been retired to deploy-scope. A line is *unavailable*
+  for the fourth sub-check only where a shift genuinely cannot exercise it against
+  the clone — the residual being a future shift with no browser at all, recorded
+  *unavailable*, never read as a failure.
+
+  **Why this is not the generous-direction reading §16 rejects.** Making the
+  browser-needing lines available enlarges what a web debt-check can *run*, not what
+  it *passes*: a loads/garbage/phone-width line tested against a locally-served clone
+  with a real browser is the strong test noon runs at build time, so a Pass it
+  yields is earned. The gate stays as hard as it was and recovers only the draws the
+  "no browser" reading wrongly forfeited — the opposite of the day-034
+  clause-checker §16 scoped out for being permissive.
+
+  **What #122 also raised, and where it stands.** §122 noted §10 "still has no sha
+  field" — already closed: §10 carries `sha:` from 1.11.0 and `shift:` from 1.20.0
+  (#116), so the shipped sha is recoverable for every ship from 1.11.0 on and need
+  not be reconstructed. This edit does not reopen it. §122 closes `shipped` with
+  this ship; #152 (promote deploy-scope to a §11.6) remains its own open build.
+
+  **Canary (§14): not required, dry run kept anyway.** §11 is **not** on §14's
+  canary list (§1–§3, §7–§9), and this edit touches neither §8's lines nor §9's
+  checklist — only §11.2's scope wording. Per the precedent #122 itself cites (the
+  last two §11 edits dry-ran regardless and each found the entry's premise false),
+  a dry run was run and did exactly that: it falsified item 6's "no browser." A
+  clean-context critic reviewed the full diff against #122, #118 item 6, #136 and
+  §16 before ship.
+
+  **Must-pass set and scope.** Doctrine-only `meta` ship; its must-pass set is the
+  five of §16 clause 5, two of which (LICENSE, root README) fail pre-existing on
+  **#65** at the hub — untouched here, §11's *Unverifiable* rather than a failure of
+  this ship, and §16 clause 5's consequence stands (a `meta` ship day cannot be a
+  clean evening while #65 is open). `MANUAL.md` only (§11.2's two-scopes bullet and
+  fourth-sub-check bullet, plus this version/changelog block); no `scripts/`,
+  `agents/` or storefront code touched. Every day-085 commit is authored *and*
+  committed `Kairui Ying <yinggarykairui@gmail.com>` with no
+  `Co-Authored-By`/`Claude-Session` trailer (§9.2, 1.19.0). The phase gate does
+  **not** move: `phase: 0`, unchanged.
 
 - **1.22.0** (2026-11-13) — meta #121, day 084: `STYLE.md`'s provenance-footer
   rule gains an explicit **revisit** form, so the next repo the factory picks
