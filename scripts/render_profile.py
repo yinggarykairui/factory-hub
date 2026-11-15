@@ -2,8 +2,9 @@
 """Render the profile storefront (yinggarykairui/yinggarykairui README) from
 dashboard/README.md. Run by the shipper as part of §9.8; stdlib only.
 
-Ranking for "Best builds": 👍 reactions (from any GitHub user) on the repo's
-closed ship issues, the repo's best rubric average as fallback, most recent
+Ranking for "Best builds": 👍 reactions on the repo's closed ship issues —
+a repo's best-received increment (`max`, from any GitHub user), not the sum
+across its revisits — the repo's best rubric average as fallback, most recent
 ship as tiebreak. Reads the token from $FACTORY_PAT or ~/.factory.env.
 
 The lookup asks for **both** `shipped` and `verified` issues: relabelling a
@@ -118,18 +119,27 @@ def parse_dashboard():
     return kpi, rows
 
 def slug_from_title(title):
-    """Ship issue titles come in three forms — `<slug>`, `improve <slug>: …`
-    (maintenance revisits) and `<slug> — …` (job-lane ships). All three
-    should credit the same slug. A title in none of those forms (a `meta:`
-    issue) has no slug and returns None."""
+    """Ship issue titles come in several forms, and all should credit the
+    same slug: a bare `<slug>`, `improve <slug>: …` (maintenance revisits),
+    the job-lane `<slug> — …`, a `<slug> (revisit)` parenthetical, and an
+    unspaced `<slug>—…` em/en-dash. A title in none of these — a `meta:` or
+    `blocked:` issue, or an `improve <doc> §…:` doctrine ship — has no slug
+    and returns None. (#128 item 1: the earlier whitelist dropped the
+    parenthetical and unspaced-dash forms, silently losing those repos'
+    votes.)"""
     t = (title or "").strip()
     m = re.match(r"^improve\s+([a-z0-9][\w-]*)\s*:", t, re.I)
     if m:
         return m.group(1).lower()
-    # A bare slug, or a job-lane `<slug> — <description>`. The dash must be
-    # spaced: `word-ladder` is one slug, not `word` and a description. A
-    # `meta:`/`blocked:` title is not a ship and has no slug.
-    m = re.match(r"^([a-z0-9][\w-]*?)(?:\s*[—–]\s|\s-\s|\s*$)", t, re.I)
+    # A bare slug, or a slug followed by a description or a parenthetical.
+    # The leading `[\w-]` run keeps a hyphenated slug whole (`word-ladder`
+    # is one slug, not `word` and a description); it is terminated only by a
+    # boundary a ship title actually uses — an em/en dash (spaced or not, so
+    # `trace-lens—replay` keys), an open paren (so `json-tidy (revisit)`
+    # keys), a *spaced* ASCII hyphen, or end of title. Never a bare ASCII
+    # hyphen, which would split the slug, and never a colon, which marks the
+    # `meta:`/`blocked:`/`improve <doc> §…:` non-ship titles.
+    m = re.match(r"^([a-z0-9][\w-]*?)(?:\s*[—–]\s*|\s-\s|\s*\(|\s*$)", t, re.I)
     return m.group(1).lower() if m else None
 
 def _issues(label, tok):
@@ -170,10 +180,14 @@ def reactions_by_slug():
             if not slug:
                 unkeyed.append(f"#{i['number']}")
                 continue
-            # A repo with several ship issues (revisits) sums to its
-            # total across them: the portfolio entry is the repo, so the
-            # votes it earned across its increments are the repo's.
-            out[slug] = out.get(slug, 0) + i.get("reactions", {}).get("+1", 0)
+            # A repo with several ship issues (revisits) keeps its
+            # best-received increment: the portfolio entry is the repo, and
+            # `max` ranks it on how well a single increment landed rather
+            # than on how many times maintenance revisited it. Summing would
+            # reward revisit count — an artifact of maintenance scheduling,
+            # not reception — so a five-increment repo with one 👍 each would
+            # outrank a one-ship repo with four (#128 item 2).
+            out[slug] = max(out.get(slug, 0), i.get("reactions", {}).get("+1", 0))
         if unkeyed:
             warn("ship issues with no parseable slug (votes not counted): "
                  + ", ".join(sorted(unkeyed)))
@@ -337,8 +351,8 @@ def render():
     rank_by = ("ranked by 👍 on its ship issues, or by its best rubric until the votes"
                " arrive" if voted else
                "ranked by best rubric — the reaction lookup did not answer on this run")
-    L.append(f"\n*One row per repo — {rank_by}. The sentence describes the repo's latest"
-             " increment.*\n")
+    L.append(f"\n*One row per repo — {rank_by}, ties broken toward the most recent"
+             " ship. The sentence describes the repo's latest increment.*\n")
     L.append("### How it works\n")
     L.append("Every project starts as an issue. It gets a spec and a README before any code")
     L.append("exists, is built by one agent, then torn apart by adversarial critics. A build")
