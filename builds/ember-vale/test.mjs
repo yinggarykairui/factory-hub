@@ -735,6 +735,9 @@ async function main() {
       relight.steps[2].done === false && relight.steps[3].done === false);
     check('the gather step shows (0/3) and the return step its base label',
       /\(0\/3\)/.test(relight.steps[2].text) && /three emberseeds to the heart/.test(relight.steps[3].text));
+    // MINOR-3: the "ask" step names Mira (its done-flag miraTold is set only by Mira).
+    check('the ask step names Mira, not "the valley folk"',
+      /Ask Mira where the emberseeds lie/.test(relight.steps[1].text));
 
     // the errand is invisible until Mira asks.
     check('the lantern errand is absent until Mira asks',
@@ -814,6 +817,172 @@ async function main() {
     for (let i = 0; i < 6; i++) { await qp.setViewportSize({ width: 320 + i * 40, height: 360 + i * 30 }); if (i % 2) await qp.evaluate(() => window.__ev.toggleQuests()); }
     check('survives quest-log garbage input + resizes', (await qp.evaluate(() => window.__ev.state)) != null);
     await qc.close();
+  }
+
+  // 20b — the quest-log first-play cue (MINOR-4) and the monotonic step display
+  // (MINOR-2), on a FRESH context (isolated localStorage, so Enter begins a new
+  // run and the log has never been opened — the main page's autosave does not leak in).
+  {
+    const lcc = await browser.newContext({ viewport: { width: 900, height: 600 } });
+    const lp = await lcc.newPage();
+    lp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(logcue): ' + m.text()); });
+    lp.on('pageerror', e => consoleErrors.push('pageerror(logcue): ' + e.message));
+    await lp.goto(url);
+    await lp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(lp);
+    await lp.keyboard.press('Enter');                               // a new run (no save in this context)
+    await lp.evaluate(() => {
+      window.__talk = function (tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (let i = 0; i < 8; i++) { const d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        const d = window.__ev.dialog();
+        if (d && d.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (let i = 0; i < 8 && window.__ev.dialog(); i++) window.__ev.action();
+        window.__ev.dismiss();
+      };
+    });
+    check('no quest-log cue before the charge',
+      await lp.evaluate(() => window.__ev.flags.questStarted === false && window.__ev.logCueShowing() === false));
+    await lp.evaluate(() => window.__talk(20, 8, 'right', 1));      // the Warden's charge
+    check('the quest-log cue appears after the charge (log never opened)',
+      await lp.evaluate(() => window.__ev.flags.questStarted === true && window.__ev.logCueShowing() === true));
+    // MINOR-2: three seeds BEFORE asking Mira — the gather step is truly done but the
+    // ask step above it is not, so the display must stay monotonic (never a ✓ above a ○).
+    const mono = await lp.evaluate(() => {
+      window.__ev.giveSeeds();
+      const q = window.__ev.quests().find(x => x.id === 'relight');
+      const firstGap = q.steps.map(s => s.shownDone).indexOf(false);
+      const shownAfterGap = q.steps.slice(firstGap + 1).some(s => s.shownDone === true);
+      return { charge: q.steps[0], ask: q.steps[1], gather: q.steps[2], shownAfterGap, gatherText: q.steps[2].text };
+    });
+    check('a truly-done step reads pending while an earlier step is undone',
+      mono.gather.done === true && mono.gather.shownDone === false &&
+      mono.ask.done === false && mono.ask.shownDone === false &&
+      mono.charge.done === true && mono.charge.shownDone === true);
+    check('the log never shows a checked step below an unchecked one', mono.shownAfterGap === false);
+    check('the gather label still reads the truth (3/3) while it displays pending',
+      /\(3\/3\)/.test(mono.gatherText));
+    // opening the log retires the cue for good.
+    await lp.evaluate(() => window.__ev.toggleQuests());
+    check('the cue is not drawn while the log is open',
+      await lp.evaluate(() => window.__ev.questOpen === true && window.__ev.logCueShowing() === false));
+    await lp.evaluate(() => window.__ev.toggleQuests());           // back to play
+    check('the cue stays retired after the log has been opened once',
+      await lp.evaluate(() => window.__ev.state === 'play' && window.__ev.logCueShowing() === false));
+    await lcc.close();
+  }
+
+  // 20c — the cue also fades on its own after ~HINT_MS of play (fresh context).
+  {
+    const fcc = await browser.newContext({ viewport: { width: 900, height: 600 } });
+    const fp = await fcc.newPage();
+    fp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(logcue2): ' + m.text()); });
+    fp.on('pageerror', e => consoleErrors.push('pageerror(logcue2): ' + e.message));
+    await fp.goto(url);
+    await fp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(fp);
+    await fp.keyboard.press('Enter');
+    await fp.evaluate(() => {
+      window.__ev.dismiss(); window.__ev.place(20, 8, 'right'); window.__ev.action();
+      for (let i = 0; i < 8; i++) { const d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+      if (window.__ev.dialog() && window.__ev.dialog().choosing) window.__ev.dialogPick(1);
+      for (let i = 0; i < 8 && window.__ev.dialog(); i++) window.__ev.action();
+      window.__ev.dismiss();
+    });
+    check('the cue is showing right after the charge (fade page)',
+      await fp.evaluate(() => window.__ev.logCueShowing() === true));
+    const faded = await fp.evaluate(() => {
+      for (let i = 0; i < 220; i++) window.__ev.step(40);           // ~8800ms of play, past HINT_MS
+      return { showing: window.__ev.logCueShowing(), state: window.__ev.state };
+    });
+    check('the quest-log cue fades on its own after ~7s of play',
+      faded.showing === false && faded.state === 'play');
+    await fcc.close();
+  }
+
+  // 20d — the cue is a TRANSITION cue, not a "quest is active" cue: a resumed save
+  // (questStarted persists, the cue's state does not) must NOT re-fire it on the
+  // first conversation after a reload; and a fresh New-game run re-earns it.
+  {
+    const scc = await browser.newContext({ viewport: { width: 900, height: 600 } });
+    const sp = await scc.newPage();
+    sp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(resume): ' + m.text()); });
+    sp.on('pageerror', e => consoleErrors.push('pageerror(resume): ' + e.message));
+    await sp.goto(url);
+    await sp.waitForFunction(() => window.__ev && window.__ev.state);
+    await sp.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await freeze(sp);
+    const TALK = () => sp.evaluate(() => {
+      window.__talk = function (tx, ty, facing, pick) {
+        window.__ev.dismiss(); window.__ev.place(tx, ty, facing); window.__ev.action();
+        for (let i = 0; i < 8; i++) { const d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        const d = window.__ev.dialog();
+        if (d && d.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (let i = 0; i < 8 && window.__ev.dialog(); i++) window.__ev.action();
+        window.__ev.dismiss();
+      };
+    });
+    await sp.evaluate(() => window.__ev.start());                  // a fresh run
+    await TALK();
+    await sp.evaluate(() => window.__talk(20, 8, 'right', 1));     // the charge arms the cue (and autosaves questStarted)
+    check('the cue arms on the fresh charge and the run is saved',
+      await sp.evaluate(() => window.__ev.logCueShowing() === true && window.__ev.hasSave() === true));
+    // reload the page: the save persists (questStarted), the cue's ephemeral state is gone.
+    await sp.reload();
+    await sp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(sp);
+    await sp.evaluate(() => window.__ev.continueGame());           // returning player
+    check('after a resume the quest is already started but no cue shows',
+      await sp.evaluate(() => window.__ev.flags.questStarted === true && window.__ev.logCueShowing() === false));
+    await TALK();                                                  // __talk was wiped by the reload — redefine
+    await sp.evaluate(() => window.__talk(6, 24, 'up', null));     // mira_open -> miraTold: applySet fires post-resume
+    check('a conversation after a resume does NOT re-arm the first-play cue',
+      await sp.evaluate(() => window.__ev.flags.miraTold === true && window.__ev.logCueShowing() === false));
+    // a fresh New-game run (same page session) re-earns the cue.
+    await sp.evaluate(() => window.__ev.newGame());
+    check('New game clears the cue state (not yet started -> not showing)',
+      await sp.evaluate(() => window.__ev.flags.questStarted === false && window.__ev.logCueShowing() === false));
+    await sp.evaluate(() => window.__talk(20, 8, 'right', 1));     // the charge again
+    check('the cue re-arms for a fresh New-game run after the quest was resumed earlier',
+      await sp.evaluate(() => window.__ev.logCueShowing() === true));
+    await scc.close();
+  }
+
+  // 20e — resuming a PRE-quest save (quest not yet started) still earns the cue on
+  // the first charge: continueGame suppresses the cue only when the resumed run has
+  // actually started the quest, not for every resume.
+  {
+    const pcc = await browser.newContext({ viewport: { width: 900, height: 600 } });
+    const pp = await pcc.newPage();
+    pp.on('console', m => { if (m.type() === 'error') consoleErrors.push('console(preq): ' + m.text()); });
+    pp.on('pageerror', e => consoleErrors.push('pageerror(preq): ' + e.message));
+    await pp.goto(url);
+    await pp.waitForFunction(() => window.__ev && window.__ev.state);
+    await pp.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await freeze(pp);
+    // a fresh run; pick up a world item BEFORE meeting the Warden -> autosaves questStarted:false.
+    await pp.evaluate(() => {
+      window.__ev.start();
+      window.__ev.place(33, 21, 'down'); window.__ev.step(16);   // walk onto the iron key -> bag + autosave
+    });
+    check('a pre-quest save exists with the quest not started',
+      await pp.evaluate(() => window.__ev.hasSave() === true && window.__ev.flags.questStarted === false));
+    await pp.reload();
+    await pp.waitForFunction(() => window.__ev && window.__ev.state);
+    await freeze(pp);
+    await pp.evaluate(() => window.__ev.continueGame());          // resume a pre-quest run
+    check('resuming a pre-quest save shows no cue yet (quest not started)',
+      await pp.evaluate(() => window.__ev.flags.questStarted === false && window.__ev.logCueShowing() === false));
+    await pp.evaluate(() => {
+      const talk = (tx, ty, f, pick) => { window.__ev.dismiss(); window.__ev.place(tx, ty, f); window.__ev.action();
+        for (let i = 0; i < 8; i++) { const d = window.__ev.dialog(); if (!d || d.choosing) break; window.__ev.action(); }
+        const d = window.__ev.dialog(); if (d && d.choosing && pick != null) window.__ev.dialogPick(pick);
+        for (let i = 0; i < 8 && window.__ev.dialog(); i++) window.__ev.action(); window.__ev.dismiss(); };
+      talk(20, 8, 'right', 1);   // the player's genuine first charge, post-resume
+    });
+    check('the first charge after resuming a pre-quest save DOES earn the cue',
+      await pp.evaluate(() => window.__ev.flags.questStarted === true && window.__ev.logCueShowing() === true));
+    await pcc.close();
   }
 
   // 21 — the main page carries all three seeds (section 14): the gather step
