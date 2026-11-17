@@ -416,8 +416,8 @@
       steps: [
         { id: "charge", label: function () { return "Take the Warden's charge"; },
           done: function () { return flags.wardenHeard; } },
-        { id: "ask",    label: function () { return "Ask the valley folk where the emberseeds lie"; },
-          done: function () { return flags.miraTold; } },
+        { id: "ask",    label: function () { return "Ask Mira where the emberseeds lie"; },
+          done: function () { return flags.miraTold; } },   // names Mira: miraTold is set only by Mira (mira_open); the Warden's recap already points to her (MINOR-3)
         { id: "gather", label: function () { return "Gather emberseeds (" + (flags.relit ? 3 : seedCount()) + "/3)"; },
           done: function () { return seedCount() === 3 || flags.relit; } },   // the relight consumes the seeds; stays done after
         { id: "return", label: function () {
@@ -472,6 +472,8 @@
   var viewW = 1, viewH = 1, dpr = 1;
   var animT = 0, walkPhase = 0, playT = 0;
   var hasRead = false;                  // the first read retires the discovery cue
+  var hasOpenedLog = false;             // the first quest-log open retires its cue (MINOR-4)
+  var logCueT = -1;                     // ms left on the "Q opens the quest log" cue; -1 = never armed
   var reduced = false;
   try { reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
 
@@ -561,7 +563,19 @@
     state = "play"; dlgNode = null; dlgChoices = null; dlgChoiceRects = [];
     screenEl.classList.remove("talking");
   }
-  function applySet(set) { if (set) { for (var k in set) if (set.hasOwnProperty(k)) flags[k] = set[k]; saveGame(); } }   // a resolved flag is durable (autosave)
+  function applySet(set) {
+    if (!set) return;
+    var wasStarted = flags.questStarted;
+    for (var k in set) if (set.hasOwnProperty(k)) flags[k] = set[k];
+    // Arm the quest-log cue on the charge's own transition (false -> true) — not
+    // merely because the quest is already active (MINOR-4). questStarted is
+    // persisted but the cue's state (logCueT, hasOpenedLog) is not, so keying off
+    // "questStarted is true" would re-fire the tutorial cue on the first
+    // conversation after every resumed save. Gate on the transition, and not if
+    // the player already opened the log on their own before the charge.
+    if (!wasStarted && flags.questStarted && !hasOpenedLog) logCueT = HINT_MS;
+    saveGame();   // a resolved flag is durable (autosave)
+  }
   // The give hook (increment 4), mirroring applySet: a node or choice that names
   // `give: "<kind>"` hands one bag item of that kind over on resolve — the
   // delivery half of Mira's lantern errand. One source of truth: the item simply
@@ -626,7 +640,7 @@
   // box-states stay exclusive. It derives everything it shows from QUESTS'
   // live predicates; it holds no state of its own.
   function toggleQuests() {
-    if (state === "play") state = "quests";
+    if (state === "play") { state = "quests"; hasOpenedLog = true; }   // opening retires the cue (MINOR-4)
     else if (state === "quests") state = "play";
   }
 
@@ -913,6 +927,7 @@
     player.px = (SPAWN_TX + 0.5) * TILE; player.py = (SPAWN_TY + 0.5) * TILE;
     player.facing = "up"; player.moving = false;
     signText = ""; toast = ""; toastT = 0; C = null; endingT = 0;
+    hasOpenedLog = false; logCueT = -1;   // a fresh run re-earns the quest-log cue (MINOR-4)
     state = "play"; playT = 0; clampCam();
   }
   function continueGame() {
@@ -920,6 +935,10 @@
     if (!s) { newGame(); return; }   // nothing valid to load -> a fresh run
     applySaved(s);
     signText = ""; C = null; endingT = 0;
+    // Suppress the first-play cue only for a run that already started the quest (a
+    // returning player). A resume of a *pre-quest* save still earns the cue on its
+    // first charge, since that charge is genuinely this player's first (MINOR-4).
+    hasOpenedLog = !!flags.questStarted; logCueT = -1;
     state = "play"; playT = 0; clampCam();
   }
   // The title's primary action: Continue a saved run, else begin a fresh one.
@@ -999,6 +1018,7 @@
     if (state === "ending") { player.moving = false; if (endingT > 0) endingT = Math.max(0, endingT - dt); return; }
     if (state !== "play") { player.moving = false; return; }
     playT += dt;
+    if (logCueT > 0) logCueT = Math.max(0, logCueT - dt);   // the quest-log cue counts down whenever play is active, like playT (MINOR-4)
     var vx = (held.right ? 1 : 0) - (held.left ? 1 : 0);
     var vy = (held.down ? 1 : 0) - (held.up ? 1 : 0);
     if (vx && vy) { vx *= 0.70711; vy *= 0.70711; } // no diagonal speed bonus
@@ -1384,6 +1404,7 @@
     ctx.fillStyle = vg; ctx.fillRect(0, 0, viewW, viewH);
 
     if (state === "play" && !hasRead && playT < HINT_MS) drawHint();
+    else if (state === "play" && flags.questStarted && !hasOpenedLog && logCueT > 0) drawLogHint();   // MINOR-4
     if (state === "play") drawToast();   // pickups/door happen in play; shown there
     if (state === "title") drawTitle();
     if (state === "reading") drawBox(signText);
@@ -1758,10 +1779,28 @@
              titleH: titleH, rowH: rowH, vis: vis };
   }
 
+  // A quest's steps resolved for display. Each step's `rawDone` is its live
+  // predicate (the single source of truth, untouched); `shownDone` is only how it
+  // renders — checked iff its own predicate holds AND every earlier step is done,
+  // so the checklist reads monotonic top-to-bottom and never shows a ✓ above an
+  // unchecked step (MINOR-2: you can gather all three seeds before asking Mira, so
+  // "gather" could tick above "ask"). This hides nothing the log claims — the
+  // label still reads the truth ("Gather emberseeds (3/3)") — it only orders the
+  // ticks. Used by both drawQuests and the __ev snapshot so there is one copy.
+  function questSteps(q) {
+    var prior = true, out = [];
+    for (var s = 0; s < q.steps.length; s++) {
+      var raw = q.steps[s].done();
+      out.push({ id: q.steps[s].id, label: q.steps[s].label(), rawDone: raw, shownDone: raw && prior });
+      prior = prior && raw;
+    }
+    return out;
+  }
+
   // The quest log: a titled panel listing each visible quest (name, a ✓ tag when
-  // complete) with its steps — a filled ✓ glyph box when done, a hollow ○ when
-  // not, done rows brighter and undone dimmer. Reads entirely off QUESTS' live
-  // predicates. With no quest visible it draws one honest line.
+  // complete) with its steps — a filled ✓ glyph box when shown-done, a hollow ○
+  // when not, done rows brighter and undone dimmer. Reads entirely off QUESTS'
+  // live predicates (via questSteps). With no quest visible it draws one honest line.
   function drawQuests() {
     var L = questLayout();
     ctx.fillStyle = "rgba(8,5,12,.55)"; ctx.fillRect(0, 0, viewW, viewH);   // dim the world behind
@@ -1796,10 +1835,11 @@
         ctx.fillText("✓ complete", Math.min(innerR - 70, tx + ctx.measureText(q.name).width + 12), y + 2);
       }
       y += L.rowH;
-      // the steps.
-      for (var s = 0; s < q.steps.length; s++) {
+      // the steps — drawn from questSteps so the ticks stay monotonic (MINOR-2).
+      var steps = questSteps(q);
+      for (var s = 0; s < steps.length; s++) {
         if (y > L.top + L.boxH - 8) break;
-        var st = q.steps[s], done = st.done();
+        var st = steps[s], done = st.shownDone;
         var gx = tx + 2, gy = y - 9;
         if (done) {
           ctx.fillStyle = "rgba(150,220,150,.9)";
@@ -1812,7 +1852,7 @@
         }
         ctx.fillStyle = done ? "rgba(236,226,206,.95)" : "rgba(190,182,166,.6)";
         ctx.font = "14px system-ui, sans-serif";
-        ctx.fillText(st.label(), tx + 22, y + 1);
+        ctx.fillText(st.label, tx + 22, y + 1);
         y += L.rowH;
       }
       y += 10;   // a gap between quests
@@ -1943,6 +1983,31 @@
     }
     if (alpha <= 0) return;
     var msg = "Face someone, a signpost, or the Ember and press " + (controlsVisible() ? "A" : "Space") + " to talk or read";
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.font = "14px system-ui, sans-serif";
+    var w = ctx.measureText(msg).width + 28, x = viewW / 2, y = 22;
+    ctx.fillStyle = "rgba(14,9,18," + (0.72 * alpha) + ")";
+    roundRect(x - w / 2, y - 15, w, 28, 9); ctx.fill();
+    ctx.strokeStyle = "rgba(255,180,90," + (0.4 * alpha) + ")"; ctx.lineWidth = 1;
+    roundRect(x - w / 2, y - 15, w, 28, 9); ctx.stroke();
+    ctx.fillStyle = "rgba(243,230,208," + alpha + ")";
+    ctx.fillText(msg, x, y + 4);
+    ctx.restore();
+    ctx.textAlign = "left";
+  }
+  // The quest-log cue (MINOR-4): once the Warden's charge starts the quest, tell a
+  // newcomer the log exists. Mirrors drawHint — same top slot (the reading cue has
+  // already retired, since talking sets hasRead), same fade — and retires the first
+  // time the log is opened. Armed in applySet, timed by logCueT.
+  function drawLogHint() {
+    var elapsed = HINT_MS - logCueT, alpha = 1;
+    if (!reduced) {
+      if (elapsed < 400) alpha = elapsed / 400;                     // gentle fade-in
+      else if (logCueT < 900) alpha = Math.max(0, logCueT / 900);   // fade-out
+    }
+    if (alpha <= 0) return;
+    var msg = "Press Q or tap Quests to open the quest log";
     ctx.save();
     ctx.textAlign = "center";
     ctx.font = "14px system-ui, sans-serif";
@@ -2276,9 +2341,13 @@
     quests: function () {
       return QUESTS.filter(function (q) { return q.visible(); }).map(function (q) {
         return { id: q.id, name: q.name, complete: q.complete(),
-          steps: q.steps.map(function (s) { return { id: s.id, text: s.label(), done: s.done() }; }) };
+          // `done` is the live predicate (unchanged); `shownDone` is the monotonic
+          // display state the log renders (MINOR-2).
+          steps: questSteps(q).map(function (s) { return { id: s.id, text: s.label, done: s.rawDone, shownDone: s.shownDone }; }) };
       });
     },
+    // whether the first-play "Q opens the quest log" cue is currently drawn (MINOR-4).
+    logCueShowing: function () { return state === "play" && flags.questStarted && !hasOpenedLog && logCueT > 0; },
 
     // --- increment 5: combat ---
     get combatActive() { return state === "combat"; },
