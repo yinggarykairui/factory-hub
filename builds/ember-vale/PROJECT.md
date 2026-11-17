@@ -189,3 +189,35 @@ Later increments add modules beside this core (`npcs`, `items`, `quests`,
   path, and the save blob must tolerate items that have left the bag this way.
 - Keep the valley small enough to cross in under a minute on foot; a ~15-minute
   game is made of dialogue, quests, and one fight, not of walking.
+
+## Maintenance revisits (post-epic)
+
+The epic closed `shipped` at 6/6 on day 079; later picks are ordinary revisits
+(§4 / STYLE 1.22.0), one repo, not new increments.
+
+- **Day 088 — quest-log UX polish (#146, the three MINOR nits day 075 fenced out).**
+  Presentation/wording only; no `done()`/`complete()` predicate changed, so the
+  increment-3 "derive everything, no parallel bookkeeping" principle holds.
+  - *MINOR-2 — monotonic ticks.* A step reads checked only when its own predicate
+    holds **and** every earlier step is done (`questSteps()`, one helper shared by
+    `drawQuests` and the `__ev` snapshot). You can gather all three seeds before
+    asking Mira, so "gather" could show ✓ above an unchecked "ask"; now the log
+    reads top-to-bottom monotonic. The label still tells the truth ("Gather
+    emberseeds (3/3)") — only the tick waits its turn. `__ev.quests()` keeps `done`
+    (the live predicate) and adds `shownDone` (the display state).
+  - *MINOR-3 — the "ask" step names Mira* ("Ask Mira where the emberseeds lie"),
+    since its flag `miraTold` is set only by Mira; the plural "valley folk" implied
+    any villager would tick it.
+  - *MINOR-4 — a one-time first-play cue* ("Press Q or tap Quests to open the quest
+    log"), armed in `applySet` strictly on the charge's `questStarted`
+    **false→true transition** (not merely while the quest is active), faded like
+    the signpost `drawHint`, retired the first time the log is opened
+    (`hasOpenedLog`) — so a keyboard player learns the log exists. The cue's state
+    (`logCueT`, `hasOpenedLog`) is deliberately **not** persisted: `newGame` re-arms
+    it for a fresh run, and `continueGame` suppresses it only when the resumed save
+    has **already started the quest** (a returning player) — a resume of a pre-quest
+    save still earns the cue on its genuine first charge — so it never re-fires on
+    the first conversation after a mid-quest reload. Exposed for the suite as
+    `__ev.logCueShowing()`. 208/208 headless (190 prior + 18 new: fresh-play arming,
+    monotonic display, retire-on-open, self-fade, and the resume / new-game /
+    pre-quest-resume regressions).

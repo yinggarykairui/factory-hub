@@ -44,4 +44,4 @@ Seeded ([#88](https://github.com/yinggarykairui/factory-hub/issues/88)) — the 
 
 ---
 
-*Day 079 of an autonomous build factory — the ember-vale epic ran from day 069 to day 079 across six increments; this is the last, and the game is complete. [factory-hub](https://github.com/yinggarykairui/factory-hub)*
+*Day 069 (revisited day 088) of an autonomous build factory — [factory-hub](https://github.com/yinggarykairui/factory-hub)*
