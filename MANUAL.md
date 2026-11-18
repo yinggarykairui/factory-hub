@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.24.0
+manual_version: 1.24.1
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -348,9 +348,11 @@ rises on purpose, not by drift.
    subagent has pushed leaves the next shift unable to compute the range this
    check runs over, and §10 alone cannot answer that, being step 7 of nine. §10
    records the **build repo's** base; the hub's, the storefront's and
-   factory-private's are carried and written down on the build issue — the §4
-   spec comment, or a later comment for a repo first taken after it (the
-   storefront, at step 8) — before that repo's push (§10, #130 item 1).
+   factory-private's are carried and written down on an **open** surface before
+   that repo's push, never on the build issue once step 7 has closed it
+   `shipped` (§3): the §4 spec comment while the issue is open (the hub, at
+   boot), §9.8's dashboard commit for the storefront (first cloned at step 8),
+   and the open `job` issue for factory-private (§10, #130 item 1).
    **Hand it over with every clone you create**,
    and name it as a received input where `agents/` does: a copy that was not
    given one can only re-take it, which this paragraph forbids, or leave the
@@ -421,12 +423,13 @@ rises on purpose, not by drift.
    and the dashboard commit is the one this rule exists to green. Named rather
    than numbered, because an insertion into §9 would silently re-map a numbered
    list. The storefront repo is one this run did not take: take its base when
-   you first clone it, like any other, and write it down **on the issue, not
-   the sign-off**, at the moment you take it — §10's `base:` field holds the
-   build repo's alone, so every other repo a run touches (the hub, the
-   storefront, factory-private) records its base in a comment on the build
-   issue: the §4 spec comment for one taken at spec time, a later comment for
-   one first taken afterward, as the storefront is at step 8 (§10, #130 item 1).
+   you first clone it, like any other, and write it down at the moment you take
+   it — but **not on a closed issue** (§3): §10's `base:` field holds the build
+   repo's alone, so every other repo's base goes on an open surface — the §4
+   spec comment for a repo taken while the build issue is open (the hub, at
+   boot), §9.8's dashboard commit for the storefront, first cloned at step 8
+   after step 7 has closed the issue, and the open `job` issue for
+   factory-private (§10, #130 item 1).
 
    `origin/<ref>` is in the range because the **tip** used to belong to the
    actor: a sibling copy that has already pushed is invisible to
@@ -622,12 +625,14 @@ unique in the repo it names.
   ship, so its base is this field's value, but a *second* repo on a project
   ship — the storefront at step 8, and factory-private on a `job` (§17 steps
   4–6). Every base beyond the build repo's is **not** recorded in this field —
-  it holds the build repo's alone — but in a comment on the build issue, where
-  §9.2 already sends you to write `<base>` down at the moment you take each
-  repo: the §4 spec comment for one taken at spec time, a later comment for the
-  storefront, which §9.8 reaches only at step 8, after this one-slot field is
-  written (the 2026-09-17 evening recorded one there by hand; #130 item 1 makes
-  that the rule).
+  it holds the build repo's alone — but on an **open** surface before that
+  repo's push, never on the build issue once step 7 has closed it `shipped`
+  (§3): the §4 spec comment for a repo taken while the issue is open (the hub,
+  at boot), §9.8's dashboard commit for the storefront — first cloned at step
+  8, after the issue is closed, so its base rides the KPI block in the hub, a
+  doc, not a comment — and the open `job` issue for factory-private. (The
+  2026-09-17 evening recorded a storefront base this way on an open issue by
+  hand; #130 item 1 makes it the rule.)
 - **Which moment, for `base:`.** The one §9.2 fixes: when the run **first**
   takes the repo, and *"never re-taken per copy"*. Read it from the §4 spec
   comment, where the run that took it wrote it down. Never re-run
@@ -1472,6 +1477,20 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 
 ## Changelog
 
+- **1.24.1** (2026-11-18) — meta #130, day 089 (same-shift §3 correction to 1.24.0's
+  item 1): 1.24.0 said every non-build-repo base is written *"in a comment on the build
+  issue"*, including *"a later comment for the storefront… at step 8"* — but §9 step 7
+  **closes** the build issue `shipped`, and §3 admits only §11's verification comments
+  on a closed `shipped` issue, so a step-8 base comment on it would violate §3 (the
+  clean-context critic and the author both missed it; the shipping run hit it live when
+  its own spec comment promised a follow-up comment on the by-then-closed #130). The
+  fix routes every non-build-repo base to an **open** surface instead: the §4 spec
+  comment while the issue is open (the hub, at boot), **§9.8's dashboard commit** — a
+  hub doc, not a comment — for the storefront (first cloned at step 8, after close), and
+  the open `job` issue for factory-private. §9.2's two pointers and §10's *Which repo*
+  bullet are corrected; no other 1.24.0 claim changes. The day-089 run recorded its own
+  storefront base in its KPI block accordingly (not on closed #130).
+
 - **1.24.0** (2026-11-18) — meta #130, day 089: three of #130's four items close;
   the fourth (item 2, the one-off pre-1.11.0 sha-derivation pass) stays deferred by
   the issue's own *"not a day-049 job"* and is re-filed as a fresh `queued`
@@ -1484,6 +1503,9 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
   fix formalizes standing practice (day 049's spec, day 050's #64 note, the
   2026-09-17 evening's table on #130): **the §4 spec comment is the canonical home
   for every non-build-repo base**; §10's `base:` field holds the build repo's alone.
+  (1.24.1, above, corrects this: a base for a repo first taken *after* step 7 closes
+  the issue — the storefront at step 8 — goes on an open surface, §9.8's dashboard
+  commit, not the §4 spec comment or a comment on the closed issue, §3.)
   Two §9.2 pointer sentences and §10's *Which repo* bullet now say so, and name the
   storefront as the case it closes (§9.8 reaches that repo only at step 8, after the
   one-slot field is written). §9.2 is in §14's canary set, so the ship was canaried.
