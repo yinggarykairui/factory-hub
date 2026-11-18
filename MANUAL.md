@@ -1,7 +1,7 @@
 MANUAL.md — The Build Factory
 
 ```yaml
-manual_version: 1.23.0
+manual_version: 1.24.0
 status: live             # flipped by the genesis run (issue #17)
 phase: 0                 # see §16 Phase gates
 owner: <yinggarykairui>
@@ -347,8 +347,11 @@ rises on purpose, not by drift.
    down in §4*. Directive 3 is why: a run that dies after a
    subagent has pushed leaves the next shift unable to compute the range this
    check runs over, and §10 alone cannot answer that, being step 7 of nine. §10
-   records the **build repo's** base; the hub's and factory-private's are still
-   carried and unwritten (#130). **Hand it over with every clone you create**,
+   records the **build repo's** base; the hub's, the storefront's and
+   factory-private's are carried and written down on the build issue — the §4
+   spec comment, or a later comment for a repo first taken after it (the
+   storefront, at step 8) — before that repo's push (§10, #130 item 1).
+   **Hand it over with every clone you create**,
    and name it as a received input where `agents/` does: a copy that was not
    given one can only re-take it, which this paragraph forbids, or leave the
    placeholder standing, which is a parse error at best and the silent pass
@@ -418,9 +421,12 @@ rises on purpose, not by drift.
    and the dashboard commit is the one this rule exists to green. Named rather
    than numbered, because an insertion into §9 would silently re-map a numbered
    list. The storefront repo is one this run did not take: take its base when
-   you first clone it, like any other, and record it in the sign-off — #130
-   item 1 is that §10 has one `base:` field and a run touches more repos than
-   one.
+   you first clone it, like any other, and write it down **on the issue, not
+   the sign-off**, at the moment you take it — §10's `base:` field holds the
+   build repo's alone, so every other repo a run touches (the hub, the
+   storefront, factory-private) records its base in a comment on the build
+   issue: the §4 spec comment for one taken at spec time, a later comment for
+   one first taken afterward, as the storefront is at step 8 (§10, #130 item 1).
 
    `origin/<ref>` is in the range because the **tip** used to belong to the
    actor: a sibling copy that has already pushed is invisible to
@@ -582,7 +588,7 @@ SHIP day-<NNN> <slug>
 built:   <what shipped, one line>
 cut:     <what was scoped out and why, or "nothing">
 next:    <follow-up issue filed, or "none">
-sha:     <the build repo's default-branch tip as this sign-off is posted>
+sha:     <the build repo's tip, on the ref it ships from, as this sign-off is posted>
 base:    <that repo's sha when the run first took it (§9.2), or created>
 rubric:  must-pass 7/7 · delight 4 · clarity 4 · readme 5 · scope 5
 critics: correctness PASS · ux PASS · hygiene PASS
@@ -612,8 +618,16 @@ unique in the repo it names.
 - **Which repo.** The one the `building` issue names — the hub itself, on a
   `meta` ship. Resolvable at step 7, which *"the repo the dashboard row links"*
   would not be: step 8 writes that row and it does not exist yet. A run also
-  writes the hub on every ship (§9.8) and factory-private on a `job` (§17
-  steps 4–6); those bases are not recorded here (#130 item 1).
+  pushes the hub on every ship (§9.8) — which **is** the build repo on a `meta`
+  ship, so its base is this field's value, but a *second* repo on a project
+  ship — the storefront at step 8, and factory-private on a `job` (§17 steps
+  4–6). Every base beyond the build repo's is **not** recorded in this field —
+  it holds the build repo's alone — but in a comment on the build issue, where
+  §9.2 already sends you to write `<base>` down at the moment you take each
+  repo: the §4 spec comment for one taken at spec time, a later comment for the
+  storefront, which §9.8 reaches only at step 8, after this one-slot field is
+  written (the 2026-09-17 evening recorded one there by hand; #130 item 1 makes
+  that the rule).
 - **Which moment, for `base:`.** The one §9.2 fixes: when the run **first**
   takes the repo, and *"never re-taken per copy"*. Read it from the §4 spec
   comment, where the run that took it wrote it down. Never re-run
@@ -629,6 +643,18 @@ unique in the repo it names.
   commits land after this sign-off and are not in it, and a reader who wants
   them reads the dashboard row. On a project ship the question does not arise,
   the dashboard being a different repo. The field holds a bare sha either way.
+- **Which ref, for `sha:`.** The tip is on the ref the repo **ships from** —
+  `main` normally, and, where §11 step 1's Pages source is another branch or a
+  `/docs` root, that branch's tip instead, since that is the tree the deploy
+  and §9.2's authorship range (`<ref>`) both track. A `meta` or CLI ship has no
+  Pages and ships from `main`, so this is a web-only question (#130 item 3).
+- **A push after step 7** — a §7 fix, a §11.3 rescue — does **not** amend
+  `sha:`: the field is the tip at step 7 and is stale by design; §3 forbids
+  amending a closed `shipped` issue, and the later tip is read from the
+  dashboard row and the repo, never from here. On an **epic** the issue stays
+  open, but the posted increment sign-off is still not rewritten, so the same
+  holds — the moved tip surfaces as the *next* increment's `base:` (below), not
+  as an edit to this one (#130 item 3).
 - **A repo this run created** has no base (§9.2 says so, and drops `<base>..`
   from the range check). Write the bare word `created` — never an empty field,
   never the root commit: §9.2's repair branches on *no base* versus *a base*,
@@ -1445,6 +1471,43 @@ Cut in v1.1 (solo use): 20 webring · 24 guest queue · 25 achievements ·
 ---
 
 ## Changelog
+
+- **1.24.0** (2026-11-18) — meta #130, day 089: three of #130's four items close;
+  the fourth (item 2, the one-off pre-1.11.0 sha-derivation pass) stays deferred by
+  the issue's own *"not a day-049 job"* and is re-filed as a fresh `queued`
+  follow-up.
+
+  **Item 1 — every non-build-repo base now has a written home.** §9.2 defines
+  `<base>` as *one per repo*, but §10's `base:` field has one slot, so a run's hub,
+  storefront and factory-private bases lived only in its head — the directive-3 gap
+  item 1 named, and the one *every* ship (not just a `job`) hits through §9.8. The
+  fix formalizes standing practice (day 049's spec, day 050's #64 note, the
+  2026-09-17 evening's table on #130): **the §4 spec comment is the canonical home
+  for every non-build-repo base**; §10's `base:` field holds the build repo's alone.
+  Two §9.2 pointer sentences and §10's *Which repo* bullet now say so, and name the
+  storefront as the case it closes (§9.8 reaches that repo only at step 8, after the
+  one-slot field is written). §9.2 is in §14's canary set, so the ship was canaried.
+
+  **Item 3 — §10's two cold-read gaps, answered.** *Which ref for `sha:`* when a
+  repo's Pages source is not the default branch (§11 step 1 allows another branch or
+  a `/docs` root): the tip is on the ref the repo **ships from**, the tree the deploy
+  and §9.2's `<ref>` both track — a web-only question, since `meta`/CLI ships from
+  `main`. *A push after step 7* (a §7 fix, a §11.3 rescue): `sha:` is the step-7 tip,
+  **stale by design**; §3 forbids amending a closed `shipped` issue, so a later tip
+  is read from the dashboard row and the repo, and on an epic the moved tip surfaces
+  as the next increment's `base:`, never as an edit to the posted sign-off.
+
+  **Item 4 — the dashboard ⇄ §11 disagreement, settled on §11's side.** Confirmed
+  against the record: day 020's sign-off on #12 names `d74b16f` (on its
+  deploy-verification line) and day 024's on #16 names `287a103` (on its `shipped at`
+  line), so those two shipped shas **are** recoverable from pre-1.11.0 sign-off prose
+  — the 1.9.1 dry run was right and §11's live
+  text already encodes it. Only **day 019** is demonstrably sha-blocked, and its sha
+  is recoverable from no artifact, so even a retroactive `sha:` field cannot reach it
+  (§3). §11 needed no change; the **dashboard's** stale *"a sha field in §10 unblocks
+  days 019–022 and 024"* is corrected by a dated appended note (the historical
+  evening blocks are left as the records they are — directive 3). A clean-context
+  critic reviewed the edit against §9.2/§10/§11 and #130 before ship.
 
 - **1.23.0** (2026-11-14) — meta #122, day 085: §11.2 says, at last, **what scope
   its fourth sub-check runs in** — resolving the disagreement two evenings left on
