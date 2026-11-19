@@ -5,7 +5,10 @@
 # past the one check that is supposed to stop a ship. This file exists to keep
 # the hub's scan honestly green, and it is allowed to hold exactly one kind of
 # entry — a *specific, published, non-functional literal* that the factory has
-# written down on purpose, matched by its exact value and its exact path.
+# written down on purpose. The *intent* is to match such a literal by its exact
+# value and its exact path — but note (day 090, #131 item 5) that gitleaks
+# combines an allowlist's criteria with OR when no `condition` is set, so the
+# single entry below is in fact looser than that intent. See its own note.
 #
 # Rules for editing this file:
 #   - Never allowlist by rule ID alone, and never by directory.
@@ -35,6 +38,20 @@ keywords = ["akia", "asia", "abia", "acca", "a3t"]
   # key is not flagged" is true of whichever build ran on 08-12 and false here;
   # do not rely on a scanner's silence being stable across versions, which is
   # the original lesson holding even harder than it was written.
+  #
+  # Matching semantics, stated truthfully (day 090, #131 item 5): the entry
+  # below has no `condition`, so gitleaks combines `paths` and `regexes` with
+  # **OR** — a finding is allowlisted if it is in HANDOFF.md OR its text is the
+  # literal, not (as the top comment's "value AND path" intent would read) only
+  # the literal *in* HANDOFF.md. That matters because the literal actually lives
+  # in three tracked files — HANDOFF.md, LESSONS.md and dashboard/README.md —
+  # while `paths` names only HANDOFF.md, so the literal's coverage in the other
+  # two currently rides the value/regex branch (plus gitleaks 8.28.0's own
+  # default allowlist of AWS example keys, LESSONS.md:115). Tightening to
+  # `condition = "AND"` with all three paths enumerated is a *behaviour change*
+  # that needs a real gitleaks run to confirm the whole-tree scan stays green —
+  # which this cloud sandbox cannot execute (the binary is classifier-blocked) —
+  # so it is deferred to #154. Nothing in the rule block below is changed here.
   [rules.allowlist]
   description = "AWS's published documentation example key, quoted in the HANDOFF write-up of the secrets negative control"
   paths = ['''^HANDOFF\.md$''']
