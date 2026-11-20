@@ -124,7 +124,7 @@
       <button id="redo" title="Redo (Ctrl/Cmd+Shift+Z)" disabled>↷ Redo</button>
     </div>
     <div class="canvas-wrap">
-      <canvas id="map" width="100" height="100" role="img" aria-label="Tilemap canvas. Use the palette to pick a tile and click to paint."></canvas>
+      <canvas id="map" width="100" height="100" role="img" aria-label="Tilemap — a visual, pointer-based map editor. Painting is done with a mouse or touch after picking a tile from the palette."></canvas>
     </div>
     <p id="status" class="status" role="status" aria-live="polite"></p>
     <p class="hint">
@@ -585,6 +585,10 @@
 
   // ---- ui wiring -------------------------------------------------------
   function selectTool(t) {
+    // The empty tile (index 0) has nothing to brush — brushing it is erasing.
+    // Coerce brush -> eraser so the pressed tool matches the behaviour instead
+    // of a brush that silently writes empties ("stealth-erase", #137).
+    if (t === "brush" && current === 0) t = "eraser";
     tool = t;
     ["brush", "eraser", "fill"].forEach(function (name) {
       document.getElementById("tool-" + name).setAttribute("aria-pressed", String(name === t));
@@ -597,7 +601,10 @@
       sws[k].setAttribute("aria-pressed", String(Number(sws[k].dataset.idx) === i));
     // picking a tile implies you want to paint it
     if (tool === "eraser" && i !== 0) selectTool("brush");
-    if (i === 0) selectTool("eraser");
+    // picking empty switches to the eraser for the common case, but not when
+    // fill is active — then empty means "flood-fill a region back to empty"
+    // (#137), which is otherwise only reachable from the keyboard.
+    if (i === 0 && tool !== "fill") selectTool("eraser");
   }
 
   function buildPalette() {
