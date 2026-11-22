@@ -726,7 +726,16 @@
     if (k === "f"){ ev.preventDefault(); heroAttack("Fire"); return; }
     if (k === "w"){ ev.preventDefault(); heroAttack("Water"); return; }
     if (k === "n"){ ev.preventDefault(); heroAttack("Nature"); return; }
-    if (k === "g" || k === " "){ ev.preventDefault(); heroGuard(); return; }
+    if (k === "g"){ ev.preventDefault(); heroGuard(); return; }
+    if (k === " "){
+      // Space is the global Guard shortcut — but when a button is focused, let
+      // the browser's native "Space activates the focused button" win, so a
+      // keyboard user can operate the target/action buttons they tabbed to.
+      // (Enter is never intercepted and already activates a focused button.)
+      const el = document.activeElement;
+      if (el && (el.tagName === "BUTTON" || el.getAttribute("role") === "button")) return;
+      ev.preventDefault(); heroGuard(); return;
+    }
   });
 
   document.getElementById("restart").addEventListener("click", startFight);
