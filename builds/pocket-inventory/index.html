@@ -161,6 +161,13 @@
 
   .hint{margin-top:16px;color:var(--ink-dim);font-size:12.5px;text-align:center;letter-spacing:.2px}
 
+  /* keyboard interaction: focus rings, held state, and an off-screen live region */
+  .item:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
+  .item.held{outline:2px dashed var(--gold);outline-offset:3px;border-radius:6px;opacity:.5}
+  .cell:focus,.slot:focus{outline:2px solid var(--ink);outline-offset:2px}
+  .cell:focus,.slot:focus{z-index:1}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
   @media (max-width:560px){
     .wrap{padding:20px 14px 40px}
     h1{font-size:22px}
@@ -191,7 +198,7 @@
       <section class="panel inv" aria-label="Inventory grid">
         <h2 class="panel-title">Satchel</h2>
         <div class="grid" id="grid"></div>
-        <p class="hint">Drag to rearrange &middot; drop onto a matching slot to equip</p>
+        <p class="hint">Drag to rearrange &middot; drop onto a matching slot to equip<br>Keyboard: focus an item, <b>Enter</b> to pick up &middot; arrows / <b>Tab</b> to aim &middot; <b>Enter</b> drop &middot; <b>Esc</b> cancel</p>
       </section>
 
       <div class="side">
@@ -212,6 +219,7 @@
   </div>
 
   <div class="tip" id="tip" role="status" aria-live="polite"></div>
+  <div class="sr-only" id="sr" aria-live="polite"></div>
 
 <script>
 "use strict";
@@ -376,6 +384,7 @@
                '<span class="slot-sub">'+sub+'</span></span>'+
              '</div>';
     }).join('');
+    applyBrowseFocusability();
   }
 
   function recompute(){
@@ -575,8 +584,162 @@
     if(e.pointerType==='mouse' && e.button!==0) return;
     var itemEl = e.target.closest('.item');
     if(!itemEl || itemEl.classList.contains('slot-hint')) return; // empty cell / slot hint: no-op
+    if(held) endCarry();                     // switching to pointer abandons a keyboard carry
     e.preventDefault();
     startDrag(itemEl, e);
+  });
+
+  // ---- keyboard path (pick up → aim → drop), sharing applyDrop as the one
+  //      source of truth for the move itself. held is the keyboard analogue of
+  //      drag; the two never run at once (each cancels the other on entry).
+  var held = null;        // {origin, id, itemEl} while carrying by keyboard, else null
+  var carryHi = null;     // the destination element currently showing drop-ok/bad
+  var sr = document.getElementById('sr');
+
+  function announce(msg){ sr.textContent = ''; sr.textContent = msg; }
+
+  function statsSummary(){
+    var t = {atk:0,def:0,luck:0};
+    for(var k in equip){ var id=equip[k]; if(id){ var it=ITEMS[id]; t.atk+=it.atk; t.def+=it.def; t.luck+=it.luck; } }
+    return 'Attack '+t.atk+', Defense '+t.def+', Luck '+t.luck+'.';
+  }
+
+  // browse mode: items are Tab-focusable, cells/slots are not. Re-applied after
+  // every render() (which rebuilds the DOM) and whenever a carry ends.
+  function applyBrowseFocusability(){
+    document.querySelectorAll('.item:not(.slot-hint)').forEach(function(el){ el.tabIndex = 0; });
+    document.querySelectorAll('[data-cell],[data-slot]').forEach(function(el){ el.removeAttribute('tabindex'); });
+  }
+
+  function destEl(t){
+    return t.type==='grid' ? gridEl.children[t.key]
+                           : equipEl.querySelector('[data-slot="'+t.key+'"]');
+  }
+  function targetOf(el){
+    if(!el || !el.closest) return null;
+    var c = el.closest('[data-cell]'); if(c) return {type:'grid', key:parseInt(c.dataset.cell,10)};
+    var s = el.closest('[data-slot]'); if(s) return {type:'equip', key:s.dataset.slot};
+    return null;
+  }
+
+  // read-only mirror of applyDrop's refusal conditions, for highlighting only.
+  // applyDrop stays the sole mutator; if its validation changes, change this too.
+  function wouldApply(origin, target, id){
+    if(origin.type===target.type && String(origin.key)===String(target.key)) return false;
+    var item = ITEMS[id];
+    if(target.type==='grid'){
+      var other = grid[target.key];
+      if(origin.type==='grid') return true;              // move/swap within grid
+      if(other == null) return true;                     // unequip into empty cell
+      return ITEMS[other].slot === origin.key;           // occupant must fit origin slot
+    }
+    if(item.slot !== target.key) return false;           // wrong type for this slot
+    return origin.type === 'grid';                       // equip<-grid only
+  }
+
+  function clearCarryHi(){ if(carryHi){ carryHi.classList.remove('drop-ok','drop-bad'); carryHi=null; } }
+  function updateCarryHighlight(el){
+    clearCarryHi();
+    if(!held) return;
+    var t = targetOf(el);
+    if(!t) return;
+    if(t.type===held.origin.type && String(t.key)===String(held.origin.key)) return; // self
+    el.classList.add(wouldApply(held.origin, t, held.id) ? 'drop-ok' : 'drop-bad');
+    carryHi = el;
+  }
+
+  function pickUp(itemEl){
+    var origin = targetOf(itemEl);
+    if(!origin) return;
+    held = {origin:origin, id:itemEl.dataset.id, itemEl:itemEl};
+    itemEl.classList.add('held');
+    hideTooltip();
+    // destinations become focusable; items step out of the tab order for the carry
+    document.querySelectorAll('[data-cell],[data-slot]').forEach(function(el){ el.tabIndex = 0; });
+    document.querySelectorAll('.item:not(.slot-hint)').forEach(function(el){ el.tabIndex = -1; });
+    announce('Picked up ' + ITEMS[held.id].name + '. Arrow keys or Tab to choose a slot or cell, Enter to drop, Escape to cancel.');
+    var startEl = destEl(origin);            // start the cursor on the item's own spot
+    if(startEl) startEl.focus();
+  }
+
+  function endCarry(){
+    if(!held) return;
+    if(held.itemEl) held.itemEl.classList.remove('held');
+    clearCarryHi();
+    held = null;
+    applyBrowseFocusability();
+  }
+
+  function cancelCarry(){
+    if(!held) return;
+    var itemEl = held.itemEl, name = ITEMS[held.id].name;
+    endCarry();
+    if(itemEl && itemEl.isConnected) itemEl.focus();
+    announce('Cancelled. ' + name + ' stays put.');
+  }
+
+  function tryDrop(){
+    if(!held) return;
+    var t = targetOf(document.activeElement);
+    if(!t) return;
+    var id = held.id, origin = held.origin;
+    var ok = applyDrop(origin, t, id);       // the one source of truth for the move
+    if(ok){
+      endCarry();
+      render();                              // rebuilds DOM + re-applies browse focus
+      var host = destEl(t);
+      var moved = host && host.querySelector('.item[data-id="'+id+'"]');
+      if(moved) moved.focus(); else if(host){ var any=host.querySelector('.item:not(.slot-hint)'); if(any) any.focus(); }
+      announce(ITEMS[id].name + ' placed. ' + statsSummary());
+    } else {
+      announce("Can't place " + ITEMS[id].name + ' there.');
+      updateCarryHighlight(document.activeElement);
+    }
+  }
+
+  function navArrow(key, el){
+    var t = targetOf(el), next = null;
+    if(t && t.type==='grid'){
+      var i=t.key, col=i%5, row=Math.floor(i/5);
+      if(key==='ArrowLeft')  next = col>0 ? gridEl.children[i-1] : null;
+      else if(key==='ArrowRight') next = col<4 ? gridEl.children[i+1] : destEl({type:'equip',key:SLOTS[Math.min(row,SLOTS.length-1)].key});
+      else if(key==='ArrowUp')   next = row>0 ? gridEl.children[i-5] : null;
+      else if(key==='ArrowDown') next = i+5 < grid.length ? gridEl.children[i+5] : null;
+    } else if(t && t.type==='equip'){
+      var j = SLOTS.findIndex(function(s){ return s.key===t.key; });
+      if(key==='ArrowUp')   next = j>0 ? destEl({type:'equip',key:SLOTS[j-1].key}) : null;
+      else if(key==='ArrowDown') next = j<SLOTS.length-1 ? destEl({type:'equip',key:SLOTS[j+1].key}) : null;
+      else if(key==='ArrowLeft') next = gridEl.children[Math.min(j,3)*5+4]; // back into the grid
+    }
+    if(next) next.focus();
+  }
+
+  var SLOT_KEYS = {w:'weapon', s:'shield', h:'helm', r:'ring', a:'amulet'};
+
+  document.addEventListener('keydown', function(e){
+    if(drag) return;                         // a pointer drag owns the interaction
+    if(held){
+      switch(e.key){
+        case 'Escape': e.preventDefault(); cancelCarry(); return;
+        case 'Enter': case ' ': case 'Spacebar': e.preventDefault(); tryDrop(); return;
+        case 'ArrowLeft': case 'ArrowRight': case 'ArrowUp': case 'ArrowDown':
+          e.preventDefault(); navArrow(e.key, document.activeElement); return;
+      }
+      var sk = SLOT_KEYS[e.key.toLowerCase()];
+      if(sk){ e.preventDefault(); var se = destEl({type:'equip',key:sk}); if(se) se.focus(); }
+      return;
+    }
+    // browse mode: Enter/Space on a focused item picks it up
+    if(e.key==='Enter' || e.key===' ' || e.key==='Spacebar'){
+      var itemEl = e.target.closest && e.target.closest('.item:not(.slot-hint)');
+      if(itemEl){ e.preventDefault(); pickUp(itemEl); }
+    }
+  });
+
+  // keep the validity highlight in step with focus (Tab, arrows and slot keys
+  // all ultimately move focus)
+  document.addEventListener('focusin', function(e){
+    if(held) updateCarryHighlight(e.target);
   });
 
   // ---- hover tooltip (desktop) ----
